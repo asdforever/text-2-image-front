@@ -1,0 +1,22 @@
+.ie-core .ie-fields { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; min-width: 0; }
+.ie-core .ie-preview-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.ie-core .ie-preview-tools button { border: 1px solid #dbe2db; border-radius: 6px; background: #fff; padding: 7px 10px; font-size: 11px; }
+.ie-core .ie-preview-tools span { font-size: 10px; color: #78867b; }
+.ie-core .ie-preview-tools button[aria-pressed=true], .ie-core .wb-mask-mode button[aria-pressed=true] { background: #eaf0e9; border-color: #aabda4; color: #345747; }
+.ie-core .ie-region-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.ie-core .ie-region-fields input { min-width: 0; }
+.ie-core .ie-checkbox { display: flex; align-items: center; }
+.ie-core .ie-checkbox input { width: 15px; min-height: 15px; }
+.ie-core .wb-editor-footer small { display: block; margin-top: 4px; }
+.ie-core .wb-editor-options textarea { width: 100%; box-sizing: border-box; }
+.ie-core .wb-editor-canvas img { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); max-height: 100%; max-width: 100%; object-fit: contain; }
+.ie-core .wb-editor-bottom { gap: 6px; }
+@media (max-width: 600px) {
+  .ie-core .wb-editor-body { grid-template-columns: minmax(0,1fr); }
+  .ie-core .wb-editor-tools { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px; border-right: 0; }
+  .ie-core .wb-editor-tools > strong, .ie-core .wb-editor-tools p { display: none; }
+  .ie-core .wb-editor-tools button { width: auto; padding: 8px; margin: 0; }
+  .ie-core .wb-editor-stage { min-height: 340px; padding: 10px; }
+  .ie-core .wb-editor-footer { flex-wrap: wrap; padding: 10px; }
+  .ie-core .wb-editor-footer > span, .ie-core .wb-editor-footer > strong { flex-basis: 100%; }
+}

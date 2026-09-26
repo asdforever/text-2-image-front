@@ -1,0 +1,26 @@
+name: text-2-image-front
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: text-2-image-front-frontend:local
+    restart: unless-stopped
+    ports:
+      - "${PICAGENT_HTTP_PORT:-18081}:80"
+    # nginx 配置在构建时 COPY 进镜像（见 Dockerfile），不再走挂载。
+    # 挂载依赖宿主机文件状态，且路径写错不会报错，只会让 nginx 起不来。
+    # 后端跑在同一个宿主机上，容器里要用下面这个别名才能访问。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+networks:
+  default:
+    name: text-2-image-front-net

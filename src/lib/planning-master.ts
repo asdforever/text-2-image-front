@@ -1,0 +1,89 @@
+import type { HeroGenerationConfig, SuiteGenerationConfig, GenerationModuleParameter, GenerationMode } from "./generation-workspace";
+import type { ApiModulePlanInput } from "../api/client";
+
+export interface ModulePlanModule {
+  moduleId: string;
+  referenceModuleId?: string;
+  taskId?: string;
+  resultCount: number;
+  moduleParameters: GenerationModuleParameter[];
+  compositionBrief: string;
+  reason: string;
+  styleTemplateId?: string;
+  visualStyleTags?: string[];
+  sceneTags?: string[];
+  referenceCaseIds?: number[];
+  bigIdea?: string;
+  visualMechanism?: string;
+}
+
+export interface ModulePlan {
+  id: string;
+  mode: GenerationMode;
+  status: "planning" | "completed" | "failed";
+  input?: ApiModulePlanInput;
+  summary: string;
+  modules: ModulePlanModule[];
+  warnings: string[];
+  error?: { code: string; message: string };
+  createdAt: string;
+}
+
+export type PlanningConfig = HeroGenerationConfig | SuiteGenerationConfig;
+
+type PlanningInputConfig = Pick<PlanningConfig, "selectedAssetIds" | "referenceAssetIds" | "market" | "aspectRatio" | "outputLanguage" | "planningBrief" | "reverseVersionId">;
+
+export function hasPlanningInput(config: Pick<PlanningConfig, "planningBrief" | "referenceAssetIds" | "reverseVersionId">): boolean {
+  return !!config.planningBrief?.trim() || !!config.referenceAssetIds?.length || !!config.reverseVersionId;
+}
+
+export function modulePlanInputFingerprint(config: PlanningInputConfig): string {
+  return JSON.stringify({ assets: config.selectedAssetIds, market: config.market, aspectRatio: config.aspectRatio, outputLanguage: config.outputLanguage, brief: (config.planningBrief ?? "").trim(), ...(config.referenceAssetIds?.length ? { references: config.referenceAssetIds } : {}), ...(config.reverseVersionId ? { reverseVersionId: config.reverseVersionId } : {}) });
+}
+
+export function modulePlanMatchesInput(fingerprint: string, config: PlanningInputConfig): boolean {
+  return fingerprint === modulePlanInputFingerprint(config);
+}
+
+export function modulePlanRequestInput(mode: GenerationMode, config: PlanningConfig): ApiModulePlanInput {
+  return { mode, sourceAssetIds: config.selectedAssetIds, ...(config.referenceAssetIds?.length ? { referenceAssetIds: config.referenceAssetIds } : {}), ...(config.reverseVersionId ? { reverseVersionId: config.reverseVersionId } : {}), marketId: config.market, aspectRatio: config.aspectRatio, outputLanguage: config.outputLanguage, brief: (config.planningBrief ?? "").trim() };
+}
+
+export function canRecoverModulePlan(plan: ModulePlan, mode: GenerationMode, config: PlanningConfig): boolean {
+  return plan.mode === mode && plan.input?.mode === mode && modulePlanMatchesInput(modulePlanInputFingerprint({
+    selectedAssetIds: plan.input.sourceAssetIds, market: plan.input.marketId, aspectRatio: plan.input.aspectRatio,
+    outputLanguage: plan.input.outputLanguage, planningBrief: plan.input.brief, referenceAssetIds: plan.input.referenceAssetIds, reverseVersionId: plan.input.reverseVersionId,
+  }), config);
+}
+
+export function needsModulePlan(config: PlanningConfig): boolean {
+  return hasPlanningInput(config) && (!config.modulePlanId || !modulePlanMatchesInput(config.modulePlanFingerprint ?? "", config));
+}
+
+function mergeParameters(current: GenerationModuleParameter[] | undefined, planned: GenerationModuleParameter[], compositionBrief: string, preserveEdits: boolean, baseline?: GenerationModuleParameter[]): GenerationModuleParameter[] {
+  const values = planned.filter((item) => item.key !== "建议构图简案").map((item) => ({ key: item.key, value: item.value }));
+  if (compositionBrief.trim()) values.push({ key: "建议构图简案", value: compositionBrief.trim() });
+  if (!preserveEdits || !current) return values;
+  const edited = current.filter((item) => baseline ? baseline.find((prior) => prior.key === item.key)?.value !== item.value : !!item.value.trim());
+  const removed = new Set(baseline?.filter((prior) => !current.some((item) => item.key === prior.key)).map((item) => item.key));
+  return [...values.filter((item) => !removed.has(item.key)).map((item) => edited.find((change) => change.key === item.key) ?? item), ...edited.filter((item) => !values.some((value) => value.key === item.key))];
+}
+
+export function applyModulePlan<T extends PlanningConfig>(config: T, plan: ModulePlan, options: { preserveEdits?: boolean } = {}): T {
+  const preserveEdits = options.preserveEdits ?? false;
+  const taskKey = (item: ModulePlanModule) => item.taskId ?? item.moduleId;
+  const sameTask = (item: ModulePlanModule) => (config.moduleTypes?.[taskKey(item)] ?? taskKey(item)) === item.moduleId;
+  const selectedModuleIds = plan.modules.map(taskKey);
+  const moduleTypes = Object.fromEntries(plan.modules.map((item) => [taskKey(item), item.moduleId]));
+  // Older saved plans may contain candidate counts; the editor now plans one image per task.
+  const plannedCounts = Object.fromEntries(plan.modules.map((item) => [taskKey(item), 1]));
+  const plannedParameters = Object.fromEntries(plan.modules.map((item) => [taskKey(item), mergeParameters(undefined, item.moduleParameters, item.compositionBrief, false)]));
+  const moduleCounts = plannedCounts;
+  const moduleParameters = Object.fromEntries(plan.modules.map((item) => {
+    const key = taskKey(item);
+    return [key, mergeParameters(config.moduleParameters[key], item.moduleParameters, item.compositionBrief, preserveEdits && sameTask(item), config.modulePlanBaseline?.moduleParameters[key])];
+  }));
+  const modulePlanReferences = Object.fromEntries(plan.modules.filter(item => item.referenceModuleId && config.reverseVersionId).map(item => [taskKey(item), { versionId: config.reverseVersionId!, moduleId: item.referenceModuleId! }]));
+  const next = { ...config, selectedModuleIds, moduleTypes, moduleCounts, moduleParameters, modulePlanReferences, modulePlanId: plan.id, modulePlanningRequest: undefined, modulePlanBaseline: { moduleCounts: plannedCounts, moduleParameters: plannedParameters } } as T;
+  return { ...next, modulePlanFingerprint: modulePlanInputFingerprint(next) };
+}

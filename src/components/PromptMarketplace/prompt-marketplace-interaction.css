@@ -1,0 +1,30 @@
+.prompt-detail-state {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.prompt-detail-refresh,
+.prompt-catalog-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.prompt-detail-refresh {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle, #d8dce3);
+  border-radius: 6px;
+  color: var(--text-secondary, #5f6673);
+  font-size: 12px;
+}
+
+.prompt-detail-refresh-error {
+  color: var(--danger, #b42318);
+}
+
