@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
 
-import { generationConfigApi, toPublishedGenerationConfig } from "../api/client";
+import { generationConfigApi } from "../api/client";
 import type { GenerationConfig } from "../lib/generation-config";
-import { readCacheKeys, sharedReadCache } from "../lib/read-cache";
 import { useGenerationConfigStore } from "../store/useGenerationConfigStore";
 
 
 export async function refreshPublishedGenerationConfig(): Promise<GenerationConfig> {
-  const record = await generationConfigApi.getPublished();
-  const published = toPublishedGenerationConfig(record);
-  useGenerationConfigStore.getState().replacePublished(published);
-  return published;
+  const record = await generationConfigApi.resolvePublished();
+  if (!record.runtimeModules || record.runtimeModules.version !== "runtime-modules-v1"
+    || !Array.isArray(record.runtimeModules.heroModules) || !Array.isArray(record.runtimeModules.suiteModules)) {
+    throw new Error("生成模块配置无效，请刷新后重试");
+  }
+  const published = { ...record.config, version: record.configVersion };
+  const runtime = { ...published, heroModules: record.runtimeModules.heroModules, suiteModules: record.runtimeModules.suiteModules };
+  useGenerationConfigStore.getState().replaceRuntimePublished(published, runtime);
+  return runtime;
 }
 
 
 export function usePublishedGenerationConfig() {
-  const published = useGenerationConfigStore((state) => state.published);
-  const hasCachedConfig = sharedReadCache.peek(readCacheKeys.publishedGenerationConfig) !== undefined;
+  const published = useGenerationConfigStore((state) => state.runtimePublished ?? state.published);
+  const hasCachedConfig = useGenerationConfigStore.getState().runtimePublished !== null;
   const [status, setStatus] = useState<"loading" | "ready" | "error">(hasCachedConfig ? "ready" : "loading");
   const [error, setError] = useState("");
 
@@ -28,7 +32,7 @@ export function usePublishedGenerationConfig() {
       })
       .catch((reason: unknown) => {
         if (!active) return;
-        setStatus(hasCachedConfig ? "ready" : "error");
+        setStatus("error");
         setError(reason instanceof Error ? reason.message : "已发布生成配置加载失败");
       });
     return () => { active = false; };

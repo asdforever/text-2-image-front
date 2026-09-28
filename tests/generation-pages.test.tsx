@@ -42,7 +42,7 @@ test("suite workspace renders all long-form planning controls without the lineag
   assert.match(html, /自定义/);
   assert.match(html, /详细规格\/参数表/);
   assert.match(html, /博主推荐图/);
-  assert.match(html, /生成详情页规划方案/);
+  assert.match(html, /根据商品资料规划每张图要讲什么/);
   assert.doesNotMatch(html, /套图血缘画布/);
 });
 

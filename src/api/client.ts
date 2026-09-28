@@ -95,6 +95,7 @@ export interface ApiModelConnectionInput {
   reuseConnectionId?: string;
 }
 export interface ApiResolvedGenerationConfig {
+  runtimeModules: { version: string; contentSha256: string; heroModules: GenerationConfig["heroModules"]; suiteModules: GenerationConfig["suiteModules"] };
   configVersion: number;
   contentSha256: string;
   config: GenerationConfig;
@@ -282,6 +283,8 @@ export interface ApiSuitePlanModulePatchInput {
 }
 export interface ApiSuitePlanConfirmation extends ApiSuitePlan { batchId: string }
 export interface ApiModulePlanInput {
+  styleId: string | null;
+  customStyle: string;
   mode: "hero" | "suite";
   reverseVersionId?: string;
   sourceAssetIds: string[];
@@ -292,6 +295,11 @@ export interface ApiModulePlanInput {
   brief: string;
 }
 export interface ApiModulePlanModule {
+  taskTitle: string;
+  informationQuestion: string;
+  productPresence: "full" | "partial" | "detail" | "context" | "none";
+  visualMechanism: string;
+  designGuideIds: string[];
   moduleId: string;
   referenceModuleId?: string;
   taskId?: string;
@@ -301,6 +309,8 @@ export interface ApiModulePlanModule {
   reason: string;
 }
 export interface ApiModulePlan {
+  planningContractVersion?: "commerce-design-v1";
+  sharedVisualDirection?: string;
   id: string;
   mode: "hero" | "suite";
   status: "planning" | "completed" | "failed";

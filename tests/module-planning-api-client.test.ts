@@ -11,7 +11,7 @@ test("规划大师客户端提交完整规划上下文并携带幂等键", async
     return new Response(JSON.stringify({ data: { id: "master-1", mode: "hero", status: "completed", summary: "突出便携", modules: [], warnings: [], createdAt: "2026-09-22T00:00:00Z" } }), { status: 200, headers: { "content-type": "application/json" } });
   }) as typeof fetch;
   try {
-    const input = { mode: "hero" as const, sourceAssetIds: ["asset-1"], marketId: "taobao", aspectRatio: "1:1", outputLanguage: "中文", brief: "一款轻量通勤耳机，主打全天佩戴" };
+    const input = { mode: "hero" as const, styleId: "minimal", customStyle: "", sourceAssetIds: ["asset-1"], marketId: "taobao", aspectRatio: "1:1", outputLanguage: "中文", brief: "一款轻量通勤耳机，主打全天佩戴" };
     await modulePlanningApi.plan("project / 1", input, "plan-key");
     await modulePlanningApi.getLatest("project / 1", "suite");
     await modulePlanningApi.get("project / 1", "plan / 1");

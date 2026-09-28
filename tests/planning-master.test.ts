@@ -5,10 +5,11 @@ import { applyModulePlan, canRecoverModulePlan, needsModulePlan, modulePlanReque
 import { normalizeHeroConfig, normalizeSuiteConfig, validateSuiteConfig } from "../src/lib/generation-workspace";
 
 const plan = {
+  planningContractVersion: "commerce-design-v1" as const, sharedVisualDirection: "统一冷灰品牌色与清晰层级",
   id: "plan-1", mode: "hero" as const, status: "completed" as const, summary: "先建立产品识别，再展示佩戴场景",
   modules: [
-    { moduleId: "hero-kv", resultCount: 2, moduleParameters: [{ key: "核心卖点", value: "轻至 180g" }], compositionBrief: "产品居中，卖点置于右上安全区", reason: "先建立识别" },
-    { moduleId: "hero-scene", resultCount: 1, moduleParameters: [{ key: "场景地点", value: "通勤地铁" }], compositionBrief: "人物侧身佩戴，保留环境动势", reason: "解释使用场景" },
+    { moduleId: "hero-kv", taskTitle: "建立产品识别", informationQuestion: "这是什么商品？", productPresence: "full", designGuideIds: ["visual-hierarchy"], resultCount: 1, moduleParameters: [{ key: "核心卖点", value: "轻至 180g" }], compositionBrief: "产品居中，卖点置于右上安全区", reason: "先建立识别", visualMechanism: "商品与卖点形成主次" },
+    { moduleId: "hero-scene", taskTitle: "解释通勤价值", informationQuestion: "通勤时如何使用？", productPresence: "context", designGuideIds: ["usage-context"], resultCount: 1, moduleParameters: [{ key: "场景地点", value: "通勤地铁" }], compositionBrief: "人物侧身佩戴，保留环境动势", reason: "解释使用场景", visualMechanism: "人物动作说明使用关系" },
   ], warnings: [], createdAt: "2026-09-22T00:00:00Z",
 };
 
@@ -23,11 +24,12 @@ test("主图和详情旧草稿按一项一张读取，保留顺序参数且不�
   }
 });
 
-test("应用旧规划按服务端顺序回填参数，每个任务固定一张图", () => {
+test("应用新规划按服务端顺序回填参数，每个任务固定一张图", () => {
   const config = applyModulePlan(normalizeHeroConfig({ planningBrief: "轻量通勤耳机" }), plan);
   assert.deepEqual(config.selectedModuleIds, ["hero-kv", "hero-scene"]);
   assert.deepEqual(config.moduleCounts, { "hero-kv": 1, "hero-scene": 1 });
-  assert.deepEqual(config.moduleParameters["hero-kv"], [{ key: "核心卖点", value: "轻至 180g" }, { key: "建议构图简案", value: "产品居中，卖点置于右上安全区" }]);
+  assert.deepEqual(config.moduleParameters["hero-kv"], [{ key: "核心卖点", value: "轻至 180g" }]);
+  assert.equal(config.moduleTaskDetails?.["hero-kv"].compositionAdvice, "产品居中，卖点置于右上安全区");
   assert.equal(config.modulePlanId, "plan-1");
   assert.equal(config.modulePlanFingerprint, modulePlanInputFingerprint(config));
 });
@@ -37,7 +39,7 @@ test("合并重规划保留用户已编辑的参数，同时清除旧候选张�
   const config = applyModulePlan(edited, plan, { preserveEdits: true });
   assert.equal(config.moduleCounts["hero-kv"], 1);
   assert.equal(config.moduleParameters["hero-kv"].find((item) => item.key === "核心卖点")?.value, "用户改成全天舒适");
-  assert.equal(config.moduleParameters["hero-kv"].find((item) => item.key === "建议构图简案")?.value, plan.modules[0].compositionBrief);
+  assert.equal(config.moduleParameters["hero-kv"].some((item) => item.key === "建议构图简案"), false);
   assert.deepEqual(config.selectedModuleIds, ["hero-kv", "hero-scene"]);
 });
 
@@ -47,6 +49,8 @@ test("输入变化后旧异步规划结果不再匹配当前请求", () => {
   assert.equal(modulePlanMatchesInput(requestFingerprint, before), true);
   assert.equal(modulePlanMatchesInput(requestFingerprint, { ...before, planningBrief: "运动耳机" }), false);
   assert.equal(modulePlanMatchesInput(requestFingerprint, { ...before, selectedAssetIds: ["asset-2"] }), false);
+  assert.equal(modulePlanMatchesInput(requestFingerprint, { ...before, styleId: "studio" }), false);
+  assert.equal(modulePlanMatchesInput(requestFingerprint, { ...before, customStyle: "暖色柔光" }), false);
 });
 
 test("详情页独立任务可以超过模块目录数量", () => {
@@ -64,8 +68,8 @@ test("同模块的独立任务各生成一张，参数互不覆盖", () => {
   assert.deepEqual(result.selectedModuleIds, ["lid", "base"]);
   assert.deepEqual(result.moduleTypes, { lid: "hero-detail", base: "hero-detail" });
   assert.deepEqual(result.moduleCounts, { lid: 1, base: 1 });
-  assert.equal(result.moduleParameters.lid.at(-1)?.value, "杯盖特写");
-  assert.equal(result.moduleParameters.base.at(-1)?.value, "杯底特写");
+  assert.equal(result.moduleTaskDetails?.lid.compositionAdvice, "杯盖特写");
+  assert.equal(result.moduleTaskDetails?.base.compositionAdvice, "杯底特写");
 });
 
 test("旧参考套图选择不再触发规划或进入新请求", () => {
@@ -84,11 +88,11 @@ test("重新规划改变任务的模块类型时不移植旧任务编辑", () =>
   assert.equal(next.moduleParameters.one.some((p) => p.value === "旧模块手改"), false);
 });
 
-test("服务端已追加的构图简案只回填一次，旧规划候选张数收敛为一张", () => {
+test("自动构图建议不进入用户参数，候选张数收敛为一张", () => {
   const config = applyModulePlan(normalizeHeroConfig({ selectedModuleIds: ["hero-kv"], moduleCounts: { "hero-kv": 1 } }), {
-    ...plan, modules: [{ ...plan.modules[0], moduleParameters: [...plan.modules[0].moduleParameters, { key: "建议构图简案", value: plan.modules[0].compositionBrief }] }],
+    ...plan, modules: [{ ...plan.modules[0] }],
   }, { preserveEdits: true });
-  assert.equal(config.moduleParameters["hero-kv"].filter((item) => item.key === "建议构图简案").length, 1);
+  assert.equal(config.moduleParameters["hero-kv"].some((item) => item.key === "建议构图简案"), false);
   assert.equal(config.moduleCounts["hero-kv"], 1);
 });
 
@@ -99,7 +103,7 @@ test("重新规划替换未编辑的自动内容，保留手改参数并清除�
   assert.equal(next.moduleCounts["hero-kv"], 1);
   assert.equal(next.moduleCounts["hero-scene"], 1);
   assert.equal(next.moduleParameters["hero-kv"].find((item) => item.key === "核心卖点")?.value, "用户指定卖点");
-  assert.equal(next.moduleParameters["hero-kv"].find((item) => item.key === "建议构图简案")?.value, "新的构图");
+  assert.equal(next.moduleTaskDetails?.["hero-kv"].compositionAdvice, "新的构图");
 });
 
 test("恢复逐项匹配服务端输入和模式，编译新资料时即使已有默认模块也需要规划", () => {

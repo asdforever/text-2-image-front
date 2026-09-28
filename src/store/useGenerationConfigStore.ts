@@ -17,6 +17,7 @@ import { HERO_MODULES, SUITE_MODULES, type GenerationModuleDefinition, type Styl
 
 interface GenerationConfigStore {
   published: GenerationConfig;
+  runtimePublished: GenerationConfig | null;
   draft: GenerationConfig;
   isDirty: boolean;
   lastSaveError: string[];
@@ -30,6 +31,7 @@ interface GenerationConfigStore {
   acceptSavedDraft: (draft: GenerationConfig, baseVersion: number) => void;
   acceptPublished: (published: GenerationConfig) => void;
   replacePublished: (published: GenerationConfig) => void;
+  replaceRuntimePublished: (published: GenerationConfig, runtime: GenerationConfig) => void;
   setSaveErrors: (errors: string[]) => void;
   setPromptVersions: (versions: PromptVersionReference[]) => void;
   addMarket: (value: GenerationMarketDefinition) => boolean;
@@ -53,7 +55,7 @@ interface GenerationConfigStore {
 
 function createInitialState() {
   const initial = createDefaultGenerationConfig();
-  return { published: initial, draft: cloneGenerationConfig(initial), draftBaseVersion: initial.version, isDirty: false, lastSaveError: [], promptVersions: DEFAULT_PROMPT_VERSION_REFERENCES.map((version) => ({ ...version })) };
+  return { published: initial, runtimePublished: null, draft: cloneGenerationConfig(initial), draftBaseVersion: initial.version, isDirty: false, lastSaveError: [], promptVersions: DEFAULT_PROMPT_VERSION_REFERENCES.map((version) => ({ ...version })) };
 }
 
 function isRecord(value: unknown): value is Record<string, any> {
@@ -211,6 +213,7 @@ export const useGenerationConfigStore = create<GenerationConfigStore>()(
       discardDraft: () => set((state) => ({ draft: cloneGenerationConfig(state.published), isDirty: false, lastSaveError: [] })),
       resetConfig: () => set(createInitialState()),
       hydrateRemote: (published, draft, baseVersion) => set({
+        runtimePublished: null,
         published: cloneGenerationConfig(published),
         draft: cloneGenerationConfig(draft),
         draftBaseVersion: baseVersion,
@@ -224,6 +227,7 @@ export const useGenerationConfigStore = create<GenerationConfigStore>()(
         lastSaveError: [],
       }),
       acceptPublished: (published) => set({
+        runtimePublished: null,
         published: cloneGenerationConfig(published),
         draft: cloneGenerationConfig(published),
         draftBaseVersion: published.version,
@@ -232,7 +236,9 @@ export const useGenerationConfigStore = create<GenerationConfigStore>()(
       }),
       replacePublished: (published) => set({
         published: cloneGenerationConfig(published),
+        runtimePublished: null,
       }),
+      replaceRuntimePublished: (published, runtime) => set({ published: cloneGenerationConfig(published), runtimePublished: cloneGenerationConfig(runtime) }),
       setSaveErrors: (lastSaveError) => set({ lastSaveError: [...lastSaveError] }),
       setPromptVersions: (versions) => set({ promptVersions: versions.map((version) => ({ ...version })) }),
       setPromptModel: (value) => get().updateDraft((draft) => ({

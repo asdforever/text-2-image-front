@@ -48,6 +48,7 @@ export interface GenerationModuleParameter {
 export type GenerationModuleParameters = Record<string, GenerationModuleParameter[]>;
 
 export interface CommonGenerationConfig {
+  moduleTaskDetails?: Record<string, { title: string; informationQuestion: string; productPresence: string; visualMechanism: string; compositionAdvice: string }>;
   selectedAssetIds: string[];
   reverseVersionId?: string;
   reverseModuleReferences?: Record<string, { versionId: string; moduleId: string }>;
@@ -200,6 +201,8 @@ export function validateGenerationPlans(selectedModuleIds: string[], plans: Arra
 const parameterPreset = (...keys: string[]): GenerationModuleParameter[] => keys.map((key) => ({ key, value: "" }));
 
 export const MODULE_PARAMETER_PRESETS: Record<string, GenerationModuleParameter[]> = {
+  "hero-freeform": parameterPreset("主信息", "事实依据", "构图要求"),
+  "suite-freeform": parameterPreset("主信息", "事实依据", "构图要求"),
   "hero-kv": parameterPreset("核心卖点", "画面文案", "文字安全区"),
   "hero-overview": parameterPreset("展示角度", "背景环境", "构图重点"),
   "hero-detail": parameterPreset("细节主体", "材质/工艺", "光线要求"),

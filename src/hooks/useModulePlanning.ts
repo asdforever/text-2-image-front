@@ -45,7 +45,7 @@ export function useModulePlanning(projectId: string, mode: GenerationMode): Modu
     const next = applyModulePlan(current(), value, { preserveEdits: true });
     save(next);
     useProjectStore.getState().updateGenerationPlans(projectId, mode, value.modules.map((item) => ({
-      moduleId: item.taskId ?? item.moduleId, title: item.moduleId, count: next.moduleCounts[item.taskId ?? item.moduleId], copy: item.reason,
+      moduleId: item.taskId ?? item.moduleId, title: item.taskTitle, count: next.moduleCounts[item.taskId ?? item.moduleId], copy: item.reason,
       visual: item.compositionBrief, moduleParameters: next.moduleParameters[item.taskId ?? item.moduleId], compositionBrief: item.compositionBrief, reason: item.reason,
     })));
     return next;

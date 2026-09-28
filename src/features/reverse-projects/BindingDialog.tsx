@@ -23,12 +23,13 @@ export function BindingDialog({ version, sourceModuleId, onClose, onBound }: { v
     let active = true; setTargetModuleId(""); setTasks([]); setTasksLoading(false);
     if (!projectId || !sourceModuleId) return;
     const config = useProjectStore.getState().generationDrafts[projectId + ":" + target]?.config;
-    const catalog = useGenerationConfigStore.getState().published[target === "hero" ? "heroModules" : "suiteModules"];
+    const state = useGenerationConfigStore.getState();
+    const catalog = (state.runtimePublished ?? state.published)[target === "hero" ? "heroModules" : "suiteModules"];
     const label = (id: string) => catalog.find(m => m.id === id)?.label ?? id;
-    const local = config?.selectedModuleIds.map((id, i) => ({ id, label: "图 " + (i + 1) + " · " + label(config.moduleTypes?.[id] ?? id) })) ?? [];
+    const local = config?.selectedModuleIds.map((id, i) => ({ id, label: "图 " + (i + 1) + " · " + (config.moduleTaskDetails?.[id]?.title ?? label(config.moduleTypes?.[id] ?? id)) })) ?? [];
     if (local.length) { setTasks(local); return; }
     setTasksLoading(true);
-    modulePlanningApi.getLatest(projectId, target).then(plan => { if (active && plan.status === "completed") setTasks(plan.modules.map((m, i) => ({ id: m.taskId ?? m.moduleId, label: "图 " + (i + 1) + " · " + label(m.moduleId) }))); }).catch(e => { if (active && (e as { status?: number }).status !== 404 && (e as { code?: string }).code !== "MODULE_PLAN_NOT_FOUND") setError(errorMessage(e)); }).finally(() => { if (active) setTasksLoading(false); });
+    modulePlanningApi.getLatest(projectId, target).then(plan => { if (active && plan.status === "completed") setTasks(plan.modules.map((m, i) => ({ id: m.taskId ?? m.moduleId, label: "图 " + (i + 1) + " · " + m.taskTitle }))); }).catch(e => { if (active && (e as { status?: number }).status !== 404 && (e as { code?: string }).code !== "MODULE_PLAN_NOT_FOUND") setError(errorMessage(e)); }).finally(() => { if (active) setTasksLoading(false); });
     return () => { active = false; };
   }, [projectId, target, sourceModuleId]);
   async function bind() {

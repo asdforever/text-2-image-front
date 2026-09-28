@@ -11,7 +11,7 @@ test("changing the fixed reference version invalidates an old master result", ()
   assert.equal(hasPlanningInput(first), true);
   assert.notEqual(modulePlanInputFingerprint(first), modulePlanInputFingerprint(next));
   assert.equal(modulePlanRequestInput("hero", first).reverseVersionId, "v1");
-  const plan = { id: "plan", mode: "hero" as const, status: "completed" as const, input: modulePlanRequestInput("hero", first), summary: "", modules: [], warnings: [], createdAt: "" };
+  const plan = { planningContractVersion: "commerce-design-v1" as const, sharedVisualDirection: "统一层级", id: "plan", mode: "hero" as const, status: "completed" as const, input: modulePlanRequestInput("hero", first), summary: "", modules: [], warnings: [], createdAt: "" };
   assert.equal(canRecoverModulePlan(plan, "hero", next), false);
 });
 
@@ -26,9 +26,9 @@ test("server bindings remain isolated by business project and target workbench",
 
 test("master assigns local module references and explicit overrides take priority", () => {
   const config = normalizeHeroConfig({ reverseVersionId: "v1", reverseModuleReferences: { lid: { versionId: "v-other", moduleId: "zoom" } } });
-  const planned = applyModulePlan(config, { id: "plan", mode: "hero", status: "completed", summary: "", createdAt: "", warnings: [], modules: [
-    { moduleId: "hero-detail", taskId: "lid", resultCount: 1, moduleParameters: [], compositionBrief: "杯盖", reason: "结构", referenceModuleId: "layout-one" },
-    { moduleId: "hero-detail", taskId: "base", resultCount: 1, moduleParameters: [], compositionBrief: "杯底", reason: "结构", referenceModuleId: "layout-two" },
+  const planned = applyModulePlan(config, { planningContractVersion: "commerce-design-v1", sharedVisualDirection: "统一层级", id: "plan", mode: "hero", status: "completed", summary: "", createdAt: "", warnings: [], modules: [
+    { moduleId: "hero-detail", taskId: "lid", taskTitle: "杯盖结构", informationQuestion: "杯盖如何设计？", productPresence: "detail", designGuideIds: ["visual-hierarchy"], resultCount: 1, moduleParameters: [], compositionBrief: "杯盖", reason: "结构", referenceModuleId: "layout-one" },
+    { moduleId: "hero-detail", taskId: "base", taskTitle: "杯底结构", informationQuestion: "杯底如何设计？", productPresence: "detail", designGuideIds: ["visual-hierarchy"], resultCount: 1, moduleParameters: [], compositionBrief: "杯底", reason: "结构", referenceModuleId: "layout-two" },
   ] });
   assert.deepEqual(moduleReverseReference(planned, "lid"), { versionId: "v-other", moduleId: "zoom" });
   assert.deepEqual(moduleReverseReference(planned, "base"), { versionId: "v1", moduleId: "layout-two" });

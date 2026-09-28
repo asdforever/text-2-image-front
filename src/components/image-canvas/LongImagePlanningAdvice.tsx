@@ -31,7 +31,7 @@ export function LongImagePlanningAdvice({ projectId }: { projectId: string }) {
         <ol>{plan.modules.map((item, index) => {
           const module = (plan.mode === "suite" ? catalog.suiteModules : catalog.heroModules).find((definition) => definition.id === item.moduleId);
           const topic = item.moduleParameters.find((parameter) => ["本图任务", "主信息", "核心卖点", "细节主体"].includes(parameter.key) && parameter.value.trim())?.value;
-          return <li key={item.taskId ?? `${item.moduleId}:${index}`}><strong>{module?.label ?? `图片 ${index + 1}`}{topic ? `：${topic}` : ""}</strong><p>{item.reason}</p></li>;
+          return <li key={item.taskId ?? `${item.moduleId}:${index}`}><strong>{item.taskTitle ?? module?.label ?? `图片 ${index + 1}`}{topic ? `：${topic}` : ""}</strong><p>{item.reason}</p></li>;
         })}</ol>
       </details>)}
       {!plans.length && !failed && <p className="lic-muted">暂无已完成的规划建议，可直接选图并自行排列。</p>}

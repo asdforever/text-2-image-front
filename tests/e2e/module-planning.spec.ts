@@ -12,7 +12,7 @@ function configFor(mode: "hero" | "suite") {
 }
 function planFor(input: ApiModulePlanInput): ApiModulePlan {
   const ids = input.mode === "hero" ? ["hero-scene", "hero-kv"] : ["suite-benefit", "suite-hero", "suite-scene", "suite-angle", "suite-mood", "suite-detail"];
-  return { id: "master-1", mode: input.mode, input, status: "completed", summary: "先解释通勤价值，再建立商品识别", warnings: ["续航需要核实"], createdAt: "2026-09-22T00:00:00Z", modules: ids.map((moduleId) => ({ moduleId, resultCount: 2, moduleParameters: [{ key: "核心卖点", value: "轻量通勤" }, { key: "建议构图简案", value: "产品位于左侧，右侧留文案区" }], compositionBrief: "产品位于左侧，右侧留文案区", reason: "帮助用户理解商品" })) };
+  return { planningContractVersion: "commerce-design-v1", sharedVisualDirection: "统一冷灰品牌色与清晰层级", id: "master-1", mode: input.mode, input, status: "completed", summary: "先解释通勤价值，再建立商品识别", warnings: ["续航需要核实"], createdAt: "2026-09-22T00:00:00Z", modules: ids.map((moduleId, index) => ({ moduleId, taskTitle: index === 0 ? "解释通勤价值" : `商品信息 ${index + 1}`, informationQuestion: index === 0 ? "通勤时如何使用？" : "这张图要说明什么？", productPresence: index === 0 ? "context" : "full", designGuideIds: [index === 0 ? "usage-context" : "visual-hierarchy"], resultCount: 1, moduleParameters: [{ key: "核心卖点", value: "轻量通勤" }], compositionBrief: "产品位于左侧，右侧留文案区", reason: "帮助用户理解商品", visualMechanism: "商品与文字形成清晰主次" })) };
 }
 async function setup(page: Page, mode: "hero" | "suite", legacyDraft = false) {
   page.on("pageerror", (error) => console.error("Planning UI error:", error.message));
@@ -33,7 +33,7 @@ async function setup(page: Page, mode: "hero" | "suite", legacyDraft = false) {
       postCalls.push({ path, body: request.postDataJSON(), key: request.headers()["idempotency-key"] });
       return route.fulfill({ status: 503, json: { error: { message: "已捕获编译请求" } } });
     }
-    if (path === "/api/generation-config") return route.fulfill({ json: { data: { id: "v1", version: 1, content: catalog, contentSha256: "a".repeat(64), createdAt: "2026-09-22T00:00:00Z" } } });
+    if (path === "/api/generation-config/resolve") return route.fulfill({ json: { data: { configVersion: 1, contentSha256: "a".repeat(64), config: catalog, runtimeModules: { version: "runtime-modules-v1", contentSha256: "c".repeat(64), heroModules: catalog.heroModules, suiteModules: catalog.suiteModules } } } });
     if (path === "/api/projects/proj-demo") return route.fulfill({ json: { data: { id: "proj-demo", name: "规划测试", status: "active", archivedAt: null, selections: {}, createdAt: "2026-09-22T00:00:00Z", updatedAt: "2026-09-22T00:00:00Z", assets: ["source-1", "ref-1", "ref-2"].map((id) => ({ id, kind: "source", state: "available", filename: id === "source-1" ? "耳机.jpg" : `${id}.jpg`, mimeType: "image/jpeg", byteSize: 1024, width: 1200, height: 800, sha256: "b".repeat(64), createdAt: "2026-09-22T00:00:00Z" })) } } });
     if (path.endsWith("/preview")) return route.fulfill({ path: "public/assets/gan65-product.jpg", contentType: "image/jpeg" });
     return route.fulfill({ status: 404, json: { error: { message: "尚无记录" } } });
@@ -94,7 +94,7 @@ for (const mode of ["hero", "suite"] as const) {
     expect(postCalls).toHaveLength(1);
   });
 
-  test(`${mode} 参考套图有序输入，同模块多任务独立编辑编译并恢复`, async ({ page }) => {
+  test(`${mode} 规划资料生成同模块多任务，独立编辑编译并恢复`, async ({ page }) => {
     const { postCalls } = await setup(page, mode);
     let saved: ApiModulePlan | undefined;
     let calls = 0;
@@ -103,21 +103,17 @@ for (const mode of ["hero", "suite"] as const) {
         calls++;
         const input = route.request().postDataJSON();
         expect(input.sourceAssetIds).toEqual(["source-1"]);
-        expect(input.referenceAssetIds).toEqual(["ref-2", "ref-1"]);
+        expect(input.brief).toBe(brief);
+        expect(input.referenceAssetIds).toBeUndefined();
         const base = planFor(input);
         saved = { ...base, modules: [
           { ...base.modules[0], taskId: "detail-lid", moduleId: `${mode}-detail`, compositionBrief: "杯盖局部与整体定位", resultCount: 1 },
-          { ...base.modules[0], taskId: "detail-base", moduleId: `${mode}-detail`, compositionBrief: "杯底局部与整体定位", resultCount: 1 },
+          { ...base.modules[0], taskId: "detail-base", taskTitle: "解释杯底结构", productPresence: "detail", moduleId: `${mode}-detail`, compositionBrief: "杯底局部与整体定位", resultCount: 1 },
         ] };
       }
       return saved ? route.fulfill({ json: { data: saved } }) : route.fulfill({ status: 404, json: { error: { message: "尚无规划" } } });
     });
     await page.goto(`/projects/proj-demo?tab=${mode}`);
-    await page.getByLabel(mode === "hero" ? "主图商品资料" : "详情页商品资料").fill("");
-    await page.getByRole("button", { name: "选择参考套图", exact: true }).click();
-    await page.getByRole("button", { name: "参考图 ref-1.jpg", exact: true }).click();
-    await page.getByRole("button", { name: "参考图 ref-2.jpg", exact: true }).click();
-    await page.getByRole("button", { name: "上移参考图 2", exact: true }).click();
     await page.getByRole("button", { name: "自动规划", exact: true }).click();
     await expect.poll(async () => (await draft(page, mode)).selectedModuleIds).toEqual(["detail-lid", "detail-base"]);
     const cards = page.locator(".studio-module.is-selected");
@@ -128,7 +124,9 @@ for (const mode of ["hero", "suite"] as const) {
     await expect(cards).toHaveCount(2);
     expect(calls).toBe(1);
     const restored = await draft(page, mode);
-    expect(restored.referenceAssetIds).toEqual(["ref-2", "ref-1"]);
+    expect(restored.planningBrief).toBe(brief);
+    expect(restored.selectedModuleIds).toEqual(["detail-lid", "detail-base"]);
+    expect(restored.moduleTypes).toMatchObject({ "detail-lid": `${mode}-detail`, "detail-base": `${mode}-detail` });
     expect(restored.moduleParameters["detail-lid"][0].value).toBe("轻量通勤");
     expect(restored.moduleParameters["detail-base"][0].value).toBe("用户只修改杯底任务");
     await page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true }).click();
@@ -158,14 +156,21 @@ for (const mode of ["hero", "suite"] as const) {
     const applied = await draft(page, mode);
     expect(applied.selectedModuleIds).toEqual(saved!.modules.map((item) => item.moduleId));
     expect(Object.values(applied.moduleCounts)).toEqual(saved!.modules.map(() => 1));
-    expect(applied.moduleParameters[saved!.modules[0].moduleId].filter((item: any) => item.key === "建议构图简案")).toHaveLength(1);
+    expect(applied.moduleParameters[saved!.modules[0].moduleId].filter((item: any) => item.key === "建议构图简案")).toHaveLength(0);
+    await expect(page.getByText(/本图要讲什么/).first()).toBeVisible();
+    await expect(page.getByText(/商品出场：.*使用情境/).first()).toBeVisible();
+    expect(applied.moduleTaskDetails[saved!.modules[0].moduleId].title).toBe("解释通勤价值");
+    await page.getByLabel("构图要求（选填）").first().fill("标题放左上角");
     await page.getByPlaceholder("填写具体要求").first().fill("用户修改后的卖点");
     const edited = await draft(page, mode);
+    expect(edited.moduleParameters[saved!.modules[0].moduleId]).toContainEqual({ key: "构图要求", value: "标题放左上角" });
     await page.reload();
     await expect(page.locator(".studio-module.is-selected")).toHaveCount(saved!.modules.length);
     expect((await draft(page, mode)).moduleParameters).toEqual(edited.moduleParameters);
     expect(plans).toBe(1);
     expect(postCalls).toHaveLength(0);
+    await page.getByRole("button", { name: catalog.styleCategories[0].styles[1].label, exact: true }).click();
+    await expect.poll(async () => (await draft(page, mode)).modulePlanId).toBeUndefined();
   });
 
   test(`${mode} 编译新资料时替换默认模块并携带规划ID`, async ({ page }) => {
