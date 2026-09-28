@@ -5,6 +5,9 @@
 .ie-core .ie-preview-tools button[aria-pressed=true], .ie-core .wb-mask-mode button[aria-pressed=true] { background: #eaf0e9; border-color: #aabda4; color: #345747; }
 .ie-core .ie-region-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .ie-core .ie-region-fields input { min-width: 0; }
+.ie-core .ie-region-details { border-top: 1px solid #dbe2db; padding-top: 12px; }
+.ie-core .ie-region-details summary { cursor: pointer; font-size: 12px; color: #68756b; }
+.ie-core .ie-region-details[open] .ie-region-fields { margin-top: 12px; }
 .ie-core .ie-checkbox { display: flex; align-items: center; }
 .ie-core .ie-checkbox input { width: 15px; min-height: 15px; }
 .ie-core .wb-editor-footer small { display: block; margin-top: 4px; }

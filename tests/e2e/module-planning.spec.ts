@@ -45,6 +45,31 @@ async function draft(page: Page, mode: string) {
 }
 
 for (const mode of ["hero", "suite"] as const) {
+  test(`${mode} 手动同类任务的设计选择独立保存并传给编译`, async ({ page }) => {
+    const { postCalls } = await setup(page, mode, true);
+    await page.goto(`/projects/proj-demo?tab=${mode}`);
+    const cards = page.locator(".studio-module.is-selected");
+    await page.getByRole("button", { name: mode === "hero" ? "添加首屏 KV" : "添加首屏主视觉", exact: true }).click();
+    const added = cards.nth(1);
+    await added.getByLabel("任务标题", { exact: true }).fill("成分说明");
+    await added.getByLabel("本图要讲什么", { exact: true }).fill("介绍已确认的成分");
+    await added.getByLabel("表达方式", { exact: true }).fill("用大字与成分示意表达");
+    await added.getByRole("combobox", { name: "商品出场", exact: true }).selectOption("none");
+    await added.getByLabel("构图要求（选填）").fill("大标题在上方");
+    await expect(cards.first().getByRole("combobox", { name: "商品出场", exact: true })).toHaveValue("auto");
+    await expect(page.getByText("当前生成模块已失效，请重新选择", { exact: true })).toHaveCount(0);
+    await page.reload();
+    await expect(added.getByRole("combobox", { name: "商品出场", exact: true })).toHaveValue("none");
+    await expect(added.getByLabel("表达方式", { exact: true })).toHaveValue("用大字与成分示意表达");
+    await page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true }).click();
+    await expect.poll(() => postCalls.length).toBe(1);
+    expect(postCalls[0].body.modules[0].taskDesign).toBeUndefined();
+    expect(postCalls[0].body.modules[1].taskDesign).toEqual({ taskTitle: "成分说明", informationQuestion: "介绍已确认的成分", visualMechanism: "用大字与成分示意表达", productPresence: "none" });
+    expect(postCalls[0].body.modules[1].moduleParameters).toContainEqual({ key: "构图要求", value: "大标题在上方" });
+    await added.getByRole("button", { name: "清除设计选择" }).click();
+    await expect(added.getByRole("combobox", { name: "商品出场", exact: true })).toHaveValue("auto");
+  });
+
   test(`${mode} 编译缺少风格时提示并展开，补全后可提交`, async ({ page }) => {
     const { postCalls } = await setup(page, mode, true);
     await page.goto(`/projects/proj-demo?tab=${mode}`);
@@ -158,7 +183,7 @@ for (const mode of ["hero", "suite"] as const) {
     expect(Object.values(applied.moduleCounts)).toEqual(saved!.modules.map(() => 1));
     expect(applied.moduleParameters[saved!.modules[0].moduleId].filter((item: any) => item.key === "建议构图简案")).toHaveLength(0);
     await expect(page.getByText(/本图要讲什么/).first()).toBeVisible();
-    await expect(page.getByText(/商品出场：.*使用情境/).first()).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "商品出场", exact: true }).first()).toHaveValue("context");
     expect(applied.moduleTaskDetails[saved!.modules[0].moduleId].title).toBe("解释通勤价值");
     await page.getByLabel("构图要求（选填）").first().fill("标题放左上角");
     await page.getByPlaceholder("填写具体要求").first().fill("用户修改后的卖点");

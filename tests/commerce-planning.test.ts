@@ -36,3 +36,12 @@ test("重规划保留用户构图要求而更新自动建议", () => {
   assert.equal(next.moduleParameters.rate.find(p => p.key === "构图要求")?.value, "标题左上");
   assert.equal(next.moduleTaskDetails?.rate.compositionAdvice, "数字置中");
 });
+
+test("恢复保留同任务手动设计，重新规划和更换类型清掉旧覆盖", () => {
+  const original = applyModulePlan(normalizeHeroConfig(), plan);
+  original.moduleTaskOverrides = { rate: { productPresence: "context", visualMechanism: "手动场景" }, removed: { productPresence: "none" } };
+  const restored = applyModulePlan(original, plan, { preserveEdits: true });
+  assert.deepEqual(restored.moduleTaskOverrides, { rate: { productPresence: "context", visualMechanism: "手动场景" } });
+  assert.deepEqual(applyModulePlan(original, plan).moduleTaskOverrides, {});
+  assert.deepEqual(applyModulePlan(original, { ...plan, modules: [{ ...plan.modules[0], moduleId: "hero-scene" }] }, { preserveEdits: true }).moduleTaskOverrides, {});
+});

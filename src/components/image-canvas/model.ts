@@ -1,6 +1,8 @@
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
 import { projectAssetPreviewUrl, type ApiCanvasGenerationStep, type ApiCanvasLayout, type ApiProjectAsset, type ApiSuiteTask, type ApiTaskVersion, type ApiWorkbench } from "../../api/client";
 import { projectVersionImages, versionSteps } from "./canvasVersions";
+import { arrangeGraph } from "./graph-layout";
+export { arrangeGraph } from "./graph-layout";
 
 export type ImageCategory = "source" | "white" | "hero" | "detail" | "generated" | "edit";
 export const categoryNames: Record<ImageCategory, string> = { source: "原始素材", white: "白底图", hero: "主图", detail: "详情套图", generated: "生成图", edit: "编辑结果" };
@@ -97,27 +99,6 @@ export function canvasGraph(images: CanvasImage[], workbench: ApiWorkbench, asse
     }
   }
   return { steps, edges };
-}
-
-export function arrangeGraph(nodes: CanvasNode[], edges: Edge[]): CanvasNode[] {
-  const visible = nodes.filter((n) => n.type !== "imageGroup" && !n.hidden);
-  const ids = new Set(visible.map((n) => n.id));
-  const levels = new Map<string, number>();
-  const depth = (id: string, trail = new Set<string>()): number => {
-    if (levels.has(id)) return levels.get(id)!;
-    if (trail.has(id)) return 0;
-    const next = new Set([...trail, id]);
-    const parents = edges.filter((e) => e.target === id && ids.has(e.source));
-    const value = parents.length ? Math.max(...parents.map((e) => depth(e.source, next))) + 1 : 0;
-    levels.set(id, value); return value;
-  };
-  const rows = new Map<number, number>();
-  return nodes.filter((n) => n.type !== "imageGroup").map((n) => {
-    if (n.hidden) { const group = nodes.find((g) => g.id === n.parentId); return { ...n, parentId: undefined, position: { x: n.position.x + (group?.position.x ?? 0), y: n.position.y + (group?.position.y ?? 0) } }; }
-    const level = depth(n.id), row = rows.get(level) ?? 0;
-    rows.set(level, row + 1);
-    return { ...n, parentId: undefined, position: { x: 48 + level * 370, y: 70 + row * 450 } };
-  });
 }
 
 export function restoreCanvas(images: CanvasImage[], layout: Pick<ApiCanvasLayout, "nodes" | "groups"> | null, graph?: CanvasGraph): CanvasNode[] {

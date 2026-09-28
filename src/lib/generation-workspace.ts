@@ -47,7 +47,15 @@ export interface GenerationModuleParameter {
 
 export type GenerationModuleParameters = Record<string, GenerationModuleParameter[]>;
 
+export interface GenerationTaskDesign {
+  taskTitle?: string;
+  informationQuestion?: string;
+  visualMechanism?: string;
+  productPresence?: "auto" | "full" | "partial" | "detail" | "context" | "none";
+}
+
 export interface CommonGenerationConfig {
+  moduleTaskOverrides?: Record<string, GenerationTaskDesign>;
   moduleTaskDetails?: Record<string, { title: string; informationQuestion: string; productPresence: string; visualMechanism: string; compositionAdvice: string }>;
   selectedAssetIds: string[];
   reverseVersionId?: string;

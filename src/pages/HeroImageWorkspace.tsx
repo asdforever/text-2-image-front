@@ -339,6 +339,7 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         moduleId: effectiveConfig.moduleTypes?.[taskId] ?? taskId,
         resultCount: 1,
         moduleParameters: getCompactModuleParameters(effectiveConfig.moduleParameters, taskId),
+        taskDesign: effectiveConfig.moduleTaskOverrides?.[taskId],
         reverseReference: moduleReverseReference(effectiveConfig, taskId),
       })),
     };

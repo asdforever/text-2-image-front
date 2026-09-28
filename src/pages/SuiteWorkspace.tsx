@@ -92,7 +92,7 @@ export function SuiteWorkspace(props: {
     .filter((slot) => slot.moduleKey === moduleId)
     .sort((a, b) => a.ordinal - b.ordinal) ?? [];
   const selectedModel = publishedConfig.models.find((item) => item.id === config.model || item.label === config.model);
-  const selection = { marketId: config.market, modelId: selectedModel?.id ?? config.model, styleId: config.styleId, moduleIds: config.selectedModuleIds, moduleCounts: config.moduleCounts, outputLanguage: config.outputLanguage, aspectRatio: config.aspectRatio, resolution: config.resolution, customStyle: config.customStyle, moduleParameters: config.moduleParameters };
+  const selection = { marketId: config.market, modelId: selectedModel?.id ?? config.model, styleId: config.styleId, moduleIds: config.selectedModuleIds, moduleTypes: config.moduleTypes, moduleCounts: config.moduleCounts, outputLanguage: config.outputLanguage, aspectRatio: config.aspectRatio, resolution: config.resolution, customStyle: config.customStyle, moduleParameters: config.moduleParameters };
   const remoteConfigErrors = generationConfigStatus === "ready" ? [] : [generationConfigStatus === "error" ? generationConfigError : "正在加载已发布生成配置"];
   const errors = attempted ? [...remoteConfigErrors, ...validateSuiteConfig(config, publishedConfig.suiteModules.length), ...validateGenerationSelection(publishedConfig, selection)] : [];
 
@@ -242,6 +242,7 @@ export function SuiteWorkspace(props: {
           moduleId: effectiveConfig.moduleTypes?.[taskId] ?? taskId,
           resultCount: 1,
           moduleParameters: getCompactModuleParameters(effectiveConfig.moduleParameters, taskId),
+          taskDesign: effectiveConfig.moduleTaskOverrides?.[taskId],
           reverseReference: moduleReverseReference(effectiveConfig, taskId),
         })),
       }, nextSession.compileIdempotencyKey);

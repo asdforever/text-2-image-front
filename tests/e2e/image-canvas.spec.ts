@@ -11,6 +11,33 @@ test.beforeEach(async ({ page }) => {
 const now = "2026-09-17T08:00:00Z";
 const asset = (id: string, kind = "source") => ({ id, kind, sourceAssetId: null, generationSnapshotId: null, state: "available", filename: `${id}-产品图片.png`, mimeType: "image/png", byteSize: 100, width: 1000, height: 1000, sha256: id, createdAt: now });
 
+test("画布节点与生成依据展示冻结的本图设计，刷新仍保留", async ({ page }, testInfo) => {
+  const state = await setup(page);
+  const design = { taskTitle: "口香糖场景图", informationQuestion: "饭后如何清新口气", visualMechanism: "生活场景与大字排版", productPresence: "context", compositionBrief: "右侧自然光与花瓣", compositionRequirements: ["左侧留白"] };
+  const step = { id: "design-step", kind: "suite", title: design.taskTitle, sourceAssetIds: ["source-1"], outputAssetIds: ["hero-1"], outputVersionIds: [], taskPrompt: "冻结的提示词", finalPrompt: "完整提示词", constraints: {}, parameters: { designBrief: design } };
+  await page.route("**/api/suites/proj-demo/workbench", route => route.fulfill({ json: { data: { suite: { id: "proj-demo", name: "设计记录" }, tasks: [], inputImages: [], generationSteps: [step], layout: null } } }));
+  await page.setViewportSize({ width: 1600, height: 960 });
+  await page.goto("/suites/proj-demo/board");
+  const card = page.locator(".ic-generation-node");
+  await expect(card).toContainText(design.informationQuestion);
+  await expect(card).toContainText("使用情境");
+  await page.reload();
+  await card.getByRole("button", { name: "查看生成依据" }).click();
+  const dialog = page.getByRole("dialog", { name: "生成依据" });
+  await expect(dialog.getByRole("region", { name: "本图设计" })).toContainText(design.visualMechanism);
+  await expect(dialog).toContainText(design.compositionBrief);
+  await expect(dialog).toContainText("左侧留白");
+  await page.screenshot({ path: testInfo.outputPath("design-details.png") });
+  await dialog.getByRole("button", { name: "关闭生成依据" }).click();
+  await page.locator('[data-id="asset:hero-1"]').click();
+  const inspector = page.getByRole("complementary", { name: "图片属性" });
+  await expect(inspector.getByRole("region", { name: "本图设计" })).toContainText(design.informationQuestion);
+  await expect(inspector).toContainText("使用情境");
+  await expect(inspector).toContainText("左侧留白");
+  await page.screenshot({ path: testInfo.outputPath("design-inspector.png") });
+  expect(state.generations).toBe(0);
+});
+
 test("风格统一卡片显示真实提示词和参考模式，不提供普通版本替换", async ({ page }, testInfo) => {
   await setup(page);
   const step = { id: "style-harmonization:task", kind: "style-harmonization", title: "局部风格统一", sourceAssetIds: ["source-1", "white-1"], outputAssetIds: ["hero-1"], outputVersionIds: [], taskPrompt: "参考图片的柔和暖光，保留商品与文字", finalPrompt: "商品真实性约束\n轻量编辑约束\n完整风格要求：柔和暖光", constraints: {}, parameters: { styleMode: "reference", providerModel: "example-model", aspectRatio: "1:1", resolution: "标准 1K", referenceAsset: { filename: "参考图片.png" } }, canRegenerate: false };
@@ -442,4 +469,36 @@ test("首次项目图片加载失败不会覆盖隐藏与位置记录，重试�
   await expect(page.locator('.react-flow__node[data-id="asset:source-1"]')).toHaveCount(0);
   await expect(page.locator(".ic-image-node")).toHaveCount(2);
   expect(state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1")).toMatchObject({ x: 360, y: 180, hidden: true });
+});
+
+
+test("脉络排列对齐多来源分支与结果，保存刷新后保持布局", async ({ page }, testInfo) => {
+  const state = await setup(page);
+  state.assets = [asset("source-a"), asset("source-b"), asset("result-b", "generated"), asset("result-a", "generated"), asset("edited-a", "generated")];
+  const step = (id: string, sources: string[], output: string) => ({ id, kind: "suite", title: `生成 ${output}`, sourceAssetIds: sources, outputAssetIds: [output], outputVersionIds: [], finalPrompt: "保留商品结构和原有文字，自然光，清晰呈现包装细节。", taskPrompt: "商品详情图", constraints: {}, parameters: { ratio: "3:4", size: "标准 1K" } });
+  const generationSteps = [step("branch-a", ["source-a", "source-b"], "result-a"), step("branch-b", ["source-a", "source-b"], "result-b"), step("edit-a", ["result-a"], "edited-a")];
+  await page.route("**/api/suites/proj-demo/workbench", route => route.fulfill({ json: { data: { suite: { id: "proj-demo", name: "多分支布局" }, tasks: [], inputImages: [], generationSteps, layout: state.layout } } }));
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.goto("/suites/proj-demo/board");
+  await expect(page.locator(".ic-generation-node")).toHaveCount(3);
+  await page.getByRole("button", { name: "按生成脉络排列" }).click();
+  await expect.poll(() => state.layout?.nodes.length).toBe(8);
+  const centers = async (id: string) => {
+    const box = (await page.locator(`.react-flow__node[data-id="${id}"]`).boundingBox())!;
+    return box.y + box.height / 2;
+  };
+  await expect.poll(async () => Math.abs(await centers("generation:branch-a") - await centers("asset:result-a"))).toBeLessThan(2);
+  await expect.poll(async () => Math.abs(await centers("generation:branch-b") - await centers("asset:result-b"))).toBeLessThan(2);
+  const boxes = await page.locator(".react-flow__node").evaluateAll(nodes => nodes.map(node => { const b=node.getBoundingClientRect(); return { left:b.left, right:b.right, top:b.top, bottom:b.bottom }; }));
+  for (let a=0; a<boxes.length; a++) for (let b=a+1; b<boxes.length; b++) {
+    const x=boxes[a], y=boxes[b];
+    expect(x.right <= y.left || y.right <= x.left || x.bottom <= y.top || y.bottom <= x.top).toBe(true);
+  }
+  const saved = state.layout.nodes;
+  await page.screenshot({ path: testInfo.outputPath("lineage-branches.png") });
+  await page.reload();
+  await expect(page.locator(".ic-generation-node")).toHaveCount(3);
+  await page.getByRole("button", { name: "按生成脉络排列" }).click();
+  await expect.poll(() => state.layout.nodes).toEqual(saved);
+  expect(state.generations).toBe(0);
 });

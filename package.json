@@ -16,6 +16,7 @@
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.1.1",
     "@langfuse/otel": "^5.11.0",
     "@langfuse/tracing": "^5.11.0",
     "@opentelemetry/api": "^1.9.0",

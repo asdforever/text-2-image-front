@@ -2,6 +2,13 @@ import { expect, test, type Page } from "playwright/test";
 
 const now = "2026-09-16T00:00:00Z";
 
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/projects/proj-demo", route => route.fulfill({ json: { data: {
+    id: "proj-demo", name: "画布测试项目", status: "active", assets: [], selections: {},
+    createdAt: now, updatedAt: now,
+  } } }));
+});
+
 async function openCoreEditor(page: Page) {
   const state = createWorkbenchState();
   state.session.operations = [];
@@ -84,21 +91,64 @@ test("局部重绘中移除内容，笔画可撤销且作为遮罩提交", async
   expect(submitted().promptSnapshot.operations[0].payload.strokes[0].points.length).toBeGreaterThan(1);
 });
 
-test("切换工具保留文字草稿，文字样式与裁剪一起保存提交", async ({page}) => {
+test("加字自动排版，切换工具保留内容并与裁剪一起提交", async ({page}, testInfo) => {
   const {editor,submitted} = await openCoreEditor(page);
   await editor.getByRole("button",{name:"添加文本 可用",exact:true}).click();
   await editor.getByLabel("精确文字").fill("新品上市");
-  await editor.getByLabel("字号",{exact:true}).fill("72");
-  await editor.getByRole("combobox",{name:/^对齐/}).selectOption("left");
+  await expect(editor.getByLabel("字号",{exact:true})).toHaveCount(0);
+  await expect(editor.getByLabel("字体",{exact:true})).toHaveCount(0);
+  await expect(editor.getByLabel("文字颜色",{exact:true})).toHaveCount(0);
+  await expect(editor.getByLabel("描边宽度",{exact:true})).toHaveCount(0);
+  await expect(editor.getByLabel("左侧位置 %")).not.toBeVisible();
+  await editor.getByLabel("添加文字要求").fill("暖色手写标题，靠左排列");
+  await page.screenshot({path:testInfo.outputPath("auto-text-desktop.png")});
   await editor.getByRole("button",{name:"裁剪与尺寸 可用",exact:true}).click();
   await editor.getByLabel("输出宽度").fill("800");
   await editor.getByRole("button",{name:"添加文本 可用",exact:true}).click();
   await expect(editor.getByLabel("精确文字")).toHaveValue("新品上市");
-  await expect(editor.getByLabel("字号",{exact:true})).toHaveValue("72");
+  await expect(editor.getByLabel("添加文字要求")).toHaveValue("暖色手写标题，靠左排列");
+  await page.setViewportSize({width:390,height:844});
+  expect(await editor.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({path:testInfo.outputPath("auto-text-mobile.png")});
   await editor.getByRole("button",{name:"确认生成修改图",exact:true}).click();
   await expect.poll(()=>submitted()?.promptSnapshot.operations.length).toBe(2);
-  expect(submitted().promptSnapshot.operations.find((item:any)=>item.type==="add_text").payload.textStyle).toMatchObject({fontSize:72,align:"left"});
+  const textPayload = submitted().promptSnapshot.operations.find((item:any)=>item.type==="add_text").payload;
+  expect(textPayload).not.toHaveProperty("textStyle");
+  expect(textPayload).toMatchObject({text:"新品上市",prompt:"暖色手写标题，靠左排列"});
   expect(submitted().promptSnapshot.operations.find((item:any)=>item.type==="crop_resize").payload.width).toBe(800);
+});
+
+test("拖动文字区域后新增文字框保留上一项，保存刷新后仍能继续编辑", async ({ page }) => {
+  const { editor, state } = await openCoreEditor(page);
+  await editor.getByRole("button", { name: "添加文本 可用", exact: true }).click();
+  await editor.getByLabel("精确文字").fill("新品上市");
+  const box = (await editor.locator(".wb-editor-canvas img").boundingBox())!;
+  await page.mouse.move(box.x + box.width * .5, box.y + box.height * .475);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * .4, box.y + box.height * .275, { steps: 8 });
+  await page.mouse.up();
+  await editor.getByRole("button", { name: "新建文字框", exact: true }).click();
+  await expect(editor.getByRole("button", { name: "添加文本：新品上市", exact: true })).toBeVisible();
+  await expect(editor.getByLabel("精确文字")).toHaveValue("");
+  await editor.getByLabel("精确文字").fill("清新一整天");
+  await editor.getByRole("button", { name: "添加文本：新品上市", exact: true }).click();
+  await expect(editor.getByRole("button", { name: "添加文本：清新一整天", exact: true })).toBeVisible();
+  await editor.getByRole("button", { name: "添加文本：清新一整天", exact: true }).click();
+  await expect(editor.getByLabel("精确文字")).toHaveValue("清新一整天");
+  await editor.getByRole("button", { name: "更新修改", exact: true }).click();
+  await expect.poll(() => state.session.operations.length).toBe(2);
+  const first = state.session.operations[0].payload as any;
+  expect(first.region.x).toBeCloseTo(.1, 1);
+  expect(first.region.y).toBeCloseTo(.2, 1);
+  expect(first).not.toHaveProperty("textStyle");
+  await editor.getByRole("button", { name: "关闭图片编辑器" }).click();
+  await page.reload();
+  await page.locator(".ic-image-node").filter({ has: page.getByRole("heading", { name: "首屏详情", exact: true }) }).dispatchEvent("click");
+  await page.getByRole("complementary", { name: "图片属性" }).getByRole("button", { name: "编辑图片" }).click();
+  await editor.getByRole("button", { name: "添加文本：新品上市", exact: true }).click();
+  await expect(editor.getByLabel("精确文字")).toHaveValue("新品上市");
+  await expect(editor.getByRole("button", { name: "添加文本：清新一整天", exact: true })).toBeVisible();
+  await expect(editor.getByLabel("字号", { exact: true })).toHaveCount(0);
 });
 
 test("图片编辑会话刷新可恢复，并支持失败重试与终版选择", async ({ page }) => {
@@ -143,13 +193,13 @@ test("图片编辑会话刷新可恢复，并支持失败重试与终版选择",
   await expect(editor.getByLabel("修改要求", { exact: true })).toHaveCount(0);
   await expect(editor.getByText("需要修改提示词时，请返回前面的提示词节点修改并生成新版本。", { exact: true })).toBeVisible();
   await editor.getByRole("button", { name: "添加文本 可用", exact: true }).click();
-  await expect(editor.getByPlaceholder("描述文字的视觉感觉，以及与画面光线、透视的关系")).toHaveValue("醒目");
+  await expect(editor.getByLabel("添加文字要求")).toHaveValue("醒目");
   await expect(page.getByText("添加文本：新品主视觉", { exact: true })).toBeVisible();
-  await editor.getByLabel("字号").fill("64");
+  await editor.getByLabel("精确文字").fill("夏日上新");
   await editor.getByRole("button", { name: "撤销", exact: true }).click();
-  await expect(editor.getByLabel("字号")).not.toHaveValue("64");
+  await expect(editor.getByLabel("精确文字")).toHaveValue("新品主视觉");
   await editor.getByRole("button", { name: "重做", exact: true }).click();
-  await expect(editor.getByLabel("字号")).toHaveValue("64");
+  await expect(editor.getByLabel("精确文字")).toHaveValue("夏日上新");
   await editor.getByRole("button", { name: "查看原图", exact: true }).click();
   await expect(editor.getByText("原图对照中", { exact: true })).toBeVisible();
   await editor.getByRole("button", { name: "返回编辑", exact: true }).click();

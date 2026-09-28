@@ -15,6 +15,11 @@ body:has(.ic-studio:not(.ic-embedded)):not(:has(.studio-workbench)) .global-side
 .ic-constraint { display: flex; gap: 9px; margin: 0 16px 8px; font-size: 11px; }
 .ic-constraint b { color: #567461; flex-shrink: 0; font-weight: 500; }
 .ic-constraint p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #747e77; }
+.ic-design-brief { display: flex; gap: 9px; margin: 0 16px 8px; font-size: 11px; }
+.ic-design-brief b { color: #567461; flex-shrink: 0; font-weight: 500; }
+.ic-design-brief p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #747e77; }
+.ic-design-details p { margin: 8px 0; color: #747e77; font-size: 12px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ic-design-details p strong { color: #567461; font-weight: 600; }
 .ic-step-prompt { margin: 8px 16px 12px; border-top: 1px solid #edf0eb; padding-top: 10px; }
 .ic-step-prompt > span { color: #8a938c; font-size: 10px; }
 .ic-studio .ic-step-prompt p { margin-top: 5px; font-size: 12px; line-height: 1.8; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; white-space: pre-wrap; }

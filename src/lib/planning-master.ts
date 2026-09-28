@@ -89,11 +89,12 @@ export function applyModulePlan<T extends PlanningConfig>(config: T, plan: Modul
     visualMechanism: item.visualMechanism ?? "", compositionAdvice: item.compositionBrief,
   }]));
   const moduleCounts = plannedCounts;
+  const moduleTaskOverrides = Object.fromEntries(plan.modules.filter(item => preserveEdits && sameTask(item) && config.moduleTaskOverrides?.[taskKey(item)]).map(item => [taskKey(item), config.moduleTaskOverrides![taskKey(item)]]));
   const moduleParameters = Object.fromEntries(plan.modules.map((item) => {
     const key = taskKey(item);
     return [key, mergeParameters(config.moduleParameters[key], item.moduleParameters, preserveEdits && sameTask(item), config.modulePlanBaseline?.moduleParameters[key])];
   }));
   const modulePlanReferences = Object.fromEntries(plan.modules.filter(item => item.referenceModuleId && config.reverseVersionId).map(item => [taskKey(item), { versionId: config.reverseVersionId!, moduleId: item.referenceModuleId! }]));
-  const next = { ...config, selectedModuleIds, moduleTypes, moduleCounts, moduleParameters, moduleTaskDetails, modulePlanReferences, modulePlanId: plan.id, modulePlanningRequest: undefined, modulePlanBaseline: { moduleCounts: plannedCounts, moduleParameters: plannedParameters } } as T;
+  const next = { ...config, selectedModuleIds, moduleTypes, moduleCounts, moduleParameters, moduleTaskDetails, moduleTaskOverrides, modulePlanReferences, modulePlanId: plan.id, modulePlanningRequest: undefined, modulePlanBaseline: { moduleCounts: plannedCounts, moduleParameters: plannedParameters } } as T;
   return { ...next, modulePlanFingerprint: modulePlanInputFingerprint(next) };
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Download, Expand, Sparkles, X } from "lucide-react";
 import type { ApiTaskVersion } from "../../api/client";
 import { categoryNames, imagePrompt, type CanvasImage } from "./model";
+import { DesignBrief } from "./DesignBrief";
 
 export function CanvasInspector({ image, close, preview, edit, generate, savePrompt, selectVersion, showVersion, download, compareVersion, busy }: {
   image: CanvasImage; close: () => void; preview: () => void; edit: () => void; generate: () => void;
@@ -21,6 +22,7 @@ export function CanvasInspector({ image, close, preview, edit, generate, savePro
       <div className="ic-detail-title"><span>{categoryNames[image.category]}</span><h2 title={image.title}>{image.title}</h2><small>{image.width > 1 && image.height > 1 ? `${image.width} × ${image.height}` : "原始尺寸"}{image.version ? ` · v${image.version.versionNumber}` : ""}</small></div>
       <div className="ic-detail-actions"><button className="ic-primary" title={!image.assetId ? "此历史图片尚未关联可编辑的项目资产" : "基于此图片创建修改版本"} onClick={edit} disabled={!image.url || !image.assetId || busy}><Sparkles size={15} />编辑图片</button><button aria-label="下载图片" disabled={!image.url || busy} onClick={download}><Download size={16} /></button></div>
       {!image.assetId && <p className="ic-note">这张历史图片尚未关联项目资产，目前可预览、对比与下载。</p>}
+      <DesignBrief parameters={image.generation?.parameters} />
       <section><h3>提示词{image.version ? "与生成参数" : ""}</h3><label><span>{canSave ? "提示词草稿" : "图片提示词"}</span><textarea aria-label={canSave ? "提示词草稿" : "图片提示词"} value={prompt} readOnly={!canSave} onChange={(event) => setPrompt(event.target.value)} placeholder="此图片未记录提示词，请在前置提示词节点中修改" /></label>
         {canSave && <><div className="ic-param-row"><label>比例<select value={ratio} onChange={(event) => setRatio(event.target.value)}>{["1:1", "3:4", "4:3", "9:16", "16:9"].map((value) => <option key={value}>{value}</option>)}</select></label><label>分辨率<select value={size} onChange={(event) => setSize(event.target.value)}>{["1K", "2K", "4K"].map((value) => <option key={value}>{value}</option>)}</select></label></div><button className="ic-full-button" disabled={busy} onClick={() => void savePrompt(prompt, { ratio, size })}>保存提示词</button></>}
         {image.task && <button className="ic-full-button" disabled={busy || ["generating", "pending"].includes(image.task.status)} onClick={generate}><Sparkles size={14} />{image.url ? "再次生成" : "生成图片"}<ArrowUpRight size={14} /></button>}

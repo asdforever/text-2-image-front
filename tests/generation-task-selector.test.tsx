@@ -5,6 +5,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { GenerationTaskSelector } from "../src/components/generation-workspace/GenerationTaskSelector";
 import { normalizeHeroConfig } from "../src/lib/generation-workspace";
 
+test("手动新增任务无需规划大师即可编辑出场和表达", () => {
+  const html = renderToStaticMarkup(<GenerationTaskSelector modules={[{ id: "hero-freeform", mode: "hero", label: "自由创意", description: "" }]} config={normalizeHeroConfig({ selectedModuleIds: ["hero-freeform"] })} onChange={() => {}} />);
+  assert.match(html, /<select[^>]*aria-label="商品出场"/);
+  assert.match(html, /value="none"/);
+  assert.match(html, /本图要讲什么/);
+  assert.match(html, /表达方式/);
+  assert.match(html, /构图要求/);
+});
+
 test("任务卡显示信息目标和不出现产品的设计，构图要求单独可编辑", () => {
   const html = renderToStaticMarkup(<GenerationTaskSelector modules={[{ id: "hero-freeform", mode: "hero", label: "自由创意", description: "按目标表达" }]}
     config={normalizeHeroConfig({ selectedModuleIds: ["rate"], moduleTypes: { rate: "hero-freeform" },

@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { createIdempotencyKey } from "../../api/client";
 import { getModuleParameterPresets, type CommonGenerationConfig, type GenerationModuleDefinition } from "../../lib/generation-workspace";
 import { ModuleParameterEditor } from "./ModuleParameterEditor";
+import { TaskDesignEditor } from "./TaskDesignEditor";
 
 /** Edits image tasks, while keeping the published module catalog as the type source. */
 export function GenerationTaskSelector(props: {
@@ -20,6 +21,7 @@ export function GenerationTaskSelector(props: {
   const setTasks = (nextIds: string[], nextTypes = config.moduleTypes ?? {}, nextCounts = config.moduleCounts, nextParameters = config.moduleParameters) =>
     props.onChange({ selectedModuleIds: nextIds, moduleTypes: nextTypes, moduleCounts: nextCounts, moduleParameters: nextParameters,
       moduleTaskDetails: Object.fromEntries(Object.entries(config.moduleTaskDetails ?? {}).filter(([id]) => nextIds.includes(id))),
+      moduleTaskOverrides: Object.fromEntries(Object.entries(config.moduleTaskOverrides ?? {}).filter(([id]) => nextIds.includes(id))),
     });
   const add = (moduleId: string) => {
     if (ids.length >= max) return;
@@ -45,25 +47,23 @@ export function GenerationTaskSelector(props: {
         const definition = props.modules.find((item) => item.id === moduleId);
         const parameters = config.moduleParameters[taskId] ?? getModuleParameterPresets(moduleId);
         const detail = config.moduleTaskDetails?.[taskId];
-        const title = detail?.title ?? definition?.label ?? "已失效模块";
-        const presence: Record<string, string> = { full: "完整展示", partial: "局部展示", detail: "细节特写", context: "使用情境", none: "不出现" };
+        const title = config.moduleTaskOverrides?.[taskId]?.taskTitle || detail?.title || definition?.label || "已失效模块";
         return <article className="studio-module is-selected" key={taskId}>
           <div className="studio-module-row">
             <div className="flex min-w-0 flex-1 items-center gap-2"><span className="shrink-0 text-xs">图 {index + 1}</span><span className="text-sm">{title}</span>{detail && <span className="text-xs text-slate-500">{definition?.label}</span>}</div>
             <button type="button" aria-label={`删除第 ${index + 1} 张任务`} disabled={ids.length <= 1} onClick={() => remove(taskId)}><Trash2 size={13} /></button>
           </div>
-          {detail && <div className="space-y-2 px-3 py-2 text-sm">
-            <p><strong>本图要讲什么：</strong>{detail.informationQuestion}</p>
-            <p><strong>表达方式：</strong>{detail.visualMechanism}</p>
-            <p><strong>商品出场：</strong>{presence[detail.productPresence] ?? detail.productPresence}</p>
-            <p><strong>构图建议：</strong>{detail.compositionAdvice}</p>
+          <TaskDesignEditor detail={detail} overrides={config.moduleTaskOverrides?.[taskId]} defaultTitle={definition?.label ?? ""}
+            onChange={patch => props.onChange({ moduleTaskOverrides: { ...config.moduleTaskOverrides, [taskId]: { ...config.moduleTaskOverrides?.[taskId], ...patch } } })}
+            onReset={() => { const next = { ...config.moduleTaskOverrides }; delete next[taskId]; props.onChange({ moduleTaskOverrides: next }); }} />
+          <div className="px-3 pb-2 text-sm">
             <label className="block">构图要求（选填）<textarea className="mt-1 w-full rounded border p-2" maxLength={500} rows={2}
               value={parameters.find(p => p.key === "构图要求")?.value ?? ""}
               placeholder="填写你希望固定的构图；未填写时可按建议优化"
               onChange={event => props.onChange({ moduleParameters: { ...config.moduleParameters, [taskId]: [
                 ...parameters.filter(p => p.key !== "构图要求"), { key: "构图要求", value: event.target.value },
               ] } })} /></label>
-          </div>}
+          </div>
           <details className="studio-module-parameters" open={index === 0}><summary>{definition?.label ?? "已失效模块"}补充参数<span>{parameters.filter((item) => item.value.trim()).length ? "已填写" : "选填"}</span></summary><ModuleParameterEditor module={definition ?? { id: moduleId, label: "已失效模块", description: "请重新规划或移除此图", mode: "suite" }} parameters={parameters} onChange={(next) => props.onChange({ moduleParameters: { ...config.moduleParameters, [taskId]: next } })} /></details>
           {props.renderTaskReference?.(taskId)}
         </article>;

@@ -175,6 +175,7 @@ export type ApiBatchGenerationSlotStatus =
   | "cancelled"
   | "needs_retry";
 export interface ApiBatchHeroModuleInput {
+  taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign;
   moduleId: string;
   reverseReference?: { versionId: string; moduleId: string };
   taskId?: string;
@@ -251,7 +252,7 @@ export interface ApiBatchGenerationDetail extends ApiBatchGeneration {
 }
 export type ApiSuitePlanStatus = "compiling" | "awaiting_confirmation" | "confirmed" | "failed";
 export interface ApiSuitePlanReferenceInput { referenceId: string; version: string }
-export interface ApiSuitePlanModuleCompileInput { moduleId: string; taskId?: string; resultCount: number; moduleParameters: Array<{ key: string; value: string }>; reverseReference?: { versionId: string; moduleId: string } }
+export interface ApiSuitePlanModuleCompileInput { moduleId: string; taskId?: string; resultCount: number; moduleParameters: Array<{ key: string; value: string }>; reverseReference?: { versionId: string; moduleId: string }; taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign }
 export interface ApiSuitePlanCompileInput {
   reverseVersionId?: string;
   sourceAssetIds: string[]; marketId: string; modelId: string; styleId: string;
