@@ -34,6 +34,8 @@ import { moduleReverseReference } from "../features/reverse-projects/planning";
 import { useProjectStore } from "../store/useProjectStore";
 import { usePublishedGenerationConfig } from "../hooks/usePublishedGenerationConfig";
 import { useTaskRecovery } from "../hooks/useTaskRecovery";
+import { getRetryableBatchSlotIds, retryBatchSlots } from "../lib/batch-retry";
+import { readSuitePlanForRecovery } from "../lib/suite-plan-recovery";
 
 export function SuiteWorkspace(props: {
   project: Project;
@@ -101,19 +103,31 @@ export function SuiteWorkspace(props: {
 
   const recovery = useTaskRecovery({
     identity: `${props.project.id}:${session?.compileIdempotencyKey ?? "latest"}:${session?.planId ?? ""}`,
-    read: () => session?.planId ? suitePlanningApi.get(props.project.id, session.planId)
-      : session ? suitePlanningApi.recover(props.project.id, session.compileIdempotencyKey)
-      : suitePlanningApi.getLatest(props.project.id),
+    read: () => readSuitePlanForRecovery(
+      session,
+      (compileIdempotencyKey) => suitePlanningApi.recover(props.project.id, compileIdempotencyKey),
+      (planId) => suitePlanningApi.get(props.project.id, planId),
+      () => suitePlanningApi.getLatest(props.project.id),
+    ),
     onValue: (value) => {
       // A GET started before confirmation may finish afterwards; never let that stale
       // snapshot move a confirmed plan back to awaiting confirmation.
       if (remotePlan && remotePlan.id === value.id && remotePlan.status === "confirmed"
         && value.status !== "confirmed" && value.revision <= remotePlan.revision) return;
       setRemotePlan(value);
-      if (!session) saveSession(props.project.id, { planId: value.id, compileIdempotencyKey: "" });
+      const savedSession = useProjectStore.getState().suiteGenerationSessions[props.project.id];
+      if (!savedSession || savedSession.planId !== value.id) {
+        saveSession(props.project.id, {
+          compileIdempotencyKey: savedSession?.compileIdempotencyKey ?? "",
+          planId: value.id,
+        });
+      }
     },
     shouldPoll: (value) => value.status === "compiling",
-    allowNotFound: !session,
+    // A persisted compile key can outlive the plan it created (for example
+    // after a browser restore). In that case the latest project plan is the
+    // safe recovery source and an empty project should remain a normal state.
+    allowNotFound: !session?.planId,
   });
   const loadingPlan = recovery.loading;
 
@@ -305,6 +319,23 @@ export function SuiteWorkspace(props: {
     }
   };
 
+  const retryFailedSlots = async () => {
+    if (!remoteBatch || busy) return;
+    const slotIds = getRetryableBatchSlotIds(remoteBatch.slots);
+    if (!slotIds.length) return;
+    setBusy(true);
+    try {
+      const result = await retryBatchSlots(slotIds, (slotId) => batchGenerationApi.retrySlot(props.project.id, remoteBatch.id, slotId));
+      setRemoteBatch(await batchGenerationApi.get(props.project.id, remoteBatch.id));
+      setPollVersion((value) => value + 1);
+      props.onToast(result.failed ? `已提交 ${result.submitted}/${slotIds.length} 张重试，${result.failed} 张提交失败` : `已提交 ${result.submitted} 张失败图片重试`);
+    } catch (error) {
+      props.onToast(error instanceof Error ? error.message : "批量重试失败");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const remove = async (asset: Asset) => {
     if (window.confirm("确定删除“" + asset.name + "”吗？此操作不会影响详情页规划。")) {
       try { await projectApi.removeAsset(props.project.id, asset.id); await props.onRefresh?.(); }
@@ -370,7 +401,7 @@ export function SuiteWorkspace(props: {
           })}</div>
         </section>}
         {remoteBatch && !preparing && <details className="studio-task-details suite-batch-section" open={["partially_failed", "failed"].includes(remoteBatch.status)}><summary>批次进度与重试</summary>
-          <BatchGenerationStatus batch={remoteBatch} busy={busy} onCancel={() => void cancelBatch()} onRetry={(slotId) => void retrySlot(slotId)}
+          <BatchGenerationStatus batch={remoteBatch} busy={busy} onCancel={() => void cancelBatch()} onRetry={(slotId) => void retrySlot(slotId)} onRetryAll={() => void retryFailedSlots()}
             moduleLabels={Object.fromEntries(plans.map((plan) => [plan.moduleId, plan.title]))}
             onSelect={(assetId) => { const asset = suiteAssets.find((item) => item.id === assetId); if (asset) props.onSelectAsset?.(asset); }} />
           <details className="studio-prompt-context suite-confirmed-prompts"><summary>查看本批次已确认提示词</summary>{remoteBatch.modules.map((module) => <article key={module.id}><strong>{plans.find((plan) => plan.moduleId === module.moduleKey)?.title ?? module.moduleKey}</strong><p>{module.confirmedTaskPrompt}</p></article>)}</details>

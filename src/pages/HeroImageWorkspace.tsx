@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { GenerationWorkerNotice } from "../components/generation-workspace/GenerationWorkerNotice";
+import { getRetryableBatchSlotIds } from "../lib/batch-retry";
 import { PanelLeftClose } from "lucide-react";
 import type { Asset, Project } from "../api/contracts";
 import {
@@ -134,18 +135,20 @@ export function BatchGenerationStatus(_props: {
   busy: boolean;
   onCancel: () => void;
   onRetry: (slotId: string) => void;
+  onRetryAll?: () => void;
   onRecompile?: () => void;
   moduleLabels?: Record<string, string>;
   onSelect?: (assetId: string) => void;
 }) {
   const props = _props;
-  const retryable = new Set(["failed", "cancelled", "needs_retry"]);
+  const retryable = new Set(getRetryableBatchSlotIds(props.batch.slots));
   const labelFor = (key: string) => props.moduleLabels?.[key] ?? HERO_MODULES.find((item) => item.id === key)?.label ?? key;
   return (
     <section className="hero-batch-status" aria-label="批次图片进度">
       <header>
         <div><span>批次生成</span><h2>成功 {props.batch.progress.succeeded} / {props.batch.progress.total}</h2></div>
         {!( ["succeeded", "partially_failed", "failed", "cancelled"] as string[]).includes(props.batch.status) && <Button type="button" variant="secondary" disabled={props.busy} onClick={props.onCancel}>取消批次</Button>}
+        {props.onRetryAll && retryable.size > 0 && <Button type="button" variant="secondary" disabled={props.busy} onClick={props.onRetryAll}>一键重试失败项（{retryable.size}）</Button>}
         {props.onRecompile && ["cancelled", "failed", "partially_failed"].includes(props.batch.status) && <Button type="button" variant="secondary" disabled={props.busy} onClick={props.onRecompile}>重新编译提示词</Button>}
       </header>
       <div className="hero-batch-module-progress">

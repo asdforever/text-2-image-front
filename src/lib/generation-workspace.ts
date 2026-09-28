@@ -11,12 +11,11 @@ export type GenerationStatus = "idle" | "validating" | "planning" | "planned" | 
 /**
  * 可以作为生成输入的项目素材类型。
  *
- * 三类都允许，和后端 `project_assets.kind` 一一对应：
+ * 只允许原始输入和白底输入，和后端 `project_assets.kind` 一一对应：
  * - `source`（原图）
  * - `base`（白底图，主图/套图的推荐输入）
- * - `hero`（生成结果，用于在已有成品基础上继续迭代）
  */
-export const SELECTABLE_PRODUCT_ASSET_TYPES: readonly AssetType[] = ["source", "base", "hero"];
+export const SELECTABLE_PRODUCT_ASSET_TYPES: readonly AssetType[] = ["source", "base"];
 
 export function selectableProductAssets(assets: Asset[]): Asset[] {
   return assets.filter((asset) => SELECTABLE_PRODUCT_ASSET_TYPES.includes(asset.type));

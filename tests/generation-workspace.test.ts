@@ -104,6 +104,19 @@ test("suite validation permits the complete published module catalog", async () 
   assert.deepEqual(validateSuiteConfig?.({ ...base, selectedAssetIds: ["asset-1"], selectedModuleIds: ["suite-hero", "suite-benefit", "suite-scene", "suite-angle", "suite-mood", "suite-detail"] }), []);
 });
 
+test("product material picker excludes generated result assets", async () => {
+  const generation = await loadGenerationModule() as Record<string, unknown>;
+  const selectableProductAssets = generation.selectableProductAssets as ((assets: Array<{ id: string; type: string }>) => Array<{ id: string }>) | undefined;
+  const assets = [
+    { id: "source", type: "source" },
+    { id: "base", type: "base" },
+    { id: "hero", type: "hero" },
+    { id: "suite", type: "suite" },
+  ];
+
+  assert.deepEqual(selectableProductAssets?.(assets), [{ id: "source", type: "source" }, { id: "base", type: "base" }]);
+});
+
 test("bounded selection toggles existing values and refuses values beyond the limit", async () => {
   const generation = await loadGenerationModule() as Record<string, unknown>;
   const toggleBoundedSelection = generation.toggleBoundedSelection as ((current: string[], id: string, max: number) => string[]) | undefined;
