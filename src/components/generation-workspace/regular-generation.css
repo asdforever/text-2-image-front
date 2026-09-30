@@ -1,0 +1,11 @@
+.creation-mode-switch { display: inline-flex; padding: 3px; gap: 3px; border-radius: 6px; background: var(--surface-3); flex-shrink: 0; }
+.creation-mode-switch button { border: 0; border-radius: 4px; min-width: 78px; min-height: 32px; padding: 6px 14px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.creation-mode-switch button[aria-pressed="true"] { background: var(--surface-1); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px #00000012; }
+.creation-mode-switch button:disabled { cursor: default; opacity: .6; }
+.professional-workspace { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; }
+.professional-mode-toolbar { display: flex; justify-content: flex-end; padding: 0 0 12px; }
+.professional-workspace > .generation-workspace { flex: 1; min-height: 0; }
+
+.regular-confirmation { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.regular-confirmation h3 { font-size: 14px; margin: 0 0 12px; }
+.regular-confirmation ul { padding-left: 18px; line-height: 1.9; margin-bottom: 16px; }

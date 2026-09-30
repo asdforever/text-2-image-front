@@ -40,3 +40,16 @@ test("裁剪比例居中且保留输出尺寸校验", () => {
   assert.deepEqual(cropForRatio("1:1", 1000, 500), { x: .25, y: 0, width: .5, height: 1, rotation: 0 });
   assert.ok(validateDraft({ ...initialDraft(1000, 1000), tool: "crop_resize", width: 999999 }));
 });
+
+
+test("描述修改只需当前图片和提示词，不要求区域或蒙版，保存恢复保留指令", () => {
+  const draft = { ...initialDraft(1000, 800), tool: "prompt_edit" as const, prompt: "背景变成木质桌面，保留商品" };
+  assert.equal(validateDraft(draft), "");
+  const operation = operationFromDraft(draft, "selected-version");
+  assert.equal(operation.type, "prompt_edit");
+  assert.equal(operation.sourceVersionId, "selected-version");
+  assert.deepEqual(operation.payload, { schemaVersion: 2, prompt: draft.prompt });
+  assert.deepEqual(operationFromDraft(draftFromOperation(operation, 1000, 800), "selected-version"), operation);
+  assert.ok(validateDraft({ ...draft, prompt: "   " }));
+  assert.ok(validateDraft({ ...draft, prompt: "x".repeat(8001) }));
+});

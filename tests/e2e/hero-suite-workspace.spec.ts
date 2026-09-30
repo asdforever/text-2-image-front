@@ -205,7 +205,7 @@ test("套图规划、编辑提示词、确认和批次结果均走服务端接�
   await mockSuiteApis(page, state);
   await page.goto("/projects/proj-demo?tab=suite");
 
-  await expect(page.getByRole("button", { name: "生成套图提示词" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "编译提示词" })).toBeVisible();
   await page.getByRole("button", { name: "选择产品素材", exact: true }).click();
   await page.getByRole("button", { name: /充电宝-正面\.jpg/ }).click();
   await page.getByRole("button", { name: "收起素材选择", exact: true }).click();
@@ -217,7 +217,7 @@ test("套图规划、编辑提示词、确认和批次结果均走服务端接�
   await page.getByLabel("首屏主视觉参数").getByPlaceholder("填写具体要求").first().fill("第 1 张突出体积");
   await page.getByText(/^核心卖点图补充参数/).click();
   await page.getByLabel("核心卖点图参数").getByPlaceholder("填写具体要求").first().fill("第 2 张说明三口快充参数");
-  await page.getByRole("button", { name: "生成套图提示词" }).click();
+  await page.getByRole("button", { name: "编译提示词" }).click();
 
   await expect(page.getByRole("region", { name: "套图提示词确认" }).getByRole("textbox")).toHaveCount(2);
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -286,7 +286,7 @@ test("部分失败的套图只重试失败槽位并保留其他结果", async ({
 test("在 1280 宽度保持独立滚动，窄屏可用键盘收起和恢复配置栏", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/projects/proj-demo?tab=suite");
-  await expect(page.getByRole("button", { name: "生成套图提示词" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "编译提示词" })).toBeVisible();
   const configBox = await page.getByRole("complementary", { name: "生成配置" }).boundingBox();
   const resultBox = await page.locator(".generation-result").boundingBox();
   expect(configBox!.x + configBox!.width).toBeLessThanOrEqual(resultBox!.x + 1);

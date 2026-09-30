@@ -313,6 +313,68 @@ test("失败版本保留旧图和提示词，可再次打开修改，手机弹�
   await page.screenshot({ path: testInfo.outputPath("canvas-version-mobile.png") });
 });
 
+test("左键长按平移画布，短按选图与直接拖图仍可用，松开和失焦结束平移", async ({ page }) => {
+  const state = await setup(page);
+  state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: .75 }, groups: [], nodes: [
+    { nodeId: "asset:source-1", x: 80, y: 180 }, { nodeId: "asset:hero-1", x: 450, y: 180 }, { nodeId: "asset:white-1", x: 80, y: 700 },
+  ] };
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.goto("/suites/proj-demo/board");
+  const canvas = page.getByRole("main", { name: "图片画布", exact: true });
+  const viewport = page.locator(".react-flow__viewport");
+  const transform = () => viewport.evaluate(element => {
+    const matrix = new DOMMatrix(getComputedStyle(element).transform);
+    return { x: matrix.e, y: matrix.f, zoom: matrix.a };
+  });
+  await expect.poll(async () => (await transform()).zoom).toBeCloseTo(.75, 2);
+  const picture = page.locator('[data-id="asset:hero-1"] .ic-node-picture');
+  const box = await picture.boundingBox();
+  const point = { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
+  const before = await transform();
+  const initialNodes = structuredClone(state.layout.nodes);
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await expect(canvas).toHaveClass(/is-hold-panning/);
+  await page.mouse.move(point.x + 90, point.y + 55, { steps: 7 });
+  await page.mouse.up();
+  await expect(canvas).not.toHaveClass(/is-hold-panning/);
+  await expect.poll(async () => (await transform()).x).toBeCloseTo(before.x + 90, 1);
+  await expect.poll(async () => (await transform()).y).toBeCloseTo(before.y + 55, 1);
+  await expect.poll(() => state.layout.viewport.x).toBeCloseTo(before.x + 90, 1);
+  for (const node of initialNodes) expect(state.layout.nodes.find((item: any) => item.nodeId === node.nodeId)).toMatchObject(node);
+  const stopped = await transform();
+  await page.mouse.move(point.x + 160, point.y + 110);
+  expect(await transform()).toEqual(stopped);
+  await expect(page.getByRole("complementary", { name: "图片属性" })).toHaveCount(0);
+  await picture.click();
+  await expect(page.getByRole("complementary", { name: "图片属性" })).toBeVisible();
+  await page.getByRole("button", { name: "关闭图片属性", exact: true }).click();
+  const nextBox = await picture.boundingBox();
+  const start = { x: nextBox!.x + nextBox!.width / 2, y: nextBox!.y + nextBox!.height / 2 };
+  const beforeDrag = await transform();
+  const priorX = state.layout.nodes.find((item: any) => item.nodeId === "asset:hero-1").x;
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 60, start.y + 30, { steps: 3 });
+  await page.mouse.up();
+  await expect.poll(() => state.layout.nodes.find((item: any) => item.nodeId === "asset:hero-1").x).toBeGreaterThan(priorX);
+  expect(await transform()).toEqual(beforeDrag);
+  const pane = await page.locator(".react-flow__pane").boundingBox();
+  const empty = { x: pane!.x + pane!.width - 100, y: pane!.y + pane!.height - 170 };
+  await page.mouse.move(empty.x, empty.y);
+  await page.mouse.down();
+  await expect(canvas).toHaveClass(/is-hold-panning/);
+  await page.mouse.move(empty.x - 70, empty.y - 40, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => (await transform()).x).toBeCloseTo(beforeDrag.x - 70, 1);
+  await expect(page.locator(".react-flow__selection")).toHaveCount(0);
+  await page.mouse.down();
+  await expect(canvas).toHaveClass(/is-hold-panning/);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(canvas).not.toHaveClass(/is-hold-panning/);
+  await page.mouse.up();
+});
+
 test("右键拖动画布且滚轮直接缩放，无需切换工具", async ({ page }) => {
   const state = await setup(page);
   await page.setViewportSize({ width: 1440, height: 960 });
@@ -366,21 +428,20 @@ test("右键拖动画布且滚轮直接缩放，无需切换工具", async ({ pa
   await expect.poll(async () => (await transform()).x).toBeCloseTo(savedViewport.x, 1);
   await page.getByRole("button", { name: "放大画布", exact: true }).click();
   await expect.poll(() => state.layout?.viewport.zoom).toBeGreaterThan(savedViewport.zoom);
-  await expect(page.getByRole("button", { name: "选择工具", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "平移工具", exact: true }).click();
-  await expect(page.getByRole("button", { name: "平移工具", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "选择工具", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "平移工具", exact: true })).toHaveCount(0);
   const panImageBox = await image.boundingBox();
   const beforeToolPan = await transform();
   const beforeToolNode = await page.locator('[data-id="asset:hero-1"]').getAttribute("style");
   await page.mouse.move(panImageBox!.x + panImageBox!.width / 2, panImageBox!.y + panImageBox!.height / 2);
   await page.mouse.down();
+  await expect(page.getByRole("main", { name: "图片画布", exact: true })).toHaveClass(/is-hold-panning/);
   await page.mouse.move(panImageBox!.x + panImageBox!.width / 2 + 50, panImageBox!.y + panImageBox!.height / 2 + 20, { steps: 6 });
   await page.mouse.up();
   await expect.poll(async () => (await transform()).x).toBeCloseTo(beforeToolPan.x + 50, 1);
   await expect.poll(async () => (await transform()).y).toBeCloseTo(beforeToolPan.y + 20, 1);
   expect(await page.locator('[data-id="asset:hero-1"]').getAttribute("style")).toBe(beforeToolNode);
-  await page.getByRole("button", { name: "选择工具", exact: true }).click();
-  await expect(page.getByRole("button", { name: "选择工具", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("main", { name: "图片画布", exact: true })).not.toHaveClass(/is-hold-panning/);
   expect(state.generations).toBe(0);
 });
 

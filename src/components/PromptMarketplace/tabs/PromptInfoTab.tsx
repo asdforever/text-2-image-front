@@ -125,6 +125,7 @@ export function PromptInfoTab({ template, categories, onCreateCategory, editingV
       )}
 
       <div className="prompt-info-content">
+        {template.defaultVersion.applicability?.runtimeRole === "style-seed" && <div className="prompt-info-section"><label>工作台风格</label><span>此模板的默认版本用于新任务。编辑并保存版本后，新编译使用更新后的风格；已编译批次保留原版本。</span></div>}
         <div className="prompt-info-section">
           <label>Code</label>
           <span>{template.code}</span>

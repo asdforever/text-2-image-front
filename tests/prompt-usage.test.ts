@@ -3,7 +3,7 @@ import test from "node:test";
 import { canUsePromptForDirectImage } from "../src/lib/prompt-usage";
 
 test("direct image selection excludes every planning role and missing versions", () => {
-  for (const runtimeRole of ["style-planner", "planner", "hero-module-planner", "suite-module-planner"]) {
+  for (const runtimeRole of ["style-seed", "style-planner", "planner", "hero-module-planner", "suite-module-planner"]) {
     assert.equal(canUsePromptForDirectImage({ applicability: { runtimeRole } }), false);
   }
   assert.equal(canUsePromptForDirectImage(null), false);

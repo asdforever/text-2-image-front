@@ -56,3 +56,27 @@ test("legacy single hero tasks retain frozen metadata and their own group withou
   assert.equal(image.batchId, undefined);
   assert.match(image.subtitle!, /1:1.*历史模型.*原始风格/);
 });
+
+
+test("批次标签读取冻结模式，不受当前页面模式影响", () => {
+  const asset = { id: "result", type: "hero", name: "result.png", url: "/result.png" } as Asset;
+  for (const [creationMode, label] of [["regular", "常规版"], ["professional", "专业版"], [undefined, "版本未记录"]] as const) {
+    const step = { id: "step", kind: "hero", title: "细节图", outputAssetIds: [asset.id], batchId: "batch", creationMode, parameters: {} } as ApiCanvasGenerationStep;
+    assert.match(generationResultImages([asset], "hero", [step])[0].groupLabel!, new RegExp(label));
+  }
+  const step = { id: "step", kind: "hero", outputAssetIds: [asset.id], batchId: "batch", creationMode: "professional", parameters: {} } as ApiCanvasGenerationStep;
+  const batch = { id: "batch", creationMode: "regular", modules: [], slots: [{ generatedAssetId: asset.id }] } as any;
+  assert.match(generationResultImages([asset], "hero", [step], batch)[0].groupLabel!, /常规版/);
+});
+
+
+test("版本隔离不会把未知归属的图片默认展示为常规版", () => {
+  const assets = ["r", "p", "unknown"].map(id => ({ id, type: "hero", name: id, url: `/${id}` } as Asset));
+  const steps = [
+    { id: "r", kind: "hero", creationMode: "regular", outputAssetIds: ["r"], batchId: "r", parameters: {} },
+    { id: "p", kind: "hero", creationMode: "professional", outputAssetIds: ["p"], batchId: "p", parameters: {} },
+  ] as ApiCanvasGenerationStep[];
+  assert.deepEqual(generationResultImages(assets, "hero", steps, null, "regular").map(image => image.id), ["r"]);
+  assert.deepEqual(generationResultImages(assets, "hero", steps, null, "professional").map(image => image.id), ["p"]);
+  assert.deepEqual(generationResultImages(assets, "hero", [], null, "regular"), []);
+});

@@ -17,10 +17,10 @@ test("canvas remains inside project navigation and preserves local controls acro
   await expect(page.getByLabel("输出类型")).toBeVisible();
   await expect(page.getByRole("complementary", { name: "主导航" })).toBeVisible();
   await expect(page.getByLabel("图片画布", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "平移工具", exact: true }).click();
+  await page.getByRole("combobox", { name: "画布模块类型", exact: true }).selectOption("unassigned");
   await page.getByLabel("输出类型").getByRole("button", { name: "白底图", exact: true }).click();
   await page.getByLabel("输出类型").getByRole("button", { name: "画布", exact: true }).click();
-  await expect(page.getByRole("button", { name: "平移工具", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("combobox", { name: "画布模块类型", exact: true })).toHaveValue("unassigned");
   await expect(page).toHaveURL(/projects\/proj-ui\?tab=canvas/);
 });
 

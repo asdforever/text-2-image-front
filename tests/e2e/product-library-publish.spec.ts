@@ -41,7 +41,7 @@ test("成品库按项目展示自动归档的全部资产", async ({ page }) => 
         previewUrl: "/api/projects/proj-demo/assets/asset-hero/preview",
         sourceSnapshot: {},
         versions: [
-          { id: "version-hero", productType: "hero", sourceSnapshot: { assetId: "asset-hero" }, previewUrl: null, status: "published" },
+          { id: "version-hero", productType: "hero", sourceSnapshot: { assetId: "asset-hero", batchId: "batch-1", batchCreatedAt: "2026-09-29T10:00:00Z", configSnapshot: { selection: { module: { id: "module-kv", label: "首屏 KV", mode: "hero" } } } }, previewUrl: null, status: "published" },
         ],
       },
     ],
@@ -58,10 +58,25 @@ test("成品库按项目展示自动归档的全部资产", async ({ page }) => 
   );
 
   await page.goto("/product-libraries");
-  await expect(page.getByText("1 个项目", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "新建成品库" })).toHaveCount(0);
-  await page.getByText("项目成品库", { exact: true }).first().click();
-
+  await expect(page.getByRole("heading", { name: "项目成品档案" })).toBeVisible();
+  const projectCard = page.locator(".workflow-project-card").filter({ hasText: "无线键盘项目" });
+  await expect(projectCard).toBeVisible();
+  await expect(projectCard).toHaveAttribute("aria-expanded", "false");
+  await projectCard.click();
+  await expect(projectCard).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByText("keyboard.png", { exact: true })).toBeVisible();
+  await expect(page.getByText("hero.png", { exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "项目批次" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "图片模块类型" })).toBeVisible();
+  await page.getByRole("combobox", { name: "项目批次" }).selectOption("batch-1");
+  await expect(page.getByText("keyboard.png", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("hero.png", { exact: true })).toBeVisible();
+  await page.getByRole("combobox", { name: "项目批次" }).selectOption("all");
+  await page.getByRole("combobox", { name: "图片模块类型" }).selectOption("source");
+  await expect(page.getByText("keyboard.png", { exact: true })).toBeVisible();
+  await expect(page.getByText("hero.png", { exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/product-libraries$/);
+  await page.goto(`/product-libraries/${library.id}`);
   await expect(page.getByText("无线键盘项目", { exact: true })).toBeVisible();
   await expect(page.getByText("原图 1", { exact: true })).toBeVisible();
   await expect(page.getByText("主图 1", { exact: true })).toBeVisible();

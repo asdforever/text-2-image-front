@@ -1,4 +1,4 @@
-export type EditTool = "none" | "add_text" | "change_text" | "inpaint" | "crop_resize";
+export type EditTool = "none" | "prompt_edit" | "add_text" | "change_text" | "inpaint" | "crop_resize";
 export type Region = { x: number; y: number; width: number; height: number; rotation: number };
 export type MaskStroke = { mode: "draw" | "erase"; points: { x: number; y: number }[]; width: number };
 export type TextStyle = { fontFamily?: string; fontSize: number; color?: string; align?: "left" | "center" | "right"; strokeColor?: string; strokeWidth?: number };
@@ -16,8 +16,8 @@ export function initialDraft(width: number, height: number): EditorDraft {
 }
 export function operationFromDraft(draft: EditorDraft, sourceVersionId: string): DraftOperation {
   const type = draft.tool === "inpaint" ? draft.action : draft.tool;
-  const summary = type === "add_text" ? `添加文本：${draft.text}` : type === "change_text" ? `改文字：${draft.originalText} → ${draft.newText}` : type === "erase" ? "局部重绘：移除选中内容" : type === "redraw" ? "局部重绘：修改选中内容" : `裁剪与尺寸：${draft.width} × ${draft.height}`;
-  const payload = type === "crop_resize" ? { region: draft.crop, width: draft.width, height: draft.height } : type === "add_text" ? { text: draft.text, region: draft.region, ...(draft.textStyle ? { textStyle: draft.textStyle } : {}), prompt: draft.prompt } : type === "change_text" ? { originalText: draft.originalText, newText: draft.newText, region: draft.region, prompt: draft.prompt } : { strokes: draft.strokes, feather: draft.feather, prompt: draft.prompt || (type === "erase" ? "移除选中内容，自然补全背景，保持光影和纹理一致" : "") };
+  const summary = type === "prompt_edit" ? `描述修改：${draft.prompt}` : type === "add_text" ? `添加文本：${draft.text}` : type === "change_text" ? `改文字：${draft.originalText} → ${draft.newText}` : type === "erase" ? "局部重绘：移除选中内容" : type === "redraw" ? "局部重绘：修改选中内容" : `裁剪与尺寸：${draft.width} × ${draft.height}`;
+  const payload = type === "prompt_edit" ? { prompt: draft.prompt } : type === "crop_resize" ? { region: draft.crop, width: draft.width, height: draft.height } : type === "add_text" ? { text: draft.text, region: draft.region, ...(draft.textStyle ? { textStyle: draft.textStyle } : {}), prompt: draft.prompt } : type === "change_text" ? { originalText: draft.originalText, newText: draft.newText, region: draft.region, prompt: draft.prompt } : { strokes: draft.strokes, feather: draft.feather, prompt: draft.prompt || (type === "erase" ? "移除选中内容，自然补全背景，保持光影和纹理一致" : "") };
   return { operationId: draft.id, type, summary, sourceVersionId, payload: { schemaVersion: 2, ...payload } };
 }
 export function draftFromOperation(item: DraftOperation, width: number, height: number): EditorDraft {
@@ -27,8 +27,10 @@ export function draftFromOperation(item: DraftOperation, width: number, height: 
     region: p.region as Region ?? { ...defaultRegion }, crop: p.region as Region ?? { ...fullRegion }, strokes: p.strokes as MaskStroke[] ?? [], feather: Number(p.feather ?? .08), action: item.type === "erase" ? "erase" : "redraw",
     textStyle: p.textStyle as TextStyle | undefined, width: Number(p.width ?? width), height: Number(p.height ?? height) };
 }
-export function isSupportedOperation(item: DraftOperation) { return ["add_text", "change_text", "redraw", "erase", "crop_resize"].includes(item.type); }
+export function isSupportedOperation(item: DraftOperation) { return ["prompt_edit", "add_text", "change_text", "redraw", "erase", "crop_resize"].includes(item.type); }
 export function validateDraft(d: EditorDraft): string {
+  if (d.tool === "prompt_edit" && !d.prompt.trim()) return "请填写修改要求";
+  if (d.prompt.length > 8000) return "修改要求最多 8000 字";
   if (d.tool === "none") return "请先选择编辑工具";
   if (d.tool === "add_text" && !d.text.trim()) return "请填写要添加的文字";
   if (d.tool === "add_text" && d.textStyle && (!Number.isFinite(d.textStyle.fontSize) || d.textStyle.fontSize < 8 || d.textStyle.fontSize > 1000 || !Number.isFinite(d.textStyle.strokeWidth ?? 0) || (d.textStyle.strokeWidth ?? 0) < 0 || (d.textStyle.strokeWidth ?? 0) > 20)) return "字号需为 8–1000，描边宽度需为 0–20";

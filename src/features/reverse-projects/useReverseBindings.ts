@@ -9,7 +9,7 @@ export interface ReverseBindingControls {
   bindings: ReverseBinding[]; loading: boolean; error: string;
   refresh: () => Promise<PlanningConfig>;
 }
-export function useReverseBindings(projectId: string, target: ReverseTarget): ReverseBindingControls {
+export function useReverseBindings(projectId: string, target: ReverseTarget, enabled = true): ReverseBindingControls {
   const [bindings, setBindings] = useState<ReverseBinding[]>([]);
   const [loading, setLoading] = useState(true); const [error, setError] = useState("");
   const scope = projectId + ":" + target;
@@ -21,9 +21,11 @@ export function useReverseBindings(projectId: string, target: ReverseTarget): Re
       const config = useProjectStore.getState().generationDrafts[scope]?.config;
       return target === "hero" ? normalizeHeroConfig(config) : normalizeSuiteConfig(config);
     };
+    if (!enabled) return Promise.resolve(current());
     if (active.current === scope) { setLoading(true); setError(""); }
     const promise = reverseProjectsApi.projectBindings(projectId, target).then(rows => {
       if (!Array.isArray(rows)) throw new Error("反推引用数据不完整，请重新加载");
+      if (current().creationMode === "regular") return current();
       const patch = reverseBindingConfigPatch(current(), rows, projectId, target);
       if (Object.keys(patch).length) useProjectStore.getState().updateGenerationDraft(projectId, target, patch);
       if (active.current === scope) setBindings(rows);
@@ -38,12 +40,13 @@ export function useReverseBindings(projectId: string, target: ReverseTarget): Re
     }).finally(() => { if (pending.current?.promise === promise) pending.current = null; if (active.current === scope) setLoading(false); });
     pending.current = { scope, promise };
     return promise;
-  }, [projectId, target, scope]);
+  }, [projectId, target, scope, enabled]);
   useEffect(() => {
+    if (!enabled) { setLoading(false); setError(""); return; }
     active.current = scope; setBindings([]);
     const update = () => { void refresh().catch(() => undefined); };
     update(); window.addEventListener("focus", update); window.addEventListener("reverse-bindings-changed", update);
     return () => { active.current = ""; window.removeEventListener("focus", update); window.removeEventListener("reverse-bindings-changed", update); };
-  }, [refresh, scope]);
+  }, [refresh, scope, enabled]);
   return { bindings, loading, error, refresh };
 }

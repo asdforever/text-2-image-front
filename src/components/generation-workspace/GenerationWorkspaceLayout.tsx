@@ -7,12 +7,14 @@ export function GenerationWorkspaceLayout({
   result,
   collapsed,
   onCollapsedChange,
+  variant,
 }: {
   config: ReactNode;
   footer: ReactNode;
   result: ReactNode;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
+  variant?: "regular" | "professional";
 }) {
   const restoreButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -26,7 +28,7 @@ export function GenerationWorkspaceLayout({
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [collapsed, onCollapsedChange]);
-  const className = ["generation-workspace", collapsed ? "is-config-collapsed" : ""].filter(Boolean).join(" ");
+  const className = ["generation-workspace", variant ? `${variant}-generation-workspace` : "", collapsed ? "is-config-collapsed" : ""].filter(Boolean).join(" ");
   return (
     <div className={className}>
       {!collapsed && (

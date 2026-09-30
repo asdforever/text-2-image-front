@@ -156,7 +156,7 @@ test("套图空项目短暂断线后恢复为可编译状态", async ({ page }) 
   await expect(page.getByRole("alert")).toContainText("暂时断线");
   offline = false;
   await expect(page.getByRole("alert")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "生成套图提示词", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "编译提示词", exact: true })).toBeEnabled();
 });
 
 test("套图未落库请求可手动重试原请求，恢复本身不重提", async ({ page }) => {
@@ -171,7 +171,7 @@ test("套图未落库请求可手动重试原请求，恢复本身不重提", as
   await page.goto(`/projects/${project.id}?tab=suite`);
   await expect(page.getByRole("status").filter({ hasText: "尚未找到记录" })).toBeVisible();
   expect(submittedKey).toBeUndefined();
-  await page.getByRole("button", { name: "生成套图提示词", exact: true }).click();
+  await page.getByRole("button", { name: "编译提示词", exact: true }).click();
   await expect(page.getByLabel("首屏主视觉提示词", { exact: true })).toHaveValue("原始提示词");
   expect(submittedKey).toBe("compile-key");
   expect(state.writes()).toBe(0);
@@ -187,7 +187,7 @@ test("套图已有方案重新编译会创建新的幂等请求", async ({ page 
   });
   await page.goto(`/projects/${project.id}?tab=suite`);
   await expect(page.getByLabel("首屏主视觉提示词", { exact: true })).toHaveValue("原始提示词");
-  await page.getByRole("button", { name: "生成套图提示词", exact: true }).click();
+  await page.getByRole("button", { name: "编译提示词", exact: true }).click();
   await expect.poll(() => submittedKey).not.toBe("compile-key");
 });
 

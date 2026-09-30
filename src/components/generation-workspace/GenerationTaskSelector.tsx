@@ -1,9 +1,8 @@
-import React from "react";
-import { Plus, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { Plus } from "lucide-react";
 import { createIdempotencyKey } from "../../api/client";
 import { getModuleParameterPresets, type CommonGenerationConfig, type GenerationModuleDefinition } from "../../lib/generation-workspace";
-import { ModuleParameterEditor } from "./ModuleParameterEditor";
-import { TaskDesignEditor } from "./TaskDesignEditor";
+import { GenerationTaskCard } from "./GenerationTaskCard";
 
 /** Edits image tasks, while keeping the published module catalog as the type source. */
 export function GenerationTaskSelector(props: {
@@ -15,6 +14,7 @@ export function GenerationTaskSelector(props: {
   renderTaskReference?: (taskId: string) => React.ReactNode;
 }) {
   const { config } = props;
+  const [editingTask, setEditingTask] = useState<string | null>(null);
   const ids = config.selectedModuleIds;
   const max = props.max ?? Number.MAX_SAFE_INTEGER;
   const typeOf = (taskId: string) => config.moduleTypes?.[taskId] ?? taskId;
@@ -30,6 +30,7 @@ export function GenerationTaskSelector(props: {
     setTasks(nextIds, { ...(config.moduleTypes ?? {}), [taskId]: moduleId }, { ...config.moduleCounts, [taskId]: 1 }, { ...config.moduleParameters, [taskId]: getModuleParameterPresets(moduleId).map((item) => ({ ...item })) });
   };
   const remove = (taskId: string) => {
+    setEditingTask(null);
     const nextIds = ids.filter((id) => id !== taskId);
     const nextTypes = { ...(config.moduleTypes ?? {}) }; delete nextTypes[taskId];
     const nextCounts = { ...config.moduleCounts }; delete nextCounts[taskId];
@@ -44,29 +45,11 @@ export function GenerationTaskSelector(props: {
     <div className="studio-module-list">
       {ids.map((taskId, index) => {
         const moduleId = typeOf(taskId);
-        const definition = props.modules.find((item) => item.id === moduleId);
-        const parameters = config.moduleParameters[taskId] ?? getModuleParameterPresets(moduleId);
-        const detail = config.moduleTaskDetails?.[taskId];
-        const title = config.moduleTaskOverrides?.[taskId]?.taskTitle || detail?.title || definition?.label || "已失效模块";
-        return <article className="studio-module is-selected" key={taskId}>
-          <div className="studio-module-row">
-            <div className="flex min-w-0 flex-1 items-center gap-2"><span className="shrink-0 text-xs">图 {index + 1}</span><span className="text-sm">{title}</span>{detail && <span className="text-xs text-slate-500">{definition?.label}</span>}</div>
-            <button type="button" aria-label={`删除第 ${index + 1} 张任务`} disabled={ids.length <= 1} onClick={() => remove(taskId)}><Trash2 size={13} /></button>
-          </div>
-          <TaskDesignEditor detail={detail} overrides={config.moduleTaskOverrides?.[taskId]} defaultTitle={definition?.label ?? ""}
-            onChange={patch => props.onChange({ moduleTaskOverrides: { ...config.moduleTaskOverrides, [taskId]: { ...config.moduleTaskOverrides?.[taskId], ...patch } } })}
-            onReset={() => { const next = { ...config.moduleTaskOverrides }; delete next[taskId]; props.onChange({ moduleTaskOverrides: next }); }} />
-          <div className="px-3 pb-2 text-sm">
-            <label className="block">构图要求（选填）<textarea className="mt-1 w-full rounded border p-2" maxLength={500} rows={2}
-              value={parameters.find(p => p.key === "构图要求")?.value ?? ""}
-              placeholder="填写你希望固定的构图；未填写时可按建议优化"
-              onChange={event => props.onChange({ moduleParameters: { ...config.moduleParameters, [taskId]: [
-                ...parameters.filter(p => p.key !== "构图要求"), { key: "构图要求", value: event.target.value },
-              ] } })} /></label>
-          </div>
-          <details className="studio-module-parameters" open={index === 0}><summary>{definition?.label ?? "已失效模块"}补充参数<span>{parameters.filter((item) => item.value.trim()).length ? "已填写" : "选填"}</span></summary><ModuleParameterEditor module={definition ?? { id: moduleId, label: "已失效模块", description: "请重新规划或移除此图", mode: "suite" }} parameters={parameters} onChange={(next) => props.onChange({ moduleParameters: { ...config.moduleParameters, [taskId]: next } })} /></details>
-          {props.renderTaskReference?.(taskId)}
-        </article>;
+        const taskKey = `${config.creationMode ?? "professional"}:${taskId}`;
+        return <GenerationTaskCard key={taskKey} taskId={taskId} moduleId={moduleId} index={index}
+          definition={props.modules.find(item => item.id === moduleId)} config={config}
+          expanded={editingTask === taskKey} onExpandedChange={() => setEditingTask(editingTask === taskKey ? null : taskKey)}
+          onChange={props.onChange} onRemove={() => remove(taskId)} reference={props.renderTaskReference?.(taskId)} />;
       })}
     </div>
     {props.error && <div className="generation-field-error" role="alert">{props.error}</div>}

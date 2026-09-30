@@ -204,3 +204,17 @@ body:has(.ic-studio:not(.ic-embedded)):not(:has(.studio-workbench)) .global-side
 .ic-compare-prompt { padding: 10px 12px; color: var(--muted, #758078); font-size: 12px; }
 .ic-compare-prompt summary { cursor: pointer; color: var(--text, #303a35); font-weight: 600; }
 .ic-compare-prompt pre { max-height: 150px; margin: 8px 0 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text, #303a35); font: inherit; line-height: 1.5; }
+
+.ic-filterbar { display: flex; flex-wrap: wrap; align-items: center; flex-shrink: 0; gap: 10px 16px; padding: 10px 18px; background: var(--ic-panel); border-bottom: 1px solid var(--ic-line); }
+.ic-filterbar .image-batch-filter { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0; }
+.ic-filterbar .image-batch-filter > span { flex-shrink: 0; color: var(--ic-muted); }
+.ic-filterbar select { width: 270px; padding: 6px 8px; }
+.ic-filterbar .image-module-filter select { width: 200px; }
+.ic-filterbar > .ic-canvas-count { margin-left: auto; }
+@media (max-width: 760px) {
+  .ic-filterbar { padding: 10px 12px; gap: 8px; }
+  .ic-filterbar .image-batch-filter { width: 100%; }
+  .ic-filterbar .image-batch-filter select { flex: 1; width: 0; }
+}
+
+.ic-canvas.is-hold-panning, .ic-canvas.is-hold-panning * { cursor: grabbing !important; user-select: none; }

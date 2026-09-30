@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { applyNodeChanges, Background, Handle, Position, ReactFlow, ReactFlowProvider, SelectionMode, useReactFlow, type NodeProps, type OnNodesChange, type Viewport } from "@xyflow/react";
-import { ArrowLeft, Check, ChevronDown, Download, Expand, FolderPlus, GitBranch, Hand, ImagePlus, Images, LayoutGrid, Loader2, Maximize2, Minimize2, Minus, MousePointer2, Plus, RotateCcw, Search, SlidersHorizontal, Sparkles, SplitSquareHorizontal, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Download, Expand, FolderPlus, GitBranch, ImagePlus, Images, LayoutGrid, Loader2, Maximize2, Minimize2, Minus, Plus, RotateCcw, Search, SlidersHorizontal, Sparkles, SplitSquareHorizontal, X } from "lucide-react";
 import JSZip from "jszip";
 import { projectApi, suiteApi, type ApiProjectAsset, type ApiSuiteTask, type ApiTaskVersion, type ApiWorkbench } from "../../api/client";
+import { arrangeResultGrid, isResultImage, resultViewNodes } from "./result-view";
+import { HOLD_MOVE_TOLERANCE, useHoldPan } from "./useHoldPan";
 import { ImageEditorModal } from "./ImageEditorModal";
 import { CanvasCompare } from "./CanvasCompare";
 import { CanvasInspector } from "./CanvasInspector";
 import { arrangeGraph, canvasGraph, canvasImages, categoryNames, imagePrompt, restoreCanvas, serializeCanvas, type CanvasImage, type CanvasNode, type GenerationStep, type ImageCategory } from "./model";
 import { GenerationDetails, GenerationNode } from "./GenerationNode";
 import { CanvasRegenerateDialog } from "./CanvasRegenerateDialog";
+import { ALL_BATCHES, ALL_MODULES, filterCanvasByBatch, imageBatchIndex, matchesCanvasImageBatch } from "./image-batches";
+import { ImageBatchFilter, ImageModuleFilter } from "./ImageBatchFilter";
 import { LongImageComposer } from "./LongImageComposer";
 import "@xyflow/react/dist/style.css";
 import "./canvas.css";
@@ -57,9 +61,22 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
   const [leftOpen, setLeftOpen] = useState(() => window.innerWidth > 760);
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [query, setQuery] = useState("");
+  const [batchSelection, setBatchSelection] = useState(() => {
+    try { return localStorage.getItem(`canvas-batch:${suiteId}`) ?? ALL_BATCHES; } catch { return ALL_BATCHES; }
+  });
+  const [moduleSelection, setModuleSelection] = useState(() => {
+    try { return localStorage.getItem(`canvas-module:${suiteId}`) ?? ALL_MODULES; } catch { return ALL_MODULES; }
+  });
+  const [viewMode, setViewMode] = useState<"lineage" | "results">(() => {
+    try { return localStorage.getItem(`canvas-view:${suiteId}`) === "results" ? "results" : "lineage"; } catch { return "lineage"; }
+  });
+  const changeView = (value: "lineage" | "results") => {
+    setViewMode(value);
+    try { localStorage.setItem(`canvas-view:${suiteId}`, value); } catch { /* The current view still works without storage. */ }
+  };
+  const batchFitRequested = useRef(false);
   const [category, setCategory] = useState<ImageCategory | "all">("all");
   const [zoom, setZoom] = useState(1);
-  const [tool, setTool] = useState<"select" | "pan">("select");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<CanvasImage[] | null>(null);
   const [stepDetails, setStepDetails] = useState<GenerationStep | null>(null);
@@ -109,6 +126,10 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
     void queue.current.catch(() => undefined);
     return queue.current;
   }, [notify, suiteId]);
+  const holdPan = useHoldPan(active, viewport => {
+    viewportRef.current = viewport;
+    void persist(nodesRef.current, viewport).catch(() => undefined);
+  });
   // 程序调整视野后显式保存；XYFlow 延迟发出的无来源事件不再重复触发保存。
   const changeViewport = (action: () => Promise<boolean>, delay = 0) => {
     const epoch = viewportEpoch.current;
@@ -198,6 +219,27 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
     const asset = assetsRef.current.find((a) => a.id === version.id || a.generationSnapshotId === version.id || generation?.outputAssetIds.includes(a.id) || version.previewUrl === `/api/projects/${suiteId}/assets/${a.id}/preview`);
     return { ...image, version, generation: generation ?? image.generation, url: asset ? `/api/projects/${suiteId}/assets/${asset.id}/preview` : version.previewUrl, assetId: asset?.id, width: asset?.width ?? version.width, height: asset?.height ?? version.height };
   };
+  const batchIndex = useMemo(() => workbench ? imageBatchIndex(workbench, assetsRef.current) : { batches: [], membership: new Map<string, Set<string>>(), modules: [], moduleMembership: new Map<string, Set<string>>() }, [workbench]);
+  const changeBatch = (value: string) => {
+    batchFitRequested.current = true;
+    setBatchSelection(value);
+    commitNodes(nodesRef.current.map(node => ({ ...node, selected: false })));
+    try { localStorage.setItem(`canvas-batch:${suiteId}`, value); } catch { /* Session-only filtering remains available. */ }
+  };
+  const changeModule = (value: string) => {
+    batchFitRequested.current = true;
+    setModuleSelection(value);
+    commitNodes(nodesRef.current.map(node => ({ ...node, selected: false })));
+    try { localStorage.setItem(`canvas-module:${suiteId}`, value); } catch { /* Session-only filtering remains available. */ }
+  };
+  useEffect(() => {
+    if (!batchFitRequested.current) return;
+    batchFitRequested.current = false;
+    const timer = window.setTimeout(() => {
+      void fitView({ padding: 0.2, maxZoom: 1, duration: 200 }).then(() => { viewportRef.current = getViewport(); });
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [batchSelection, moduleSelection, fitView, getViewport]);
   const presentedImages = images.map(presentImage);
   const graph = workbench ? canvasGraph(presentedImages, workbench, assetsRef.current) : { steps: [], edges: [] };
   const showImageVersion = (image: CanvasImage, versionId: string) => {
@@ -222,7 +264,7 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
       }
     });
   };
-  const displayNodes = nodes.map((node) => {
+  const baseDisplayNodes = nodes.map((node) => {
     if (node.data.image) return { ...node, data: { ...node.data, image: presentImage(node.data.image), selectImageVersion: showImageVersion, versionSaving: pendingVersions.current.has(node.data.image.id) } };
     if (node.type !== "generation") return node;
     const step = graph.steps.find((s) => `generation:${s.id}` === node.id) ?? node.data.step!;
@@ -230,6 +272,9 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
     const latest = track?.revisions[track.revisions.length - 1];
     return { ...node, hidden: !graph.steps.some((s) => `generation:${s.id}` === node.id && s.outputNodeIds.some((id) => nodes.some((n) => n.id === id && !n.hidden))), data: { ...node.data, step, openStep: setStepDetails, regenerateStep: setRegenerateStep, generationStatus: latest?.status, latestRevisionNumber: latest?.number } };
   });
+  const lineageNodes = filterCanvasByBatch(baseDisplayNodes, graph, batchIndex, batchSelection, moduleSelection);
+  const resultNodes = resultViewNodes(baseDisplayNodes, batchIndex, batchSelection, moduleSelection);
+  const displayNodes = viewMode === "results" ? resultNodes : lineageNodes;
   const visibleIds = new Set(displayNodes.filter((n) => !n.hidden).map((n) => n.id));
   const edges = graph.edges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target));
   const selectedNodes = displayNodes.filter((n) => n.selected && !n.hidden);
@@ -238,7 +283,8 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
   const latestCanvasEdit = [...(workbench?.imageEditChildren ?? [])].reverse().find((child) => child.task.sourceCardId && child.task.status !== "archived");
   const latestEditImage = latestCanvasEdit ? images.find((image) => image.id === `edit-child:${latestCanvasEdit.task.id}` && image.url) : undefined;
   const editInProgress = latestCanvasEdit && ["queued", "generating"].includes(String(latestCanvasEdit.task.status));
-  const filteredImages = images.filter((image) => (category === "all" || image.category === category) && image.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
+  const batchImages = presentedImages.filter(image => matchesCanvasImageBatch(batchIndex, batchSelection, image, moduleSelection));
+  const filteredImages = batchImages.filter(image => viewMode !== "results" || isResultImage(image)).filter((image) => (category === "all" || image.category === category) && image.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   const onNodesChange: OnNodesChange<CanvasNode> = useCallback((changes) => {
     const next = applyNodeChanges(changes.filter((c) => c.type !== "remove"), nodesRef.current);
     commitNodes(next);
@@ -248,6 +294,12 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
   const add = (id: string, position?: { x: number; y: number }) => {
     const node = nodesRef.current.find((n) => n.id === id);
     if (!node) return;
+    if (node.data.image && !isResultImage(node.data.image)) changeView("lineage");
+    if (node.data.image && !matchesCanvasImageBatch(batchIndex, batchSelection, presentImage(node.data.image), moduleSelection)) {
+      setBatchSelection(ALL_BATCHES);
+      setModuleSelection(ALL_MODULES);
+      try { localStorage.setItem(`canvas-batch:${suiteId}`, ALL_BATCHES); localStorage.setItem(`canvas-module:${suiteId}`, ALL_MODULES); } catch { /* Keep the selected image accessible. */ }
+    }
     if (!node.hidden && !position) { focus(id); return; }
     const next = nodesRef.current.map((n) => n.id === id ? { ...n, parentId: undefined, hidden: false, selected: true, position: position ?? screenToFlowPosition({ x: innerWidth / 2, y: innerHeight / 2 }) } : { ...n, selected: false });
     commitNodes(next); void persist(next).catch(() => undefined); setInspectorOpen(true);
@@ -256,23 +308,29 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
   };
   const remove = () => {
     const selectedIds = new Set(selectedNodes.map((n) => n.id));
-    const next = nodesRef.current.map((n) => n.type === "image" && (selectedIds.has(n.id) || selectedIds.has(n.parentId ?? "")) ? { ...n, hidden: true, selected: false } : { ...n, selected: false });
+    const next = nodesRef.current.map((n) => n.type === "image" && (selectedIds.has(n.id) || (selectedIds.has(n.parentId ?? "") && visibleIds.has(n.id))) ? { ...n, hidden: true, selected: false } : { ...n, selected: false });
     commitNodes(next); void persist(next).catch(() => undefined); notify("已移出画布，图片仍保留在项目中");
   };
   const arrange = () => {
-    const visible = nodesRef.current.filter((n) => n.type === "image" && !n.hidden);
-    const ids = new Set((selectedPictures.length > 1 ? selectedNodes : visible).map((n) => n.id));
-    let index = 0;
-    const next = nodesRef.current.map((n) => ids.has(n.id) ? { ...n, parentId: undefined, position: { x: 48 + index % 3 * 286, y: 70 + Math.floor(index++ / 3) * 450 } } : n).filter((n) => n.type !== "imageGroup" || nodesRef.current.some((child) => child.parentId === n.id && !ids.has(child.id)));
-    commitNodes(next); void persist(next).catch(() => undefined); changeViewport(() => fitView({ padding: 0.15, maxZoom: 1, duration: 250 }), 20);
+    changeView("results");
+    const next = arrangeResultGrid(nodesRef.current, resultNodes);
+    commitNodes(next); void persist(next).catch(() => undefined);
+    changeViewport(() => fitView({ padding: 0.15, maxZoom: 1, duration: 250 }), 20);
   };
   const arrangeLineage = () => {
-    const next = arrangeGraph(nodesRef.current, graph.edges);
+    changeView("lineage");
+    const lineageVisibleIds = new Set(lineageNodes.filter(node => !node.hidden).map(node => node.id));
+    const arranged = arrangeGraph(lineageNodes, graph.edges.filter(edge => lineageVisibleIds.has(edge.source) && lineageVisibleIds.has(edge.target)));
+    const moved = new Map(arranged.filter(node => lineageVisibleIds.has(node.id)).map(node => [node.id, node]));
+    const next = nodesRef.current.map(node => {
+      const placed = moved.get(node.id);
+      return placed ? { ...node, position: placed.position, parentId: undefined, extent: undefined, expandParent: undefined } : node;
+    }).filter(node => node.type !== "imageGroup" || nodesRef.current.some(child => child.parentId === node.id && !moved.has(child.id)));
     commitNodes(next); void persist(next).catch(() => undefined);
     changeViewport(() => fitView({ padding: 0.15, maxZoom: 1, duration: 250 }), 20);
   };
   const createGroup = () => {
-    const chosen = nodesRef.current.filter((n) => n.selected && n.type === "image" && !n.hidden);
+    const chosen = displayNodes.filter((n) => n.selected && n.type === "image" && !n.hidden);
     if (chosen.length < 2 || !groupTitle.trim()) return;
     const positions = serializeCanvas(nodesRef.current).nodes;
     const points = chosen.map((n) => positions.find((p) => p.nodeId === n.id)!);
@@ -337,19 +395,26 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
 
   return <div className={`ic-studio ${embedded ? "ic-embedded" : ""} ${fullscreen ? "is-fullscreen" : ""} ${leftOpen ? "has-library" : ""} ${selectedImage && inspectorOpen ? "has-inspector" : ""}`}>
     <header className="ic-topbar"><div className="ic-project">{!embedded && <button aria-label="返回项目" onClick={() => navigate(`/suites/${suiteId}`)}><ArrowLeft size={18} /></button>}<div><strong>{workbench.suite.name}</strong><span>图片画布 <ChevronDown size={12} /></span></div></div><div className="ic-top-center"><span className="ic-live-dot" />自由创作空间</div><div className="ic-top-actions">{editInProgress ? <span className="ic-edit-progress" role="status"><Loader2 className="ic-spin" size={14} />修改图生成中</span> : latestEditImage ? <button type="button" className="ic-edit-result-action" onClick={() => add(latestEditImage.id)}><Sparkles size={15} />查看最新修改图</button> : null}<button aria-label="制作长图" onClick={() => setLongImageOpen(true)}><Images size={15} /><span>制作长图</span></button><span className={`ic-save-state ${saveState === "保存失败" ? "is-error" : ""}`}>{saveState === "已保存" ? <Check size={13} /> : <Loader2 size={13} />}{saveState}</span>{saveState === "保存失败" && <button onClick={() => setRecoverSave(true)}>重试保存</button>}<button aria-label="刷新项目图片" onClick={() => void reload()}><RotateCcw size={15} /></button><button aria-label={fullscreen ? "退出画布全屏" : "进入画布全屏"} title={fullscreen ? "退出画布全屏（Esc）" : "进入画布全屏"} onClick={() => setFullscreen((value) => !value)}>{fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}<span>{fullscreen ? "退出全屏" : "全屏"}</span></button><button className="ic-primary" disabled={!selectedPictures.some((i) => i.url) || busy} onClick={() => download(selectedPictures.filter((i) => i.url))}><Download size={14} /><span>导出选中</span></button></div></header>
+    <div className="ic-filterbar"><ImageBatchFilter label="画布批次" batches={batchIndex.batches} value={batchSelection} onChange={changeBatch} /><ImageModuleFilter label="画布模块类型" modules={batchIndex.modules} value={moduleSelection} onChange={changeModule} /><span className="ic-canvas-count">{displayNodes.filter((n) => n.type === "image" && !n.hidden).length} 张图片</span></div>
     <div className="ic-body">
-      {leftOpen && <aside className="ic-library" aria-label="项目图片"><header><div><strong>项目图片</strong><span>{images.length} 张</span></div><button aria-label="关闭项目图片" onClick={() => setLeftOpen(false)}><X size={15} /></button></header><div className="ic-library-search"><Search size={14} /><input aria-label="搜索项目图片" placeholder="搜索图片" value={query} onChange={(event) => setQuery(event.target.value)} /></div><div className="ic-category"><button className={category === "all" ? "is-active" : ""} onClick={() => setCategory("all")}>全部</button>{(Object.keys(categoryNames) as ImageCategory[]).filter((c) => images.some((i) => i.category === c)).map((c) => <button key={c} className={category === c ? "is-active" : ""} onClick={() => setCategory(c)}>{categoryNames[c]}</button>)}</div><div className="ic-library-list">{assetError && <div className="ic-error" role="alert">{assetError}<button onClick={() => void reload()}>重试</button></div>}{filteredImages.map((image) => { const onCanvas = nodes.some((n) => n.id === image.id && !n.hidden); return <button className="ic-library-item" key={image.id} aria-label={`${onCanvas ? "定位图片" : "加入画布"} ${image.title}`} draggable onDragStart={(event) => { event.dataTransfer.setData("application/x-canvas-image", image.id); event.dataTransfer.effectAllowed = "copyMove"; }} onClick={() => add(image.id)}><div>{image.url ? <img src={image.url} alt="" loading="lazy" draggable={false} /> : <Images size={22} />}<span>{onCanvas ? <Check size={11} /> : <Plus size={11} />}</span></div><strong title={image.title}>{image.title}</strong><small>{categoryNames[image.category]}</small></button>; })}{!filteredImages.length && <p className="ic-library-empty">{query ? "没有找到匹配的图片" : "项目图片会显示在这里"}</p>}</div><footer><ImagePlus size={14} /><span>拖入画布，自由排列与对比</span></footer></aside>}
-      <main className="ic-canvas" aria-label="图片画布" onPointerDownCapture={startRightPan} onPointerMoveCapture={moveRightPan} onPointerUpCapture={endRightPan} onPointerCancelCapture={endRightPan} onLostPointerCapture={endRightPan} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDrop={(event) => { event.preventDefault(); const id = event.dataTransfer.getData("application/x-canvas-image"); if (id) add(id, screenToFlowPosition({ x: event.clientX, y: event.clientY })); }}>
-        <div className="ic-canvas-top"><div className="ic-tool-strip" role="toolbar" aria-label="画布工具"><button aria-label="选择工具" title="选择：左键选图、拖图和框选" aria-pressed={tool === "select"} className={tool === "select" ? "is-active" : ""} onClick={() => setTool("select")}><MousePointer2 size={17} /></button><button aria-label="平移工具" title="拖动：左键移动画布" aria-pressed={tool === "pan"} className={tool === "pan" ? "is-active" : ""} onClick={() => setTool("pan")}><Hand size={17} /></button><i /><button aria-label="项目图片" title="项目图片" className={!fullscreen && leftOpen ? "is-active" : ""} onClick={() => { if (!fullscreen) setLeftOpen(!leftOpen); }}><Images size={17} /></button><i /><button aria-label="自动排列" title="自动排列" onClick={arrange}><LayoutGrid size={17} /></button>{!!graph.steps.length && <button aria-label="按生成脉络排列" title="按生成脉络排列" onClick={arrangeLineage}><GitBranch size={17} /></button>}</div><span className="ic-canvas-count">{nodes.filter((n) => n.type === "image" && !n.hidden).length} 张图片</span></div>
+      {leftOpen && <aside className="ic-library" aria-label="项目图片"><header><div><strong>项目图片</strong><span>{filteredImages.length} / {images.length} 张</span></div><button aria-label="关闭项目图片" onClick={() => setLeftOpen(false)}><X size={15} /></button></header><div className="ic-library-search"><Search size={14} /><input aria-label="搜索项目图片" placeholder="搜索图片" value={query} onChange={(event) => setQuery(event.target.value)} /></div><div className="ic-category"><button className={category === "all" ? "is-active" : ""} onClick={() => setCategory("all")}>全部</button>{(Object.keys(categoryNames) as ImageCategory[]).filter((c) => images.some((i) => i.category === c)).map((c) => <button key={c} className={category === c ? "is-active" : ""} onClick={() => setCategory(c)}>{categoryNames[c]}</button>)}</div><div className="ic-library-list">{assetError && <div className="ic-error" role="alert">{assetError}<button onClick={() => void reload()}>重试</button></div>}{filteredImages.map((image) => { const onCanvas = displayNodes.some((n) => n.id === image.id && !n.hidden); return <button className="ic-library-item" key={image.id} aria-label={`${onCanvas ? "定位图片" : "加入画布"} ${image.title}`} draggable onDragStart={(event) => { event.dataTransfer.setData("application/x-canvas-image", image.id); event.dataTransfer.effectAllowed = "copyMove"; }} onClick={() => add(image.id)}><div>{image.url ? <img src={image.url} alt="" loading="lazy" draggable={false} /> : <Images size={22} />}<span>{onCanvas ? <Check size={11} /> : <Plus size={11} />}</span></div><strong title={image.title}>{image.title}</strong><small>{categoryNames[image.category]}</small></button>; })}{!filteredImages.length && <p className="ic-library-empty">{query ? "没有找到匹配的图片" : "项目图片会显示在这里"}</p>}</div><footer><ImagePlus size={14} /><span>拖入画布，自由排列与对比</span></footer></aside>}
+      <main className={`ic-canvas${holdPan.panning ? " is-hold-panning" : ""}`} aria-label="图片画布"
+        onPointerDownCapture={event => { holdPan.onPointerDownCapture(event); startRightPan(event); }}
+        onPointerMoveCapture={event => { holdPan.onPointerMoveCapture(event); moveRightPan(event); }}
+        onPointerUpCapture={event => { holdPan.onPointerUpCapture(event); endRightPan(event); }}
+        onPointerCancelCapture={event => { holdPan.onPointerCancelCapture(event); endRightPan(event); }}
+        onLostPointerCapture={event => { holdPan.onLostPointerCapture(event); endRightPan(event); }}
+        onClickCapture={holdPan.onClickCapture} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDrop={(event) => { event.preventDefault(); const id = event.dataTransfer.getData("application/x-canvas-image"); if (id) add(id, screenToFlowPosition({ x: event.clientX, y: event.clientY })); }}>
+        <div className="ic-canvas-top"><div className="ic-tool-strip" role="toolbar" aria-label="画布工具"><button aria-label="项目图片" title="项目图片" className={!fullscreen && leftOpen ? "is-active" : ""} onClick={() => { if (!fullscreen) setLeftOpen(!leftOpen); }}><Images size={17} /></button><i /><button aria-label="自动排列" title="自动排列：只看生成结果和修改图" aria-pressed={viewMode === "results"} className={viewMode === "results" ? "is-active" : ""} onClick={arrange}><LayoutGrid size={17} /></button>{(!!graph.steps.length || viewMode === "results") && <button aria-label="按生成脉络排列" title="按生成脉络排列：显示完整来源与提示词" aria-pressed={viewMode === "lineage"} className={viewMode === "lineage" ? "is-active" : ""} onClick={arrangeLineage}><GitBranch size={17} /></button>}</div><span className="ic-canvas-count">{displayNodes.filter((n) => n.type === "image" && !n.hidden).length} 张图片</span></div>
         {(loadError || assetError) && <div className="ic-load-warning" role="alert">{loadError || assetError}<button onClick={() => void reload()}>重新加载</button></div>}
-        <ReactFlow<CanvasNode> nodes={displayNodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onNodeClick={() => { if (tool === "pan") return; setInspectorOpen(true); if (innerWidth <= 760) setLeftOpen(false); }} onNodeDoubleClick={(_, node) => { if (tool === "pan") return; if (node.data.image?.url) setPreview([node.data.image]); else if (node.data.step) setStepDetails(node.data.step); }} onPaneClick={() => tool === "select" && commitNodes(nodesRef.current.map((n) => ({ ...n, selected: false })))} onMove={(_, viewport) => setZoom(viewport.zoom)} onMoveEnd={(event, viewport) => { if (!event || rightPan.current) return; viewportRef.current = viewport; if (loaded.current && !suppressViewportSave.current) void persist(nodesRef.current, viewport).catch(() => undefined); }} nodesConnectable={false} nodesDraggable={tool === "select"} elementsSelectable={tool === "select"} selectionOnDrag={tool === "select"} selectionMode={SelectionMode.Partial} panOnDrag={tool === "pan" ? [0, 1, 2] : [1, 2]} panOnScroll={false} zoomOnScroll zoomOnPinch zoomOnDoubleClick={false} onContextMenu={(event) => event.preventDefault()} multiSelectionKeyCode={["Shift", "Control", "Meta"]} deleteKeyCode={null} minZoom={0.12} maxZoom={2.5} fitView={false}><Background gap={24} size={1} color="#d7dcd8" /></ReactFlow>
-        {!nodes.some((n) => n.type === "image" && !n.hidden) && <div className="ic-empty-canvas"><div><Images size={34} /></div><h2>让想法在这里展开</h2><p>从左侧加入图片，摆放、比较，继续创作。</p><button onClick={() => setLeftOpen(true)}>打开项目图片</button></div>}
+        <ReactFlow<CanvasNode> nodes={displayNodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onNodeClick={() => { setInspectorOpen(true); if (innerWidth <= 760) setLeftOpen(false); }} onNodeDoubleClick={(_, node) => { if (node.data.image?.url) setPreview([node.data.image]); else if (node.data.step) setStepDetails(node.data.step); }} onPaneClick={() => commitNodes(nodesRef.current.map((n) => ({ ...n, selected: false })))} onMove={(_, viewport) => setZoom(viewport.zoom)} onMoveEnd={(event, viewport) => { if (!event || rightPan.current) return; viewportRef.current = viewport; if (loaded.current && !suppressViewportSave.current) void persist(nodesRef.current, viewport).catch(() => undefined); }} nodeDragThreshold={HOLD_MOVE_TOLERANCE} paneClickDistance={HOLD_MOVE_TOLERANCE} nodesConnectable={false} nodesDraggable elementsSelectable selectionOnDrag selectionMode={SelectionMode.Partial} panOnDrag={[1, 2]} panOnScroll={false} zoomOnScroll zoomOnPinch zoomOnDoubleClick={false} onContextMenu={(event) => event.preventDefault()} multiSelectionKeyCode={["Shift", "Control", "Meta"]} deleteKeyCode={null} minZoom={0.12} maxZoom={2.5} fitView={false}><Background gap={24} size={1} color="#d7dcd8" /></ReactFlow>
+        {!displayNodes.some((n) => n.type === "image" && !n.hidden) && <div className="ic-empty-canvas"><div><Images size={34} /></div><h2>{viewMode === "results" ? "当前筛选下暂无成品图片" : "让想法在这里展开"}</h2><p>{viewMode === "results" ? "可调整批次、模块类型，或切回生成脉络查看素材。" : "从左侧加入图片，摆放、比较，继续创作。"}</p><button onClick={() => setLeftOpen(true)}>打开项目图片</button></div>}
         {!!selectedNodes.length && <div className="ic-selection-bar"><span>{selectedPictures.length ? `已选 ${selectedPictures.length} 张` : "图片分组"}</span>{selectedImage?.url && <><button aria-label="预览图片" onClick={() => setPreview([selectedImage])}><Expand size={15} /></button><button disabled={!selectedImage.assetId} title={!selectedImage.assetId ? "历史图片未关联项目资产" : "编辑图片"} onClick={() => openEditor(selectedImage)}><Sparkles size={14} />AI 编辑</button></>}{selectedPictures.length === 2 && selectedPictures.every((i) => i.url) && <button aria-label="对比图片" onClick={() => setPreview(selectedPictures)}><SplitSquareHorizontal size={15} />对比</button>}{selectedPictures.length > 1 && <button aria-label="创建分组" onClick={() => { setGroupTitle("候选方案"); setGroupDialog(true); }}><FolderPlus size={15} />分组</button>}{selectedNodes.some((n) => n.type === "imageGroup") && <button onClick={ungroup}>解散分组</button>}{selectedImage && <button aria-label="图片属性" onClick={() => setInspectorOpen(!inspectorOpen)}><SlidersHorizontal size={15} /></button>}<i /><button aria-label="移出画布" title="移出画布，保留项目图片" onClick={remove}><X size={15} /></button></div>}
-        <div className="ic-canvas-bottom"><span>{tool === "pan" ? "左键拖动画布 · 滚轮缩放" : "左键选择 / 拖图 · Shift 多选 · 滚轮缩放"} · 右键 / 中键拖动画布</span><div className="ic-zoom"><button aria-label="缩小画布" onClick={() => changeViewport(() => zoomOut())}><Minus size={15} /></button><button onClick={() => changeViewport(() => setViewport({ ...getViewport(), zoom: 1 }))}>{Math.round(zoom * 100)}%</button><button aria-label="放大画布" onClick={() => changeViewport(() => zoomIn())}><Plus size={15} /></button><i /><button aria-label="适应画布" onClick={() => changeViewport(() => fitView({ padding: 0.15, maxZoom: 1, duration: 250 }))}><Expand size={15} /></button></div></div>
+        <div className="ic-canvas-bottom"><span>短按选图 · 直接拖图 · 长按拖动画布 · Shift 多选 · 滚轮缩放 · 右键 / 中键拖动画布</span><div className="ic-zoom"><button aria-label="缩小画布" onClick={() => changeViewport(() => zoomOut())}><Minus size={15} /></button><button onClick={() => changeViewport(() => setViewport({ ...getViewport(), zoom: 1 }))}>{Math.round(zoom * 100)}%</button><button aria-label="放大画布" onClick={() => changeViewport(() => zoomIn())}><Plus size={15} /></button><i /><button aria-label="适应画布" onClick={() => changeViewport(() => fitView({ padding: 0.15, maxZoom: 1, duration: 250 }))}><Expand size={15} /></button></div></div>
       </main>
     {selectedImage && inspectorOpen && <CanvasInspector image={selectedImage} close={() => setInspectorOpen(false)} preview={() => setPreview([selectedImage])} edit={() => openEditor(selectedImage)} generate={() => setConfirmGeneration(selectedImage)} busy={busy} download={() => download([selectedImage])} showVersion={(version) => showImageVersion(selectedImage, version.id)} compareVersion={(version) => setPreview([selectedImage, { ...selectedImage, version, url: version.previewUrl }])} savePrompt={(prompt, params) => run(async () => { if (!selectedImage.task) return; await suiteApi.updateTask(selectedImage.task.id, { expectedRevision: selectedImage.task.promptRevision, promptDraft: prompt, generationParams: { ...selectedImage.task.generationParams, ...params } }); await reload(); notify("提示词与参数已保存"); })} selectVersion={(version, selection) => { if (selectedImage.canvasVersion) { showImageVersion(selectedImage, version.id); return; } void run(async () => { if (!selectedImage.task) return; if (selectedImage.editTask) await suiteApi.selectImageEditVersion(selectedImage.task.id, version.id, selection); else await suiteApi.selectTaskVersion(selectedImage.task.id, version.id, selection); await reload(); notify(selection === "final" ? "已设为终版" : "已切换当前版本"); }); }} />}
     </div>
-    {longImageOpen && <LongImageComposer projectId={suiteId} assets={assetsRef.current} workbench={workbench} close={() => setLongImageOpen(false)} saved={reload} />}
+    {longImageOpen && <LongImageComposer initialModuleId={moduleSelection} initialBatchId={batchSelection} projectId={suiteId} assets={assetsRef.current} workbench={workbench} close={() => setLongImageOpen(false)} saved={reload} />}
     {preview && <CanvasCompare images={preview} close={() => setPreview(null)} />}
     {stepDetails && <GenerationDetails step={stepDetails} close={() => setStepDetails(null)} />}
     {regenerateStep && <CanvasRegenerateDialog projectId={suiteId} step={regenerateStep} tracks={workbench.generationTracks ?? []} assets={assetsRef.current} close={() => setRegenerateStep(null)} submitted={async () => { await reload(); notify("新版本已提交，生成结果会自动更新，旧版本已保留"); }} />}

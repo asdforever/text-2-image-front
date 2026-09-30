@@ -1,3 +1,4 @@
+import { belongsToCreationMode } from "../lib/creation-mode-label";
 import React, { useEffect, useRef, useState } from "react";
 import { GenerationWorkerNotice } from "../components/generation-workspace/GenerationWorkerNotice";
 import { getRetryableBatchSlotIds } from "../lib/batch-retry";
@@ -13,6 +14,8 @@ import {
   type ApiHeroGenerationTask,
 } from "../api/client";
 import { HeroConfigPanel } from "../components/HeroConfigPanel";
+import { GenerationModulesPanel } from "../components/generation-workspace/GenerationModulesPanel";
+import { CreationModeSwitch } from "../components/generation-workspace/CreationModeSwitch";
 import { GenerationFooter, GenerationWorkspaceLayout } from "../components/generation-workspace";
 import { useGenerationResultMetadata } from "../hooks/useGenerationResultMetadata";
 import { generationResultImages } from "../lib/generation-results";
@@ -28,7 +31,7 @@ import {
   type HeroGenerationConfig,
 } from "../lib/generation-workspace";
 import { createGenerationSnapshot, validateGenerationSelection } from "../lib/generation-config";
-import { needsModulePlan } from "../lib/planning-master";
+import { canCompileRegular, needsModulePlan } from "../lib/planning-master";
 import { useModulePlanning } from "../hooks/useModulePlanning";
 import { moduleReverseReference } from "../features/reverse-projects/planning";
 import { useProjectStore } from "../store/useProjectStore";
@@ -79,7 +82,7 @@ export function HeroPromptConfirmation(_props: {
       </div>
       </details>
       {props.task.unconfirmedItems.length > 0 && <p className="studio-unconfirmed">待核实：{props.task.unconfirmedItems.join("、")}</p>}
-      <p>提示词已统一合成；如需调整，请修改左侧模块参数后重新编译。</p>
+      <p>提示词已统一合成；如需调整，请修改模块参数后重新编译。</p>
       <label className="hero-task-prompt-field">实时任务提示词<textarea value={prompt} readOnly disabled={props.busy} /></label>
       <footer><span>确认后将调用生图模型并生成 1 张图片</span><Button type="button" disabled={props.busy || !prompt.trim()} onClick={props.onConfirm}>{props.busy ? "生成中..." : "确认并生成"}</Button></footer>
     </section>
@@ -100,7 +103,7 @@ export function BatchPromptConfirmation(_props: {
   return (
     <section className="hero-prompt-confirmation" aria-label="批次主图提示词确认">
       <header><div><span>生成前确认</span><h2>逐个检查模块实时任务提示词</h2></div><button type="button" onClick={props.onCancel} disabled={props.busy}>取消</button></header>
-      <p>提示词已统一合成；如需调整，请修改左侧模块参数后重新编译。</p>
+      <p>提示词已统一合成；如需调整，请修改模块参数后重新编译。</p>
       <div className="hero-batch-prompt-list">
         {props.batch.modules.map((module) => {
           const cards = [
@@ -219,17 +222,21 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
   const [attempted, setAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [submittingCompile, setSubmittingCompile] = useState(false);
-  const [task, setTask] = useState<ApiHeroGenerationTask | null>(null);
-  const [batch, setBatch] = useState<ApiBatchGenerationDetail | null>(null);
+  const [storedTask, setTask] = useState<ApiHeroGenerationTask | null>(null);
+  const [storedBatch, setBatch] = useState<ApiBatchGenerationDetail | null>(null);
+  const task = belongsToCreationMode(storedTask, config.creationMode) ? storedTask : null;
+  const batch = belongsToCreationMode(storedBatch, config.creationMode) ? storedBatch : null;
   const resultMetadata = useGenerationResultMetadata(props.project.id, props.project.assets);
   const [moduleTaskPrompts, setModuleTaskPrompts] = useState<Record<string, string>>({});
   const [flowError, setFlowError] = useState("");
+  useEffect(() => { setFlowError(""); }, [config.creationMode]);
   const seenSuccessfulBatchSlotIds = useRef<Set<string>>(new Set());
-  const resultImages = generationResultImages(props.project.assets, "hero", resultMetadata, batch);
+  const resultImages = generationResultImages(props.project.assets, "hero", resultMetadata, storedBatch, config.creationMode ?? "professional");
   const preparing = modulePlanner.planning || submittingCompile;
+  const activeGeneration = !!storedBatch && ["compiling_prompt", "queued", "running", "cancel_requested"].includes(storedBatch.status) || storedTask?.status === "generating";
   const taskPending = preparing || !!batch && ["compiling_prompt", "queued", "running", "cancel_requested"].includes(batch.status) || task?.status === "generating";
   const recovery = useTaskRecovery({
-    identity: `${props.project.id}:${heroGenerationSession?.compileIdempotencyKey}:${heroGenerationSession?.batchId}:${batch?.status}`,
+    identity: `${props.project.id}:${heroGenerationSession?.compileIdempotencyKey}:${heroGenerationSession?.batchId}:${storedBatch?.status}`,
     enabled: !!heroGenerationSession && !heroGenerationSession.taskId,
     read: () => heroGenerationSession?.batchId
       ? batchGenerationApi.get(props.project.id, heroGenerationSession.batchId)
@@ -297,7 +304,7 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
   const styleName = selectedStyle?.label ?? getStyleLabel(config.styleId, config.customStyle);
 
   const generate = async (forceNewCompile = false) => {
-    if (busy || modulePlanner.planning || recovery.loading || batch?.status === "compiling_prompt") return;
+    if (busy || taskPending || activeGeneration || recovery.loading || recovery.error) return;
     setAttempted(true);
     let effectiveConfig = config;
     setBusy(true);
@@ -324,6 +331,8 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
     startRun(props.project.id, "hero", effectiveConfig.selectedModuleIds, "planning");
     props.onToast("正在分析产品图并编译提示词");
     const input: ApiBatchHeroPromptCompileInput = {
+      creationMode: effectiveConfig.creationMode,
+      userNotes: effectiveConfig.creationMode === "regular" ? effectiveConfig.userNotes : undefined,
       sourceAssetId: sourceId,
       marketId: effectiveConfig.market,
       modelId: effectiveModelId,
@@ -333,14 +342,15 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
       outputLanguage: effectiveConfig.outputLanguage,
       customStyle: effectiveConfig.customStyle,
       modulePlanId: effectiveConfig.modulePlanId,
-      reverseVersionId: effectiveConfig.reverseVersionId,
+      reverseVersionId: effectiveConfig.creationMode === "regular" ? undefined : effectiveConfig.reverseVersionId,
       modules: effectiveConfig.selectedModuleIds.map((taskId) => ({
         taskId,
         moduleId: effectiveConfig.moduleTypes?.[taskId] ?? taskId,
         resultCount: 1,
         moduleParameters: getCompactModuleParameters(effectiveConfig.moduleParameters, taskId),
-        taskDesign: effectiveConfig.moduleTaskOverrides?.[taskId],
-        reverseReference: moduleReverseReference(effectiveConfig, taskId),
+        regularTask: effectiveConfig.creationMode === "regular" ? effectiveConfig.regularTaskOverrides?.[taskId] ?? effectiveConfig.regularTasks?.[taskId] : undefined,
+        taskDesign: effectiveConfig.creationMode === "regular" ? undefined : effectiveConfig.moduleTaskOverrides?.[taskId],
+        reverseReference: effectiveConfig.creationMode === "regular" ? undefined : moduleReverseReference(effectiveConfig, taskId),
       })),
     };
     const inputFingerprint = JSON.stringify(input);
@@ -500,16 +510,17 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
       </div>
       <GenerationTaskStatus batch={preparing ? null : batch} status={modulePlanner.planning ? "planning" : preparing ? "compiling_prompt" : batch?.status ?? task?.status} moduleCount={preparing ? config.selectedModuleIds.length : batch?.modules.length ?? (task ? 1 : 0)} loading={recovery.loading} reconnecting={!!recovery.error} />
       <div className="generation-result-body">
+        <GenerationModulesPanel projectId={props.project.id} mode="hero" config={config} planner={modulePlanner} errors={errors} onChange={change} />
         {recovery.missing && <p role="status">正在查询已提交的主图任务，尚未找到记录。不会自动重新生成。</p>}
-        {(task?.status === "awaiting_confirmation" || batch?.status === "awaiting_confirmation") && <details className="studio-confirmation-details" open key={batch?.id ?? task?.id}><summary>提示词已就绪 · 检查并确认生成</summary>
         {task?.status === "awaiting_confirmation" && <HeroPromptConfirmation task={task} busy={busy} onConfirm={() => void confirmGeneration()} onCancel={() => { setTask(null); clearHeroGenerationSession(props.project.id); }} />}
-        {batch?.status === "awaiting_confirmation" && <BatchPromptConfirmation batch={batch} busy={busy} onConfirm={() => void confirmBatchGeneration()} onCancel={() => { setBatch(null); setModuleTaskPrompts({}); clearHeroGenerationSession(props.project.id); }} />}
+        {(batch?.status === "awaiting_confirmation") && <details className="studio-confirmation-details" open key={batch.id}><summary>提示词已就绪 · 检查并确认生成</summary>
+          <BatchPromptConfirmation batch={batch} busy={busy} onConfirm={() => void confirmBatchGeneration()} onCancel={() => { setBatch(null); setModuleTaskPrompts({}); clearHeroGenerationSession(props.project.id); }} />
         </details>}
         {!preparing && batch && !["awaiting_confirmation", "compiling_prompt"].includes(batch.status) && <details className="studio-task-details" open={["failed", "partially_failed"].includes(batch.status)}><summary>批次进度与重试</summary><BatchGenerationStatus batch={batch} busy={busy} onCancel={() => void cancelBatchGeneration()} onRetry={(slotId) => void retryBatchSlot(slotId)} onRecompile={() => void generate(true)} /></details>}
         {task?.status === "generating" && <div className="generation-empty-state" role="status"><strong>正在生成主图</strong><span>已锁定平台、风格和商品真实性约束，请稍候。</span></div>}
-        {(recovery.error || flowError || batch?.error?.message) && <div className="hero-generation-error" role="alert"><strong>{recovery.error ? "任务状态查询暂时中断" : "本次操作未完成"}</strong><span>{recovery.error || flowError || batch?.error?.message}</span></div>}
+        {(recovery.error || flowError || batch?.error?.message || task?.error?.message) && <div className="hero-generation-error" role="alert"><strong>{recovery.error ? "任务状态查询暂时中断" : "本次操作未完成"}</strong><span>{recovery.error || flowError || batch?.error?.message || task?.error?.message}</span></div>}
         {task?.status === "succeeded" && <section className="hero-generation-summary"><strong>本次生成快照</strong><span>最终提示词哈希：{task.finalPromptSha256}</span><details><summary>查看最终提示词</summary><pre>{task.finalPrompt}</pre></details></section>}
-        <GenerationImageStage
+        <GenerationImageStage key={config.creationMode ?? "professional"}
           images={resultImages}
           activeBatchId={preparing ? undefined : batch?.id} taskPending={taskPending}
           source={props.project.assets.find((asset) => asset.id === config.selectedAssetIds[0])}
@@ -519,13 +530,14 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
     </div>
   );
 
-  return (
+
+  return (<div className="professional-workspace"><div className="professional-mode-toolbar"><CreationModeSwitch value={config.creationMode} disabled={busy || taskPending} onChange={creationMode => change({ creationMode })} /></div>
     <GenerationWorkspaceLayout
       collapsed={collapsed}
       onCollapsedChange={setCollapsed}
       config={<HeroConfigPanel project={props.project} config={config} planner={modulePlanner} updatedAt={record?.updatedAt} errors={errors} onChange={change} onUpload={upload} onRefresh={props.onRefresh} />}
-      footer={<GenerationFooter label="编译提示词" countLabel={`共 ${config.selectedModuleIds.length} 张 · 每项一张图`} errors={errors} busy={busy || recovery.loading || batch?.status === "compiling_prompt"} onSubmit={() => void generate()} />}
+      footer={<GenerationFooter label={activeGeneration ? "当前批次处理中" : "编译提示词"} disabled={activeGeneration || !!recovery.error || config.creationMode === "regular" && (modulePlanner.planning || !canCompileRegular(config))} countLabel={`共 ${config.selectedModuleIds.length} 张 · 每项一张图`} errors={errors} busy={busy || recovery.loading || batch?.status === "compiling_prompt"} onSubmit={() => void generate()} />}
       result={result}
-    />
+    /></div>
   );
 }

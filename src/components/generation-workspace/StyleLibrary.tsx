@@ -25,6 +25,7 @@ export function StyleLibrary(props: {
   };
   return (
     <div className="style-library">
+      <a href="/prompts" className="generation-config-meta">在提示词商城管理风格版本</a>
       <div className="studio-style-tools">
         <button type="button" className={`studio-custom-toggle${props.selectedId === CUSTOM_STYLE_ID ? " selected" : ""}`} aria-pressed={props.selectedId === CUSTOM_STYLE_ID} onClick={() => props.onChange(props.selectedId === CUSTOM_STYLE_ID ? null : CUSTOM_STYLE_ID)}>＋ 自定义</button>
         <select aria-label="风格分类" value={category?.id ?? ""} onChange={(event) => setCategoryId(event.target.value)}>{props.categories.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>

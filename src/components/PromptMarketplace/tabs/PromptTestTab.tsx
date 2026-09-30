@@ -143,8 +143,8 @@ export function PromptTestTab({ template }: PromptTestTabProps) {
     );
   }
 
-  if (["style-planner", "planner", "hero-module-planner", "suite-module-planner"].includes(String(template.defaultVersion.applicability?.runtimeRole))) {
-    return <div className="prompt-tab-placeholder"><p>这是规划模板。请在主图或详情页工作台选择对应风格或模块，结合商品图片生成方案后查看效果。</p><p>此处的直接生图测试仅适用于生图提示词。</p></div>;
+  if (["style-seed", "style-planner", "planner", "hero-module-planner", "suite-module-planner"].includes(String(template.defaultVersion.applicability?.runtimeRole))) {
+    return <div className="prompt-tab-placeholder"><p>这是风格或规划模板。请在主图或详情页工作台选择对应风格或模块，结合商品图片生成方案后查看效果。</p><p>此处的直接生图测试仅适用于生图提示词。</p></div>;
   }
 
   return (

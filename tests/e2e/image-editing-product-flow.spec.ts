@@ -18,7 +18,7 @@ async function openCoreEditor(page: Page) {
   await page.route("**/api/projects/proj-demo/assets", route => route.fulfill({json:{data:[{id:"asset-source",state:"available",kind:"generated",filename:"首屏详情.png",width:1024,height:1024}]}}));
   await page.route("**/api/suites/proj-demo/workbench", route => route.fulfill({json:{data:{...state.workbench,imageEditChildren:[]}}}));
   await page.route("**/api/suites/proj-demo/workbench/layout", route => route.fulfill({json:{data:{...route.request().postDataJSON(),layoutVersion:2}}}));
-  await page.route("**/api/image-editor/capabilities", route => route.fulfill({json:{data:{capabilities:{addText:true,changeText:true,redraw:true,erase:true,cropResize:true,ocr:false}}}}));
+  await page.route("**/api/image-editor/capabilities", route => route.fulfill({json:{data:{capabilities:{promptEdit:true,addText:true,changeText:true,redraw:true,erase:true,cropResize:true,ocr:false}}}}));
   await page.route("**/api/image-editor/sessions?projectId=*", route => route.fulfill({json:{data:[state.session]}}));
   await page.route("**/api/image-editor/sessions/session-1/operations", async route => {
     const body = route.request().postDataJSON();
@@ -37,6 +37,32 @@ async function openCoreEditor(page: Page) {
   await expect(editor.getByRole("button",{name:"添加文本 可用",exact:true})).toBeEnabled();
   return {editor,state,submitted:()=>submitted,ocrCalls:()=>ocrCalls};
 }
+
+test("描述修改发送当前图片和最终输入，保存恢复后可以与裁剪一起提交", async ({ page }, testInfo) => {
+  const { editor, submitted } = await openCoreEditor(page);
+  await editor.getByRole("button", { name: "描述修改 可用", exact: true }).click();
+  await editor.getByRole("button", { name: "确认生成修改图", exact: true }).click();
+  await expect(editor.getByRole("alert")).toContainText("请填写修改要求");
+  expect(submitted()).toBeNull();
+  await editor.getByLabel("修改要求", { exact: true }).fill("背景改成木质桌面，保留商品与文字");
+  await editor.getByRole("button", { name: "添加修改", exact: true }).click();
+  await editor.getByRole("button", { name: "关闭图片编辑器", exact: true }).click();
+  await page.getByRole("complementary", { name: "图片属性" }).getByRole("button", { name: "编辑图片" }).click();
+  await editor.getByRole("button", { name: "描述修改 可用", exact: true }).click();
+  await expect(editor.getByLabel("修改要求", { exact: true })).toHaveValue("背景改成木质桌面，保留商品与文字");
+  await editor.getByRole("button", { name: "裁剪与尺寸 可用", exact: true }).click();
+  await editor.getByLabel("输出宽度").fill("800");
+  await editor.getByRole("button", { name: "描述修改 可用", exact: true }).click();
+  await editor.getByLabel("修改要求", { exact: true }).fill("背景改成浅色木桌，自然光，保留商品与文字");
+  await page.screenshot({ path: testInfo.outputPath("prompt-edit-desktop.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await editor.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  await editor.getByRole("button", { name: "确认生成修改图", exact: true }).click();
+  await expect.poll(() => submitted()?.promptSnapshot.operations.length).toBe(2);
+  expect(submitted().configSnapshot.sourceVersionId).toBe("asset-source");
+  expect(submitted().promptSnapshot.operations.find((op: any) => op.type === "prompt_edit").payload).toEqual({ schemaVersion: 2, prompt: "背景改成浅色木桌，自然光，保留商品与文字" });
+  expect(submitted().promptSnapshot.operations.find((op: any) => op.type === "crop_resize").payload.width).toBe(800);
+});
 
 test("未接 OCR 也能框选改文字，确认生成先保存最后输入的内容", async ({page}, testInfo) => {
   const {editor,state,submitted,ocrCalls} = await openCoreEditor(page);

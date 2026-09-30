@@ -16,7 +16,11 @@ export interface ModulePlanningControls {
 
 /** A single controller shared by the explicit planning action and compile action. */
 export function useModulePlanning(projectId: string, mode: GenerationMode): ModulePlanningControls {
-  const references = useReverseBindings(projectId, mode);
+  const creationMode = useProjectStore(state => {
+    const config = state.generationDrafts[`${projectId}:${mode}`]?.config;
+    return config ? config.creationMode ?? "professional" : "regular";
+  });
+  const references = useReverseBindings(projectId, mode, creationMode !== "regular");
   const [planning, setPlanning] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ApiModulePlan | null>(null);
@@ -76,7 +80,7 @@ export function useModulePlanning(projectId: string, mode: GenerationMode): Modu
     };
     void recover();
     return () => { epoch.current++; locked.current = false; };
-  }, [projectId, mode, references.refresh]);
+  }, [projectId, mode, references.refresh, creationMode]);
 
   const plan = async (): Promise<PlanningConfig | null> => {
     if (locked.current) return null;
@@ -110,5 +114,6 @@ export function useModulePlanning(projectId: string, mode: GenerationMode): Modu
       if (epoch.current === operation) { locked.current = false; setPlanning(false); }
     }
   };
-  return { planning, error, plan, summary: result?.summary, warnings: result?.warnings, references };
+  const resultIsCurrent = result && canRecoverModulePlan(result, mode, current());
+  return { planning, error, plan, summary: resultIsCurrent ? result.summary : undefined, warnings: resultIsCurrent ? result.warnings : undefined, references: creationMode === "regular" ? undefined : references };
 }

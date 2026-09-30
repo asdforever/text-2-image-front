@@ -402,14 +402,6 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .test-product-heading > div { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .test-product-source { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; padding: 6px 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-size: 11px; }
 .test-product-source strong { overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.product-library-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-.product-library-card { grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; width: 100%; color: inherit; text-align: left; cursor: pointer; }
-.product-library-card:hover { border-color: var(--muted); background: var(--surface-2); }
-.product-library-icon { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: #d0a85e; background: var(--surface-2); }
-.product-library-copy { display: grid; min-width: 0; gap: 4px; }
-.product-library-copy strong { overflow: hidden; color: var(--text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.product-library-copy small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.product-library-count { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .product-archive-toolbar { margin-top: 22px; }
 .project-archive-list { display: grid; gap: 18px; }
 .project-archive { border-top: 1px solid var(--border); padding-top: 16px; }
@@ -428,6 +420,20 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .project-asset-meta strong { overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .project-asset-meta small { color: var(--muted); font-size: 9px; }
 .project-archive-empty { display: flex; min-height: 112px; align-items: center; justify-content: center; gap: 9px; border: 1px dashed var(--border); color: var(--muted); font-size: 11px; }
+.product-library-project-grid { align-items: start; }
+.product-library-project-grid .workflow-project-card { width: 100%; cursor: pointer; font: inherit; }
+.product-library-project-grid .workflow-project-card[aria-expanded="true"] { border-color: var(--home-green, #228566); box-shadow: 0 5px 16px #17382a12; }
+.product-library-inline-archive { grid-column: 1 / -1; min-width: 0; padding: 17px 18px 19px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); }
+.product-library-inline-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+.product-library-inline-toolbar > div:first-child { display: grid; gap: 5px; }
+.product-library-inline-toolbar strong { color: var(--text); font-size: 14px; }
+.product-library-inline-toolbar span { color: var(--muted); font-size: 10px; }
+.product-library-inline-filters { display: flex; flex-wrap: wrap; justify-content: end; gap: 10px 14px; }
+.product-library-inline-filters .image-batch-filter { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+.product-library-inline-filters .image-batch-filter select { min-width: 185px; min-height: 32px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-1); color: var(--text); font: inherit; }
+.product-library-inline-filters .image-module-filter select { min-width: 150px; }
+.product-library-inline-archive .project-archive { border-top: 0; padding-top: 16px; }
+@media(max-width:760px) { .product-library-inline-toolbar { align-items: stretch; flex-direction: column; } .product-library-inline-filters { justify-content: start; } .product-library-inline-filters .image-batch-filter { width: 100%; } .product-library-inline-filters .image-batch-filter select { flex: 1; min-width: 0; } }
 .prompt-card .target-pill { justify-self: start; }
 .task-filter { width: 150px; }
 .task-center-filters { display: flex; align-items: end; gap: 10px; }

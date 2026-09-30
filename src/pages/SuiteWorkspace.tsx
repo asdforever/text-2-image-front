@@ -1,3 +1,4 @@
+import { belongsToCreationMode } from "../lib/creation-mode-label";
 import React, { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import { Download, PanelLeftClose } from "lucide-react";
@@ -11,6 +12,8 @@ import {
   type ApiSuitePlan,
 } from "../api/client";
 import { SuiteConfigPanel } from "../components/SuiteConfigPanel";
+import { GenerationModulesPanel } from "../components/generation-workspace/GenerationModulesPanel";
+import { CreationModeSwitch } from "../components/generation-workspace/CreationModeSwitch";
 import { GenerationFooter, GenerationWorkspaceLayout } from "../components/generation-workspace";
 import { useGenerationResultMetadata } from "../hooks/useGenerationResultMetadata";
 import { generationResultImages } from "../lib/generation-results";
@@ -28,7 +31,7 @@ import {
   type SuiteGenerationConfig,
 } from "../lib/generation-workspace";
 import { createGenerationSnapshot, validateGenerationSelection } from "../lib/generation-config";
-import { needsModulePlan } from "../lib/planning-master";
+import { canCompileRegular, needsModulePlan } from "../lib/planning-master";
 import { useModulePlanning } from "../hooks/useModulePlanning";
 import { moduleReverseReference } from "../features/reverse-projects/planning";
 import { useProjectStore } from "../store/useProjectStore";
@@ -56,10 +59,13 @@ export function SuiteWorkspace(props: {
   const [attempted, setAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [submittingPlan, setSubmittingPlan] = useState(false);
-  const [remotePlan, setRemotePlan] = useState<ApiSuitePlan | null>(null);
-  const [remoteBatch, setRemoteBatch] = useState<ApiBatchGenerationDetail | null>(null);
+  const [storedPlan, setRemotePlan] = useState<ApiSuitePlan | null>(null);
+  const [storedBatch, setRemoteBatch] = useState<ApiBatchGenerationDetail | null>(null);
+  const remotePlan = belongsToCreationMode(storedPlan, config.creationMode) ? storedPlan : null;
+  const remoteBatch = belongsToCreationMode(storedBatch, config.creationMode) ? storedBatch : null;
   const [pollVersion, setPollVersion] = useState(0);
   const [flowError, setFlowError] = useState("");
+  useEffect(() => { setFlowError(""); }, [config.creationMode]);
   const [draft, setDraft] = useState<SuitePromptDraft>({ prompts: {} });
   const operationLock = useRef(false);
   const seenSuccessfulSlots = useRef(new Set<string>());
@@ -79,8 +85,9 @@ export function SuiteWorkspace(props: {
     moduleParameters: module.moduleParameters,
   })) ?? [];
   const resultMetadata = useGenerationResultMetadata(props.project.id, props.project.assets);
-  const resultImages = generationResultImages(props.project.assets, "suite", resultMetadata, remoteBatch);
-  const suiteAssets = props.project.assets.flatMap((asset) => {
+  const resultImages = generationResultImages(props.project.assets, "suite", resultMetadata, storedBatch, config.creationMode ?? "professional");
+  const visibleAssetIds = new Set(resultImages.map(image => image.id));
+  const suiteAssets = props.project.assets.filter(asset => visibleAssetIds.has(asset.id)).flatMap((asset) => {
     const slot = remoteBatch?.slots.find((candidate) => candidate.generatedAssetId === asset.id);
     return asset.type === "suite" || slot ? [{ ...asset, category: slot?.moduleKey ?? asset.category, sequence: slot?.ordinal ?? asset.sequence }] : [];
   }).sort((a, b) => {
@@ -132,7 +139,7 @@ export function SuiteWorkspace(props: {
   const loadingPlan = recovery.loading;
 
   useEffect(() => {
-    const batchId = remotePlan?.generationBatchId;
+    const batchId = storedPlan?.generationBatchId;
     if (!batchId) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -160,7 +167,7 @@ export function SuiteWorkspace(props: {
     };
     void poll();
     return () => { active = false; if (timer) clearTimeout(timer); };
-  }, [props.project.id, remotePlan?.generationBatchId, pollVersion]);
+  }, [props.project.id, storedPlan?.generationBatchId, pollVersion]);
 
   const focusFirstInvalid = () => {
     if (typeof document === "undefined") return;
@@ -227,6 +234,8 @@ export function SuiteWorkspace(props: {
     try {
       saveGenerationSnapshot(props.project.id, "suite", createGenerationSnapshot(publishedConfig, effectiveSelection));
       const value = await suitePlanningApi.compile(props.project.id, {
+        creationMode: effectiveConfig.creationMode,
+        userNotes: effectiveConfig.creationMode === "regular" ? effectiveConfig.userNotes : undefined,
         sourceAssetIds: effectiveConfig.selectedAssetIds,
         marketId: effectiveConfig.market,
         modelId: effectiveModelId,
@@ -236,14 +245,15 @@ export function SuiteWorkspace(props: {
         outputLanguage: effectiveConfig.outputLanguage,
         customStyle: effectiveConfig.customStyle,
         modulePlanId: effectiveConfig.modulePlanId,
-        reverseVersionId: effectiveConfig.reverseVersionId,
+        reverseVersionId: effectiveConfig.creationMode === "regular" ? undefined : effectiveConfig.reverseVersionId,
         modules: effectiveConfig.selectedModuleIds.map((taskId) => ({
           taskId,
           moduleId: effectiveConfig.moduleTypes?.[taskId] ?? taskId,
           resultCount: 1,
           moduleParameters: getCompactModuleParameters(effectiveConfig.moduleParameters, taskId),
-          taskDesign: effectiveConfig.moduleTaskOverrides?.[taskId],
-          reverseReference: moduleReverseReference(effectiveConfig, taskId),
+          regularTask: effectiveConfig.creationMode === "regular" ? effectiveConfig.regularTaskOverrides?.[taskId] ?? effectiveConfig.regularTasks?.[taskId] : undefined,
+          taskDesign: effectiveConfig.creationMode === "regular" ? undefined : effectiveConfig.moduleTaskOverrides?.[taskId],
+          reverseReference: effectiveConfig.creationMode === "regular" ? undefined : moduleReverseReference(effectiveConfig, taskId),
         })),
       }, nextSession.compileIdempotencyKey);
       if (useProjectStore.getState().suiteGenerationSessions[props.project.id]?.compileIdempotencyKey !== nextSession.compileIdempotencyKey) return;
@@ -382,11 +392,12 @@ export function SuiteWorkspace(props: {
       </div>
       <GenerationTaskStatus batch={preparing ? null : remoteBatch} status={modulePlanner.planning ? "planning" : preparing ? "compiling" : remoteBatch?.status ?? remotePlan?.status} moduleCount={submittingPlan ? config.selectedModuleIds.length : remotePlan?.modules.length} loading={loadingPlan} reconnecting={!!recovery.error} />
       <div className="generation-result-body">
+        <GenerationModulesPanel projectId={props.project.id} mode="suite" config={config} planner={modulePlanner} errors={errors} onChange={change} />
         {(recovery.error || flowError || remotePlan?.error?.message) && <div className="suite-flow-error" role="alert">{recovery.error || flowError || remotePlan?.error?.message}</div>}
         {recovery.missing && <p role="status">正在查询已提交的套图任务，尚未找到记录。不会自动重新生成。</p>}
         {awaitingConfirmation && remotePlan && <section className="suite-prompt-confirmation" aria-label="套图提示词确认">
           <header className="suite-section-heading"><div><h2>检查套图提示词</h2><p>共 {total} 张。检查每张图的提示词，最终拼接顺序在画布中调整。</p></div></header>
-          <p>提示词已统一合成；如需调整，请修改左侧模块参数后重新编译。</p>
+          <p>提示词已统一合成；如需调整，请修改模块参数后重新编译。</p>
           <details className="studio-prompt-context suite-global-constraints"><summary>查看平台、风格与商品约束</summary>
             <div className="suite-constraint-cards">{Object.entries(remotePlan.constraints).map(([key, card]) => <article key={key}><strong>{key === "market" ? "电商平台约束" : key === "style" ? "全局风格约束" : key === "authenticity" ? "商品真实性约束" : key}</strong><p>{card.content}</p></article>)}</div>
           </details>
@@ -408,7 +419,7 @@ export function SuiteWorkspace(props: {
           <details className="studio-prompt-context suite-confirmed-prompts"><summary>查看本批次已确认提示词</summary>{remoteBatch.modules.map((module) => <article key={module.id}><strong>{plans.find((plan) => plan.moduleId === module.moduleKey)?.title ?? module.moduleKey}</strong><p>{module.confirmedTaskPrompt}</p></article>)}</details>
         </details>}
         {remotePlan?.status === "confirmed" && !remoteBatch && <p className="suite-loading" role="status">已确认，正在读取生成进度…</p>}
-        {<GenerationImageStage
+        {<GenerationImageStage key={config.creationMode ?? "professional"}
           images={resultImages}
           activeBatchId={preparing ? undefined : remoteBatch?.id} taskPending={preparing || batchActive}
           source={!remoteBatch ? props.project.assets.find((asset) => asset.id === config.selectedAssetIds[0]) : undefined}
@@ -426,13 +437,14 @@ export function SuiteWorkspace(props: {
     </div>
   );
 
-  return (
+
+  return (<div className="professional-workspace"><div className="professional-mode-toolbar"><CreationModeSwitch value={config.creationMode} disabled={busy || preparing || batchActive} onChange={creationMode => change({ creationMode })} /></div>
     <GenerationWorkspaceLayout
       collapsed={collapsed}
       onCollapsedChange={setCollapsed}
       config={<SuiteConfigPanel project={props.project} config={config} planner={modulePlanner} errors={errors} onChange={change} onUpload={upload} onRefresh={props.onRefresh} />}
-      footer={<><p className="suite-config-note">{awaitingConfirmation ? "左侧配置用于重新编译；本次张数以右侧方案为准。" : batchActive ? "本批次已锁定，左侧修改用于下一批。" : styleName}</p><GenerationFooter label="生成套图提示词" countLabel={`共 ${config.selectedModuleIds.length} 张 · 每项一张图`} errors={errors} busy={busy || compiling || !!recovery.error || batchActive || loadingPlan || (remotePlan?.status === "confirmed" && !remoteBatch)} onSubmit={() => void generatePlan()} /></>}
+      footer={<><p className="suite-config-note">{awaitingConfirmation ? "左侧配置用于重新编译；本次张数以右侧方案为准。" : batchActive ? "本批次已锁定，左侧修改用于下一批。" : styleName}</p><GenerationFooter label="编译提示词" disabled={config.creationMode === "regular" && (modulePlanner.planning || !canCompileRegular(config))} countLabel={`共 ${config.selectedModuleIds.length} 张 · 每项一张图`} errors={errors} busy={busy || compiling || !!recovery.error || batchActive || loadingPlan || (remotePlan?.status === "confirmed" && !remoteBatch)} onSubmit={() => void generatePlan()} /></>}
       result={result}
-    />
+    /></div>
   );
 }

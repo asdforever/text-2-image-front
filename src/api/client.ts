@@ -175,6 +175,7 @@ export type ApiBatchGenerationSlotStatus =
   | "cancelled"
   | "needs_retry";
 export interface ApiBatchHeroModuleInput {
+  regularTask?: import("../lib/generation-workspace").RegularTask;
   taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign;
   moduleId: string;
   reverseReference?: { versionId: string; moduleId: string };
@@ -183,6 +184,8 @@ export interface ApiBatchHeroModuleInput {
   moduleParameters: Array<{ key: string; value: string }>;
 }
 export interface ApiBatchHeroPromptCompileInput {
+  creationMode?: import("../lib/generation-workspace").CreationMode;
+  userNotes?: string;
   sourceAssetId: string;
   reverseVersionId?: string;
   marketId: string;
@@ -197,6 +200,7 @@ export interface ApiBatchHeroPromptCompileInput {
 }
 export interface ApiBatchGeneration {
   id: string;
+  creationMode?: "regular" | "professional";
   plannerVersion?: "v2";
   projectId: string;
   sourceAssetId: string;
@@ -252,8 +256,9 @@ export interface ApiBatchGenerationDetail extends ApiBatchGeneration {
 }
 export type ApiSuitePlanStatus = "compiling" | "awaiting_confirmation" | "confirmed" | "failed";
 export interface ApiSuitePlanReferenceInput { referenceId: string; version: string }
-export interface ApiSuitePlanModuleCompileInput { moduleId: string; taskId?: string; resultCount: number; moduleParameters: Array<{ key: string; value: string }>; reverseReference?: { versionId: string; moduleId: string }; taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign }
+export interface ApiSuitePlanModuleCompileInput { moduleId: string; taskId?: string; resultCount: number; moduleParameters: Array<{ key: string; value: string }>; reverseReference?: { versionId: string; moduleId: string }; taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign; regularTask?: import("../lib/generation-workspace").RegularTask }
 export interface ApiSuitePlanCompileInput {
+  creationMode?: import("../lib/generation-workspace").CreationMode;
   reverseVersionId?: string;
   sourceAssetIds: string[]; marketId: string; modelId: string; styleId: string;
   aspectRatio: string; resolution: string; outputLanguage: string;
@@ -284,6 +289,9 @@ export interface ApiSuitePlanModulePatchInput {
 }
 export interface ApiSuitePlanConfirmation extends ApiSuitePlan { batchId: string }
 export interface ApiModulePlanInput {
+  creationMode?: import("../lib/generation-workspace").CreationMode;
+  selectedModules?: Array<{ taskId: string; moduleId: string }>;
+  userNotes?: string;
   styleId: string | null;
   customStyle: string;
   mode: "hero" | "suite";
@@ -296,6 +304,7 @@ export interface ApiModulePlanInput {
   brief: string;
 }
 export interface ApiModulePlanModule {
+  suggestedCopy?: string;
   taskTitle: string;
   informationQuestion: string;
   productPresence: "full" | "partial" | "detail" | "context" | "none";
@@ -310,7 +319,7 @@ export interface ApiModulePlanModule {
   reason: string;
 }
 export interface ApiModulePlan {
-  planningContractVersion?: "commerce-design-v1";
+  planningContractVersion?: "commerce-design-v1" | "regular-design-v1";
   sharedVisualDirection?: string;
   id: string;
   mode: "hero" | "suite";
@@ -395,6 +404,7 @@ export interface ApiCanvasGenerationStep {
   id: string; kind: string; title: string; sourceAssetIds: string[]; outputAssetIds: string[]; outputVersionIds: string[];
   finalPrompt: string; taskPrompt: string; constraints: Record<string, { content?: string; source?: string; contentSha256?: string; promptTemplateId?: string | null; promptVersionId?: string | null; promptVersionSha256?: string | null }>;
   parameters: Record<string, unknown>;
+  creationMode?: "regular" | "professional";
   trackId?: string; revisionId?: string; revisionNumber?: number; batchId?: string; batchCreatedAt?: string; batchStatus?: string;
   canRegenerate?: boolean;
 }
@@ -980,6 +990,7 @@ export const suiteApi = {
   getProductionLibrary(libraryId:string){return request<ApiProductionLibrary>(`/api/product-libraries/${encodeURIComponent(libraryId)}`);},
   archiveProductionLibrary(libraryId:string){return request<ApiProductionLibrary>(`/api/product-libraries/${encodeURIComponent(libraryId)}/archive`,{method:"POST",headers:{"content-type":"application/json"}});},
   listProductionProducts(libraryId:string, includeArchived = false){return request<ApiProductionProduct[]>(`/api/product-libraries/${encodeURIComponent(libraryId)}/products?includeArchived=${includeArchived ? "true" : "false"}`);},
+  countProductionProducts(libraryId:string, includeArchived = false){return request<{count:number}>(`/api/product-libraries/${encodeURIComponent(libraryId)}/products/count?includeArchived=${includeArchived ? "true" : "false"}`);},
   createProductionProduct(libraryId:string,body:{name:string;projectId?:string|null}){return request<ApiProductionProduct>(`/api/product-libraries/${encodeURIComponent(libraryId)}/products`,{method:"POST",headers:{"content-type":"application/json","idempotency-key":createIdempotencyKey()},body:JSON.stringify(body)});},
   getProductionProduct(productId:string){return request<ApiProductionProduct>(`/api/products/${encodeURIComponent(productId)}`);},
   listProductionVersions(productId:string,params:{productType?:ApiProductionProductType;status?:string}={}){const search=new URLSearchParams();Object.entries(params).forEach(([key,value])=>{if(value)search.set(key,value);});return request<ApiProductionVersion[]>(`/api/products/${encodeURIComponent(productId)}/versions?${search.toString()}`);},

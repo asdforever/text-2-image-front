@@ -43,7 +43,7 @@ test("项目上传由后端自动归档且不会写入测试库", async ({ page 
   expect(testProductCalls).toBe(0);
 
   await page.goto("/product-libraries");
-  await expect(page.getByText("1 个项目", { exact: true })).toBeVisible();
+  await expect(page.getByText("演示项目", { exact: true })).toBeVisible();
   expect(productionPublishCalls).toBe(0);
   expect(testProductCalls).toBe(0);
 });

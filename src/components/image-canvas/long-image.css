@@ -98,3 +98,8 @@
   .lic-dialog .lic-primary { padding: 10px 13px; white-space: nowrap; }
   .lic-success { width: 100%; }
 }
+
+.lic-sources .image-batch-filter { margin-bottom: 10px; }
+
+.lic-image-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 600px) { .lic-image-filters { grid-template-columns: minmax(0, 1fr); gap: 0; } }

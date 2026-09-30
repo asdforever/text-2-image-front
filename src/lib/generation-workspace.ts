@@ -1,6 +1,8 @@
 import type { Asset, AssetType } from "../api/contracts";
 
 export type GenerationMode = "hero" | "suite";
+export type CreationMode = "regular" | "professional";
+export interface RegularTask { goal: string; copy: string }
 export type GenerationMarket = string;
 const LEGACY_MARKET_SELECTIONS: Record<string, string> = { domestic: "taobao", international: "amazon" };
 export function normalizeGenerationMarket(value: string | undefined): GenerationMarket {
@@ -55,6 +57,10 @@ export interface GenerationTaskDesign {
 }
 
 export interface CommonGenerationConfig {
+  creationMode?: CreationMode;
+  userNotes?: string;
+  regularTasks?: Record<string, RegularTask>;
+  regularTaskOverrides?: Record<string, RegularTask>;
   moduleTaskOverrides?: Record<string, GenerationTaskDesign>;
   moduleTaskDetails?: Record<string, { title: string; informationQuestion: string; productPresence: string; visualMechanism: string; compositionAdvice: string }>;
   selectedAssetIds: string[];
@@ -266,6 +272,7 @@ export function getStylePrompt(styleId: string | null, customStyle = ""): string
 }
 
 const commonDefaults: CommonGenerationConfig = {
+  creationMode: "professional",
   selectedAssetIds: [],
   outputLanguage: "中文",
   market: "taobao",
@@ -286,14 +293,14 @@ function withoutReferenceSelection<T extends Partial<CommonGenerationConfig>>(va
   } : {}) };
 }
 
-export function normalizeHeroConfig(value: Partial<HeroGenerationConfig> = {}): HeroGenerationConfig {
+export function normalizeHeroConfig(value: Partial<HeroGenerationConfig> = { creationMode: "regular" }): HeroGenerationConfig {
   value = withoutReferenceSelection(value);
   const selectedModuleIds = value.selectedModuleIds ?? [];
   const planningBrief = value.planningBrief ?? value.designBrief ?? "";
   return { ...commonDefaults, designBrief: "", ...value, ...(planningBrief ? { planningBrief } : {}), selectedModuleIds, market: normalizeGenerationMarket(value.market), moduleParameters: value.moduleParameters ?? {}, moduleCounts: Object.fromEntries(selectedModuleIds.map((id) => [id, 1])) };
 }
 
-export function normalizeSuiteConfig(value: Partial<SuiteGenerationConfig> = {}): SuiteGenerationConfig {
+export function normalizeSuiteConfig(value: Partial<SuiteGenerationConfig> = { creationMode: "regular" }): SuiteGenerationConfig {
   value = withoutReferenceSelection(value);
   const selectedModuleIds = value.selectedModuleIds ?? [];
   const planningBrief = value.planningBrief ?? value.creativePrompt ?? "";

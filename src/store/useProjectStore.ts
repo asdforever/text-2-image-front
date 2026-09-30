@@ -283,8 +283,8 @@ export const useProjectStore = create<ProjectStore>()(
         const key = `${projectId}:${mode}`;
         const current = state.generationDrafts[key]?.config;
         const config = mode === "hero"
-          ? normalizeHeroConfig({ ...(current as Partial<HeroGenerationConfig>), ...(patch as Partial<HeroGenerationConfig>) })
-          : normalizeSuiteConfig({ ...(current as Partial<SuiteGenerationConfig>), ...(patch as Partial<SuiteGenerationConfig>) });
+          ? normalizeHeroConfig({ ...normalizeHeroConfig(current), ...(patch as Partial<HeroGenerationConfig>) })
+          : normalizeSuiteConfig({ ...normalizeSuiteConfig(current), ...(patch as Partial<SuiteGenerationConfig>) });
         return { generationDrafts: { ...state.generationDrafts, [key]: { config, updatedAt: new Date().toISOString() } } };
       }),
       clearGenerationDraft: (projectId, mode) => set((state) => {

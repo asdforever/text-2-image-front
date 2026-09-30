@@ -7,6 +7,7 @@ export function GenerationFooter(props: {
   countLabel: string;
   errors: string[];
   busy: boolean;
+  disabled?: boolean;
   onSubmit: () => void;
 }) {
   return (
@@ -15,7 +16,7 @@ export function GenerationFooter(props: {
         <span>{props.countLabel}</span>
         {props.errors.length > 0 && <span role="alert">{props.errors[0]}</span>}
       </div>
-      <Button disabled={props.busy} onClick={props.onSubmit}>
+      <Button disabled={props.busy || props.disabled} onClick={props.onSubmit}>
         <Sparkles size={15} />{props.busy ? "处理中…" : props.label}
       </Button>
     </div>

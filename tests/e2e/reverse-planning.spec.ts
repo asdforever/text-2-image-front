@@ -76,7 +76,7 @@ for (const mode of ["hero", "suite"] as const) {
     await page.reload();
     await expect(page.getByLabel("模块反推参考")).toContainText("商品特写 · v2");
     expect(calls.plans).toHaveLength(1);
-    await page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true }).click();
+    await page.getByRole("button", { name: "编译提示词", exact: true }).click();
     await expect.poll(() => calls.compiles.length).toBe(1);
     expect(calls.compiles[0]).toMatchObject({ reverseVersionId: version.id, modulePlanId: "master-ref", modules: [{ taskId: "detail-task", reverseReference: { versionId: version.id, moduleId: module.id } }] });
   });

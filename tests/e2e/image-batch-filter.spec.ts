@@ -1,0 +1,116 @@
+import { expect, test } from "playwright/test";
+
+test("画布和长图按批次与模块交集筛选，跨批次选图和原布局保留", async ({ page }, testInfo) => {
+  const assets = ["source", "white", "a1", "a2", "b1", "b-edit"].map(id => ({ id, kind: id === "source" ? "source" : id === "white" ? "white_background" : "generated", sourceAssetId: id === "b-edit" ? "b1" : null, generationSnapshotId: null, sourceKind: "generated", filename: `${id}.png`, mimeType: "image/png", state: "available", width: 1000, height: 1000, byteSize: 100, sha256: id, createdAt: "2026-09-29T00:00:00Z" }));
+  const steps = [
+    { id: "white-step", kind: "white", title: "生成白底图", sourceAssetIds: ["source"], outputAssetIds: ["white"] },
+    { id: "a-step", kind: "hero", title: "第一批", sourceAssetIds: ["white"], outputAssetIds: ["a1"], batchId: "batch-a", batchCreatedAt: "2026-09-28T01:00:00Z" },
+    { id: "a-scene", kind: "hero", title: "第一批场景", sourceAssetIds: ["white"], outputAssetIds: ["a2"], batchId: "batch-a", batchCreatedAt: "2026-09-28T01:00:00Z" },
+    { id: "b-step", kind: "hero", title: "第二批", sourceAssetIds: ["white"], outputAssetIds: ["b1"], batchId: "batch-b", batchCreatedAt: "2026-09-29T01:00:00Z" },
+  ].map(step => ({ ...step, outputVersionIds: [], finalPrompt: "商品实拍", taskPrompt: "商品实拍", parameters: step.id === "white-step" ? {} : { module: { id: step.id === "a-scene" ? "hero-scene" : "hero-detail", label: step.id === "a-scene" ? "使用场景" : "细节特写", mode: "hero" } }, constraints: {} }));
+  const initialNodes = assets.map((asset, i) => ({ nodeId: `asset:${asset.id}`, x: 100 + i * 350, y: i < 2 ? 100 : 600, hidden: asset.id === "a2" }));
+  let layout: any = { nodes: initialNodes, groups: [], viewport: { x: 0, y: 0, zoom: .4 }, layoutVersion: 1 };
+  const saves: any[] = [];
+  const recipes: any[] = [];
+  await page.route(url => url.pathname.startsWith("/api/"), async route => {
+    const path = new URL(route.request().url()).pathname;
+    const data = (value: any) => route.fulfill({ json: { data: value } });
+    if (path.endsWith("/preview")) return route.fulfill({ path: "public/assets/gan65-product.jpg", contentType: "image/jpeg" });
+    if (path === "/api/projects/batch-demo") return data({ id: "batch-demo", name: "批次筛选测试", status: "active", selections: {}, assets: [], createdAt: "2026-09-29", updatedAt: "2026-09-29" });
+    if (path.endsWith("/assets")) return data(assets);
+    if (path.endsWith("/workbench")) return data({ suite: { id: "batch-demo", name: "批次筛选测试" }, inputImages: [], tasks: [], batches: [], generationSteps: steps, layout });
+    if (path.endsWith("/layout")) { saves.push(route.request().postDataJSON()); layout = { ...saves.at(-1), layoutVersion: layout.layoutVersion + 1 }; return data(layout); }
+    if (path.endsWith("/style-harmonizations")) return data([]);
+    if (path.endsWith("/long-images")) {
+      if (route.request().method() === "GET") return data([]);
+      const recipe = route.request().postDataJSON(); recipes.push(recipe);
+      return data({ assetId: "long-result", title: recipe.title, width: 750, height: 1500, previewUrl: "", recipe });
+    }
+    return route.fulfill({ status: 404, json: { error: { message: "暂无记录" } } });
+  });
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.goto("/projects/batch-demo?tab=canvas");
+  const filter = page.getByRole("combobox", { name: "画布批次" });
+  await expect(filter).toBeVisible();
+  const moduleFilter = page.getByRole("combobox", { name: "画布模块类型" });
+  await moduleFilter.selectOption("hero-detail");
+  await expect(page.getByRole("complementary", { name: "项目图片" }).locator(".ic-library-item")).toHaveCount(3);
+  await expect(page.locator('.react-flow__node[data-id="asset:a1"]')).toBeVisible();
+  await filter.selectOption("batch-b");
+  await moduleFilter.selectOption("hero-scene");
+  await expect(page.getByRole("complementary", { name: "项目图片" }).locator(".ic-library-item")).toHaveCount(0);
+  await expect(filter).toHaveValue("batch-b");
+  await moduleFilter.selectOption("hero-detail");
+  await expect(page.locator('.react-flow__node[data-id="asset:a1"]')).toHaveCount(0);
+  await expect(page.locator('.react-flow__node[data-id="asset:b1"]')).toBeVisible();
+  await expect(page.locator('.react-flow__node[data-id="asset:b-edit"]')).toBeVisible();
+  await expect(page.locator('.react-flow__node[data-id="asset:white"]')).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "项目图片" }).locator(".ic-library-item")).toHaveCount(2);
+  await page.screenshot({ path: testInfo.outputPath("canvas-batch.png") });
+  expect(saves).toHaveLength(0);
+  await page.getByRole("button", { name: "自动排列", exact: true }).click();
+  await expect(page.locator(".ic-image-node")).toHaveCount(2);
+  await expect(page.locator(".ic-generation-node")).toHaveCount(0);
+  await expect(page.locator('.react-flow__node[data-id="asset:source"]')).toHaveCount(0);
+  await expect(page.locator('.react-flow__node[data-id="asset:white"]')).toHaveCount(0);
+  await expect.poll(() => saves.length).toBeGreaterThan(0);
+  const arrangedB = structuredClone(saves.at(-1).nodes.find((node: any) => node.nodeId === "asset:b1"));
+  expect(saves.at(-1).nodes.find((node: any) => node.nodeId === "asset:source").hidden).toBe(false);
+  expect(saves.at(-1).nodes.find((node: any) => node.nodeId === "asset:a1")).toMatchObject(initialNodes.find(node => node.nodeId === "asset:a1")!);
+  await page.screenshot({ path: testInfo.outputPath("results-only.png") });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "自动排列", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".ic-image-node")).toHaveCount(2);
+  await expect(page.locator(".ic-generation-node")).toHaveCount(0);
+  await page.getByRole("button", { name: "制作长图", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "制作长图", exact: true });
+  const longFilter = dialog.getByRole("combobox", { name: "长图批次" });
+  await expect(longFilter).toHaveValue("batch-b");
+  const longModuleFilter = dialog.getByRole("combobox", { name: "长图模块类型" });
+  await expect(longModuleFilter).toHaveValue("hero-detail");
+  await expect(dialog.locator(".lic-source-grid button")).toHaveCount(2);
+  await dialog.getByRole("button", { name: "添加 第二批 · 图 1 · V1", exact: true }).click();
+  await longFilter.selectOption("all");
+  await expect(dialog.locator(".lic-source-grid button")).toHaveCount(3);
+  await longFilter.selectOption("batch-a");
+  await expect(dialog.locator(".lic-source-grid button")).toHaveCount(1);
+  await longModuleFilter.selectOption("hero-scene");
+  await expect(dialog.locator(".lic-source-grid button")).toHaveCount(1);
+  await expect(dialog.locator(".lic-source-grid")).toContainText("第一批场景");
+  await longModuleFilter.selectOption("hero-detail");
+  await expect(dialog.locator('[data-long-item="0"]')).toContainText("第二批");
+  await dialog.getByRole("button", { name: "添加 第一批 · 图 1 · V1", exact: true }).click();
+  await longFilter.selectOption("unassigned");
+  await expect(dialog.locator(".lic-source-grid button")).toHaveCount(0);
+  await longModuleFilter.selectOption("all");
+  await expect(dialog.locator(".lic-source-grid button")).toHaveCount(2);
+  await expect(dialog.locator("[data-long-item]")).toHaveCount(2);
+  await page.screenshot({ path: testInfo.outputPath("long-image-batches.png") });
+  await dialog.getByRole("button", { name: "保存并归档", exact: true }).click();
+  await expect.poll(() => recipes.length).toBe(1);
+  expect(recipes[0].items.map((item: any) => item.assetId)).toEqual(["b1", "a1"]);
+  await expect(dialog.getByText("已保存到项目和成品库")).toBeVisible();
+  await dialog.getByRole("button", { name: "关闭长图制作" }).click();
+  await filter.selectOption("batch-a");
+  await page.getByRole("button", { name: "按生成脉络排列", exact: true }).click();
+  await expect(page.locator(".ic-generation-node")).not.toHaveCount(0);
+  await expect(page.locator('.react-flow__node[data-id="asset:source"]')).toBeVisible();
+  await expect(page.getByRole("button", { name: "按生成脉络排列", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".ic-save-state")).toHaveText("已保存");
+  const savedB = saves.at(-1).nodes.find((node: any) => node.nodeId === "asset:b1");
+  expect(savedB).toMatchObject(arrangedB);
+  expect(saves.at(-1).nodes.find((node: any) => node.nodeId === "asset:a2").hidden).toBe(true);
+  await filter.selectOption("all");
+  await expect(page.locator('.react-flow__node[data-id="asset:b1"]')).toBeVisible();
+  await expect(page.locator('.react-flow__node[data-id="asset:a2"]')).toHaveCount(0);
+  await page.reload();
+  await expect(filter).toHaveValue("all");
+  await expect(moduleFilter).toHaveValue("hero-detail");
+  await expect(page.locator('.react-flow__node[data-id="asset:b1"]')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(filter).toBeVisible();
+  await filter.selectOption("batch-b");
+  await expect(page.locator('.react-flow__node[data-id="asset:a1"]')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("canvas-batch-mobile.png") });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});

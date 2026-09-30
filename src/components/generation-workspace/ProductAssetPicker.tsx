@@ -60,6 +60,7 @@ export function ProductAssetPicker({
               key={asset.id}
               type="button"
               className={["generation-asset", selectedIds.includes(asset.id) ? "selected" : ""].filter(Boolean).join(" ")}
+              aria-label={`${asset.name} ${asset.status === "ready" ? "可用" : asset.status}`}
               aria-pressed={selectedIds.includes(asset.id)}
               onClick={() => onChange(toggleBoundedSelection(selectedIds, asset.id, max))}
             >

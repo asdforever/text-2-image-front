@@ -45,23 +45,82 @@ async function draft(page: Page, mode: string) {
 }
 
 for (const mode of ["hero", "suite"] as const) {
+  test(`${mode} 模块单列摘要与独立编辑`, async ({ page }, testInfo) => {
+    await setup(page, mode);
+    let saved: ApiModulePlan | undefined;
+    await page.route("**/api/projects/proj-demo/module-plans**", async route => {
+      if (route.request().method() === "POST") saved = planFor(route.request().postDataJSON());
+      return saved ? route.fulfill({ json: { data: saved } }) : route.fulfill({ status: 404, json: { error: { message: "尚无规划" } } });
+    });
+    await page.setViewportSize({ width: 1600, height: 1100 });
+    await page.goto(`/projects/proj-demo?tab=${mode}`);
+    await page.getByRole("button", { name: "自动规划", exact: true }).click();
+    const cards = page.locator(".studio-module.is-selected");
+    await expect(cards).toHaveCount(mode === "hero" ? 2 : 6);
+    await expect(cards.getByRole("textbox")).toHaveCount(0);
+    await expect(cards.first()).toContainText("通勤时如何使用？");
+    const boxes = await cards.evaluateAll(elements => elements.map(element => {
+      const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height };
+    }));
+    for (let i = 1; i < boxes.length; i++) {
+      expect(boxes[i].x).toBe(boxes[0].x);
+      expect(boxes[i].width).toBe(boxes[0].width);
+      expect(boxes[i].y).toBeGreaterThanOrEqual(boxes[i - 1].y + boxes[i - 1].height);
+    }
+    await page.screenshot({ path: testInfo.outputPath("module-list-desktop.png") });
+    await cards.first().getByRole("button", { name: "修改第 1 张任务标题" }).click();
+    await cards.first().getByLabel("任务标题", { exact: true }).fill("放弃这个标题");
+    await cards.first().getByLabel("任务标题", { exact: true }).press("Escape");
+    await expect(cards.first()).toContainText("解释通勤价值");
+    await expect(page.locator(".generation-config")).toBeVisible();
+    await cards.first().getByRole("button", { name: "修改第 1 张任务标题" }).click();
+    await cards.first().getByLabel("任务标题", { exact: true }).fill("新的通勤主题");
+    await cards.first().getByLabel("任务标题", { exact: true }).press("Enter");
+    await cards.first().getByRole("button", { name: "编辑第 1 张任务", exact: true }).click();
+    await expect(cards.first().getByRole("textbox", { name: "任务标题", exact: true })).toHaveCount(0);
+    await cards.first().getByLabel("本图要讲什么", { exact: true }).fill("介绍地铁通勤的使用方式");
+    await expect(cards.first().getByLabel("构图要求（选填）")).not.toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("module-editor-desktop.png") });
+    await cards.nth(1).getByRole("button", { name: "编辑第 2 张任务", exact: true }).click();
+    await expect(cards.first().getByLabel("本图要讲什么", { exact: true })).toHaveCount(0);
+    await expect(cards.first()).toContainText("介绍地铁通勤的使用方式");
+    await expect(cards.nth(1).getByLabel("本图要讲什么", { exact: true })).toHaveValue("这张图要说明什么？");
+    await page.reload();
+    await expect(cards.first()).toContainText("新的通勤主题");
+    await expect(cards.first()).toContainText("介绍地铁通勤的使用方式");
+    await expect(cards.getByRole("textbox")).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "关闭生成配置", exact: true }).first().click();
+    await cards.first().getByRole("button", { name: "编辑第 1 张任务", exact: true }).click();
+    await expect(cards.first().getByLabel("本图要讲什么", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("module-editor-mobile.png") });
+  });
+
   test(`${mode} 手动同类任务的设计选择独立保存并传给编译`, async ({ page }) => {
     const { postCalls } = await setup(page, mode, true);
     await page.goto(`/projects/proj-demo?tab=${mode}`);
     const cards = page.locator(".studio-module.is-selected");
     await page.getByRole("button", { name: mode === "hero" ? "添加首屏 KV" : "添加首屏主视觉", exact: true }).click();
     const added = cards.nth(1);
+    await added.getByRole("button", { name: "修改第 2 张任务标题" }).click();
     await added.getByLabel("任务标题", { exact: true }).fill("成分说明");
+    await added.getByLabel("任务标题", { exact: true }).press("Enter");
+    await added.getByRole("button", { name: "编辑第 2 张任务", exact: true }).click();
     await added.getByLabel("本图要讲什么", { exact: true }).fill("介绍已确认的成分");
     await added.getByLabel("表达方式", { exact: true }).fill("用大字与成分示意表达");
     await added.getByRole("combobox", { name: "商品出场", exact: true }).selectOption("none");
+    await added.locator("summary").filter({ hasText: "构图建议与要求" }).click();
     await added.getByLabel("构图要求（选填）").fill("大标题在上方");
+    await cards.first().getByRole("button", { name: "编辑第 1 张任务", exact: true }).click();
     await expect(cards.first().getByRole("combobox", { name: "商品出场", exact: true })).toHaveValue("auto");
+    await cards.nth(1).getByRole("button", { name: "编辑第 2 张任务", exact: true }).click();
     await expect(page.getByText("当前生成模块已失效，请重新选择", { exact: true })).toHaveCount(0);
     await page.reload();
+    await added.getByRole("button", { name: "编辑第 2 张任务", exact: true }).click();
     await expect(added.getByRole("combobox", { name: "商品出场", exact: true })).toHaveValue("none");
     await expect(added.getByLabel("表达方式", { exact: true })).toHaveValue("用大字与成分示意表达");
-    await page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true }).click();
+    await page.getByRole("button", { name: "编译提示词", exact: true }).click();
     await expect.poll(() => postCalls.length).toBe(1);
     expect(postCalls[0].body.modules[0].taskDesign).toBeUndefined();
     expect(postCalls[0].body.modules[1].taskDesign).toEqual({ taskTitle: "成分说明", informationQuestion: "介绍已确认的成分", visualMechanism: "用大字与成分示意表达", productPresence: "none" });
@@ -76,7 +135,7 @@ for (const mode of ["hero", "suite"] as const) {
     const style = page.getByRole("button", { name: catalog.styleCategories[0].styles[0].label, exact: true });
     await style.click();
     await page.getByRole("button", { name: "折叠图片风格", exact: true }).click();
-    const submit = page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true });
+    const submit = page.getByRole("button", { name: "编译提示词", exact: true });
     await submit.click();
     const section = page.locator(".generation-section-card").filter({ hasText: "图片风格" });
     await expect(section.getByRole("alert")).toContainText("请选择图片风格");
@@ -103,12 +162,13 @@ for (const mode of ["hero", "suite"] as const) {
     await expect(page.getByRole("button", { name: /[上下]移第 .* 张任务/ })).toHaveCount(0);
     await expect(page.getByRole("combobox", { name: /生成张数/ })).toHaveCount(0);
     // Submit the untouched legacy count first; simply hiding the selector must not send four images.
-    await page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true }).click();
+    await page.getByRole("button", { name: "编译提示词", exact: true }).click();
     await expect.poll(() => postCalls.length).toBe(1);
     expect(postCalls[0].body.modules[0].resultCount).toBe(1);
     await page.getByRole("button", { name: mode === "hero" ? "添加首屏 KV" : "添加首屏主视觉", exact: true }).click();
     await expect(cards).toHaveCount(2);
-    await cards.nth(1).locator("summary").click();
+    await cards.nth(1).getByRole("button", { name: "编辑第 2 张任务", exact: true }).click();
+    await cards.nth(1).locator("summary").filter({ hasText: "补充参数" }).click();
     await cards.nth(1).getByPlaceholder("填写具体要求").first().fill("第二张独立内容");
     const added = await draft(page, mode);
     expect(new Set(added.selectedModuleIds).size).toBe(2);
@@ -143,7 +203,8 @@ for (const mode of ["hero", "suite"] as const) {
     await expect.poll(async () => (await draft(page, mode)).selectedModuleIds).toEqual(["detail-lid", "detail-base"]);
     const cards = page.locator(".studio-module.is-selected");
     await expect(page.getByRole("combobox", { name: /生成张数/ })).toHaveCount(0);
-    await cards.nth(1).locator("summary").click();
+    await cards.nth(1).getByRole("button", { name: "编辑第 2 张任务", exact: true }).click();
+    await cards.nth(1).locator("summary").filter({ hasText: "补充参数" }).click();
     await cards.nth(1).getByPlaceholder("填写具体要求").first().fill("用户只修改杯底任务");
     await page.reload();
     await expect(cards).toHaveCount(2);
@@ -154,7 +215,7 @@ for (const mode of ["hero", "suite"] as const) {
     expect(restored.moduleTypes).toMatchObject({ "detail-lid": `${mode}-detail`, "detail-base": `${mode}-detail` });
     expect(restored.moduleParameters["detail-lid"][0].value).toBe("轻量通勤");
     expect(restored.moduleParameters["detail-base"][0].value).toBe("用户只修改杯底任务");
-    await page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true }).click();
+    await page.getByRole("button", { name: "编译提示词", exact: true }).click();
     await expect.poll(() => postCalls.length).toBe(1);
     expect(postCalls[0].body.modulePlanId).toBe("master-1");
     expect(postCalls[0].body.modules.map((item: any) => [item.taskId, item.moduleId, item.resultCount])).toEqual([
@@ -182,10 +243,13 @@ for (const mode of ["hero", "suite"] as const) {
     expect(applied.selectedModuleIds).toEqual(saved!.modules.map((item) => item.moduleId));
     expect(Object.values(applied.moduleCounts)).toEqual(saved!.modules.map(() => 1));
     expect(applied.moduleParameters[saved!.modules[0].moduleId].filter((item: any) => item.key === "建议构图简案")).toHaveLength(0);
-    await expect(page.getByText(/本图要讲什么/).first()).toBeVisible();
+    await page.getByRole("button", { name: "编辑第 1 张任务", exact: true }).click();
+    await expect(page.getByLabel("本图要讲什么", { exact: true })).toBeVisible();
     await expect(page.getByRole("combobox", { name: "商品出场", exact: true }).first()).toHaveValue("context");
     expect(applied.moduleTaskDetails[saved!.modules[0].moduleId].title).toBe("解释通勤价值");
+    await page.locator(".module-task-editor summary").filter({ hasText: "构图建议与要求" }).click();
     await page.getByLabel("构图要求（选填）").first().fill("标题放左上角");
+    await page.locator(".module-task-editor summary").filter({ hasText: "补充参数" }).click();
     await page.getByPlaceholder("填写具体要求").first().fill("用户修改后的卖点");
     const edited = await draft(page, mode);
     expect(edited.moduleParameters[saved!.modules[0].moduleId]).toContainEqual({ key: "构图要求", value: "标题放左上角" });
@@ -207,7 +271,7 @@ for (const mode of ["hero", "suite"] as const) {
       await route.fulfill({ json: { data: planFor(route.request().postDataJSON()) } });
     });
     await page.goto(`/projects/proj-demo?tab=${mode}`);
-    await page.getByRole("button", { name: mode === "hero" ? "编译提示词" : "生成套图提示词", exact: true }).click();
+    await page.getByRole("button", { name: "编译提示词", exact: true }).click();
     await expect.poll(() => postCalls.length).toBe(1);
     expect(plans).toBe(1);
     expect(postCalls[0].body.modulePlanId).toBe("master-1");

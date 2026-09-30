@@ -21,7 +21,7 @@ export function useGenerationResultMetadata(projectId: string, assets: Asset[]) 
         if (task.projectId !== projectId || !task.generatedAssetId) continue;
         const selection = (task.snapshot.selection ?? {}) as Record<string, unknown>;
         const module = selection.module as { label?: string } | undefined;
-        steps.push({ id: `hero-task:${task.id}`, kind: "hero", title: module?.label ?? "主图",
+        steps.push({ creationMode: task.snapshot.creationMode === "regular" ? "regular" : "professional", id: `hero-task:${task.id}`, kind: "hero", title: module?.label ?? "主图",
           sourceAssetIds: [task.sourceAssetId], outputAssetIds: [task.generatedAssetId], outputVersionIds: [],
           finalPrompt: task.finalPrompt ?? "", taskPrompt: task.confirmedTaskPrompt ?? "", constraints: {}, parameters: selection });
       }
