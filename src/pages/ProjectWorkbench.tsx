@@ -12,14 +12,16 @@ import { Button } from "../components/ui/button";
 import { BaseImageWorkspace } from "./BaseImageWorkspace";
 import { HeroImageWorkspace } from "./HeroImageWorkspace";
 import { SuiteWorkspace } from "./SuiteWorkspace";
+import { ProjectReverseWorkspace } from "./ProjectReverseWorkspace";
 const EmbeddedBoard = lazy(() => import("./BoardPage").then(module => ({ default: module.BoardPage })));
 
-type ImageTab = Exclude<OutputTarget, "video"> | "canvas";
+type ImageTab = Exclude<OutputTarget, "video"> | "canvas" | "reverse";
 
 const TAB_LABELS: Record<ImageTab, string> = {
   base: "白底图",
   hero: "主图",
   suite: "详情套图",
+  reverse: "项目反推",
   canvas: "画布",
 };
 
@@ -42,7 +44,7 @@ function ProjectWorkbenchContent() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
-  const activeTab: ImageTab = search.tab === "hero" || search.tab === "suite" || search.tab === "canvas" ? search.tab : "base";
+  const activeTab: ImageTab = search.tab === "hero" || search.tab === "suite" || search.tab === "reverse" || search.tab === "canvas" ? search.tab : "base";
   const [visited, setVisited] = useState<ImageTab[]>([activeTab]);
   const project = useMemo(() => projectDetail ? toWorkbenchProject(projectDetail) : null, [projectDetail]);
   const selectedAsset = useMemo(() => project?.assets.find((asset) => asset.id === selectedAssetId), [project, selectedAssetId]);
@@ -67,7 +69,7 @@ function ProjectWorkbenchContent() {
     if (activeTab !== "base") setPanelOpen(false);
   }, [activeTab]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(null), 2400); return () => window.clearTimeout(timer); }, [toast]);
-  useHotkeys("ctrl+tab", (event) => { event.preventDefault(); const tabs: ImageTab[] = ["base", "hero", "suite", "canvas"]; void navigate({ search: { tab: tabs[(tabs.indexOf(activeTab) + 1) % tabs.length] } }); });
+  useHotkeys("ctrl+tab", (event) => { event.preventDefault(); const tabs: ImageTab[] = ["base", "hero", "suite", "reverse", "canvas"]; void navigate({ search: { tab: tabs[(tabs.indexOf(activeTab) + 1) % tabs.length] } }); });
   useHotkeys("escape", () => setSelectionMode(false));
 
   if (loading) return <div className="app-shell"><main className="page-loading" role="status"><span>正在加载项目...</span></main></div>;
@@ -87,6 +89,7 @@ function ProjectWorkbenchContent() {
     ? <BaseImageWorkspace key={project.id + ":base"} project={project} projectDetail={projectDetail} onRefresh={refreshBaseProject} selectionMode={selectionMode} selectedIds={selectedIds} onSelectedIdsChange={setSelectedIds} onSelectAsset={inspectAsset} onToast={setToast} focusAssetId={selectedAssetId} />
     : tab === "hero"
       ? <HeroImageWorkspace key={project.id + ":hero"} project={project} selectionMode={selectionMode} selectedIds={selectedIds} onSelectedIdsChange={setSelectedIds} onSelectAsset={inspectAsset} onToast={setToast} onRefresh={refreshProject} focusAssetId={selectedAssetId} />
+      : tab === "reverse" ? <ProjectReverseWorkspace key={project.id + ":reverse"} project={project} projectDetail={projectDetail} onRefresh={refreshProject} onToast={setToast} />
       : tab === "canvas" ? <EmbeddedBoard suiteId={project.id} active={activeTab === "canvas"} embedded navigate={() => changeTab("suite")} />
       : <SuiteWorkspace key={project.id + ":suite"} project={project} onToast={setToast} onSelectAsset={inspectAsset} onRefresh={refreshProject} />;
 

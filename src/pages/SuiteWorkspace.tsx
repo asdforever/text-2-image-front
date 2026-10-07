@@ -390,10 +390,10 @@ export function SuiteWorkspace(props: {
           <div className="generation-result-header-actions">{!collapsed && <Button size="icon" variant="ghost" title="收起配置" aria-label="收起配置" onClick={() => setCollapsed(true)}><PanelLeftClose size={16} /></Button>}</div>
         </header>
       </div>
-      <GenerationTaskStatus batch={preparing ? null : remoteBatch} status={modulePlanner.planning ? "planning" : preparing ? "compiling" : remoteBatch?.status ?? remotePlan?.status} moduleCount={submittingPlan ? config.selectedModuleIds.length : remotePlan?.modules.length} loading={loadingPlan} reconnecting={!!recovery.error} />
+      <GenerationTaskStatus batch={preparing || modulePlanner.error ? null : remoteBatch} status={modulePlanner.planning ? "planning" : preparing ? "compiling" : modulePlanner.error ? "failed" : remoteBatch?.status ?? remotePlan?.status} moduleCount={preparing || modulePlanner.error ? config.selectedModuleIds.length : remotePlan?.modules.length} loading={loadingPlan} reconnecting={!!recovery.error} />
       <div className="generation-result-body">
+        {(recovery.error || flowError || modulePlanner.error || remotePlan?.error?.message) && <div className="suite-flow-error" role="alert">{recovery.error || flowError || modulePlanner.error || remotePlan?.error?.message}</div>}
         <GenerationModulesPanel projectId={props.project.id} mode="suite" config={config} planner={modulePlanner} errors={errors} onChange={change} />
-        {(recovery.error || flowError || remotePlan?.error?.message) && <div className="suite-flow-error" role="alert">{recovery.error || flowError || remotePlan?.error?.message}</div>}
         {recovery.missing && <p role="status">正在查询已提交的套图任务，尚未找到记录。不会自动重新生成。</p>}
         {awaitingConfirmation && remotePlan && <section className="suite-prompt-confirmation" aria-label="套图提示词确认">
           <header className="suite-section-heading"><div><h2>检查套图提示词</h2><p>共 {total} 张。检查每张图的提示词，最终拼接顺序在画布中调整。</p></div></header>

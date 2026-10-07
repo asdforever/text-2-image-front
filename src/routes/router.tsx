@@ -10,6 +10,7 @@ const AssetLibrariesPage = lazyRouteComponent(() => import("../pages/AssetLibrar
 const AssetLibraryDetailPage = lazyRouteComponent(() => import("../pages/AssetLibraryDetailPage"), "default");
 const ProductLibrariesPage = lazyRouteComponent(() => import("../pages/ProductLibrariesPage"), "default");
 const ProductLibraryDetailPage = lazyRouteComponent(() => import("../pages/ProductLibraryDetailPage"), "default");
+const ProductLibraryProjectPage = lazyRouteComponent(() => import("../pages/ProductLibraryProjectPage"), "default");
 const TestProductLibrariesPage = lazyRouteComponent(() => import("../pages/TestProductLibrariesPage"), "default");
 const TestProductLibraryDetailPage = lazyRouteComponent(() => import("../pages/TestProductLibraryDetailPage"), "default");
 const TestRunsPage = lazyRouteComponent(() => import("../pages/TestRunsPage"), "default");
@@ -58,7 +59,7 @@ const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/projects/$projectId",
   validateSearch: (search: Record<string, unknown>) => ({
-    tab: search.tab === "hero" || search.tab === "suite" || search.tab === "video" || search.tab === "canvas" ? search.tab : "base",
+    tab: search.tab === "hero" || search.tab === "suite" || search.tab === "reverse" || search.tab === "video" || search.tab === "canvas" ? search.tab : "base",
   }),
   beforeLoad: ({ search, params }) => {
     if (search.tab === "video") {
@@ -94,6 +95,12 @@ const productLibrariesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/product-libraries",
   component: ProductLibrariesPage,
+});
+
+const productLibraryProjectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/product-libraries/projects/$productId",
+  component: ProductLibraryProjectPage,
 });
 
 const productLibraryDetailRoute = createRoute({
@@ -135,6 +142,7 @@ const routeTree = rootRoute.addChildren([
   assetLibrariesRoute,
   assetLibraryDetailRoute,
   productLibrariesRoute,
+  productLibraryProjectRoute,
   productLibraryDetailRoute,
   testProductLibrariesRoute,
   testProductLibraryDetailRoute,

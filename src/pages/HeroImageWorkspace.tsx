@@ -508,8 +508,9 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         {!collapsed && <Button size="icon" variant="ghost" title="收起配置" aria-label="收起配置" onClick={() => setCollapsed(true)}><PanelLeftClose size={16} /></Button>}
       </header>
       </div>
-      <GenerationTaskStatus batch={preparing ? null : batch} status={modulePlanner.planning ? "planning" : preparing ? "compiling_prompt" : batch?.status ?? task?.status} moduleCount={preparing ? config.selectedModuleIds.length : batch?.modules.length ?? (task ? 1 : 0)} loading={recovery.loading} reconnecting={!!recovery.error} />
+      <GenerationTaskStatus batch={preparing || modulePlanner.error ? null : batch} status={modulePlanner.planning ? "planning" : preparing ? "compiling_prompt" : modulePlanner.error ? "failed" : batch?.status ?? task?.status} moduleCount={preparing || modulePlanner.error ? config.selectedModuleIds.length : batch?.modules.length ?? (task ? 1 : 0)} loading={recovery.loading} reconnecting={!!recovery.error} />
       <div className="generation-result-body">
+        {(recovery.error || flowError || modulePlanner.error || batch?.error?.message || task?.error?.message) && <div className="hero-generation-error" role="alert"><strong>{recovery.error ? "任务状态查询暂时中断" : "本次操作未完成"}</strong><span>{recovery.error || flowError || modulePlanner.error || batch?.error?.message || task?.error?.message}</span></div>}
         <GenerationModulesPanel projectId={props.project.id} mode="hero" config={config} planner={modulePlanner} errors={errors} onChange={change} />
         {recovery.missing && <p role="status">正在查询已提交的主图任务，尚未找到记录。不会自动重新生成。</p>}
         {task?.status === "awaiting_confirmation" && <HeroPromptConfirmation task={task} busy={busy} onConfirm={() => void confirmGeneration()} onCancel={() => { setTask(null); clearHeroGenerationSession(props.project.id); }} />}
@@ -518,7 +519,6 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         </details>}
         {!preparing && batch && !["awaiting_confirmation", "compiling_prompt"].includes(batch.status) && <details className="studio-task-details" open={["failed", "partially_failed"].includes(batch.status)}><summary>批次进度与重试</summary><BatchGenerationStatus batch={batch} busy={busy} onCancel={() => void cancelBatchGeneration()} onRetry={(slotId) => void retryBatchSlot(slotId)} onRecompile={() => void generate(true)} /></details>}
         {task?.status === "generating" && <div className="generation-empty-state" role="status"><strong>正在生成主图</strong><span>已锁定平台、风格和商品真实性约束，请稍候。</span></div>}
-        {(recovery.error || flowError || batch?.error?.message || task?.error?.message) && <div className="hero-generation-error" role="alert"><strong>{recovery.error ? "任务状态查询暂时中断" : "本次操作未完成"}</strong><span>{recovery.error || flowError || batch?.error?.message || task?.error?.message}</span></div>}
         {task?.status === "succeeded" && <section className="hero-generation-summary"><strong>本次生成快照</strong><span>最终提示词哈希：{task.finalPromptSha256}</span><details><summary>查看最终提示词</summary><pre>{task.finalPrompt}</pre></details></section>}
         <GenerationImageStage key={config.creationMode ?? "professional"}
           images={resultImages}

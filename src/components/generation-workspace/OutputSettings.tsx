@@ -12,7 +12,7 @@ export function OutputSettings({ value, onChange }: { value: OutputSettingsValue
   const patch = (next: Partial<OutputSettingsValue>) => onChange({ ...value, ...next });
   const standardLanguages = ["中文", "英文", "日文"];
   const languages = standardLanguages.includes(value.outputLanguage) ? standardLanguages : [value.outputLanguage, ...standardLanguages];
-  const models = useGenerationConfigStore((state) => state.published.models);
+  const models = useGenerationConfigStore((state) => (state.runtimePublished ?? state.published).models);
   const matchedModel = models.find((model) => model.id === value.model || model.label === value.model);
   const selectedModel = matchedModel ?? (!value.model ? models[0] : undefined);
   const modelIsMissing = Boolean(value.model) && !matchedModel;

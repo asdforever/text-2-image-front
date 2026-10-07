@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Image } from "lucide-react";
 import { suiteApi, type ApiProductionLibrary, type ApiProductionProduct } from "../api/client";
 import { ImageBatchFilter, ImageModuleFilter } from "../components/image-canvas/ImageBatchFilter";
@@ -6,6 +7,7 @@ import { ProjectArchive } from "../components/product-library/ProjectArchive";
 import { ALL_BATCHES, ALL_MODULES, buildProductionImageFilterIndex, matchesProductionImageFilters } from "../components/product-library/product-image-filters";
 
 export function ProductLibrariesPage() {
+  const navigate = useNavigate();
   const [library, setLibrary] = useState<ApiProductionLibrary | null>(null);
   const [projects, setProjects] = useState<ApiProductionProduct[]>([]);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
@@ -85,9 +87,16 @@ export function ProductLibrariesPage() {
                 <button
                   className="workflow-project-card"
                   type="button"
-                  aria-expanded={expandedProductId === product.id}
-                  aria-controls={`product-archive-${product.id}`}
+                  aria-expanded={product.projectId ? undefined : expandedProductId === product.id}
+                  aria-controls={product.projectId ? undefined : `product-archive-${product.id}`}
                   onClick={() => {
+                    if (product.projectId) {
+                      void navigate({
+                        to: "/product-libraries/projects/$productId",
+                        params: { productId: product.id },
+                      });
+                      return;
+                    }
                     setExpandedProductId(current => current === product.id ? null : product.id);
                     setBatchFilter(ALL_BATCHES);
                     setModuleFilter(ALL_MODULES);
