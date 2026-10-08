@@ -54,7 +54,7 @@ export function canvasImages(workbench: ApiWorkbench, assets: ApiProjectAsset[])
   }
   return projectVersionImages(images.map((image) => {
     const generation = workbench.generationSteps?.find((s) => s.outputAssetIds.includes(image.assetId ?? "") || s.outputVersionIds.includes(image.version?.id ?? ""));
-    const category = generation?.kind === "suite" ? "detail" : generation && ["hero", "white", "edit"].includes(generation.kind) ? generation.kind as ImageCategory : image.category;
+    const category = generation && ["suite", "reverse"].includes(generation.kind) ? "detail" : generation && ["hero", "white", "edit"].includes(generation.kind) ? generation.kind as ImageCategory : image.category;
     return { ...image, category, generation };
   }), workbench, assets);
 }

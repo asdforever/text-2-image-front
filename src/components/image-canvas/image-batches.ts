@@ -19,7 +19,7 @@ export function imageBatchIndex(workbench: ApiWorkbench, assets: ApiProjectAsset
   const explicitModules = new Set<string>();
   const parents = new Map<string, Set<string>>();
   const explicit = new Set<string>();
-  const batches = new Map<string, { id: string; kind: string; createdAt?: string; creationMode?: string }>();
+  const batches = new Map<string, { id: string; kind: string; createdAt?: string; creationMode?: string; reversePlanName?: string; reverseBatchNo?: number }>();
   const link = (output: string, source: string) => {
     if (output === source) return;
     if (!parents.has(output)) parents.set(output, new Set());
@@ -54,7 +54,8 @@ export function imageBatchIndex(workbench: ApiWorkbench, assets: ApiProjectAsset
     if (batchId) {
       const createdAt = step.batchCreatedAt ?? base?.batchCreatedAt ?? workbench.batches?.find(batch => batch.id === batchId)?.createdAt;
       const prior = batches.get(batchId);
-      batches.set(batchId, { id: batchId, kind: prior?.kind ?? step.kind, creationMode: prior?.creationMode ?? step.creationMode ?? base?.creationMode, createdAt: prior?.createdAt ?? createdAt });
+      batches.set(batchId, { id: batchId, kind: prior?.kind ?? step.kind, creationMode: prior?.creationMode ?? step.creationMode ?? base?.creationMode, createdAt: prior?.createdAt ?? createdAt,
+        reversePlanName: prior?.reversePlanName ?? step.reversePlanName ?? base?.reversePlanName, reverseBatchNo: prior?.reverseBatchNo ?? step.reverseBatchNo ?? base?.reverseBatchNo });
       outputs.forEach(id => record(id, batchId));
     }
     for (const output of outputs) for (const source of step.sourceAssetIds) link(output, source);
@@ -101,7 +102,8 @@ export function imageBatchIndex(workbench: ApiWorkbench, assets: ApiProjectAsset
   return { membership, moduleMembership, modules: [...modules.values()].sort((a, b) => a.label.localeCompare(b.label, "zh-CN")), batches: sorted.map((batch, index) => {
     const date = batch.createdAt ? new Date(batch.createdAt) : null;
     const time = date && Number.isFinite(date.valueOf()) ? date.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "时间未记录";
-    return { id: batch.id, createdAt: batch.createdAt, label: `${creationModeLabel(batch.creationMode)} · ${names[batch.kind] ?? "生成"} · ${time} · ${batch.id.slice(0, 8)}${index === 0 && date && Number.isFinite(date.valueOf()) ? "（最新）" : ""}` };
+    const title = batch.kind === "reverse" ? `${batch.reversePlanName ?? "项目反推"}${batch.reverseBatchNo ? ` · 反推批次 ${batch.reverseBatchNo}` : ""}` : `${creationModeLabel(batch.creationMode)} · ${names[batch.kind] ?? "生成"}`;
+    return { id: batch.id, createdAt: batch.createdAt, label: `${title} · ${time} · ${batch.id.slice(0, 8)}${index === 0 && date && Number.isFinite(date.valueOf()) ? "（最新）" : ""}` };
   }) };
 }
 

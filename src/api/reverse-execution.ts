@@ -19,7 +19,7 @@ export interface ReverseExecutionTask {
   moduleParameters?: Array<{ key: string; value: string }>;
   parametersAssigned?: boolean;
   promptDraft: string;
-  status: "draft" | "compiled" | "generating" | "succeeded" | "failed";
+  status: "draft" | "compiled" | "queued" | "not_requested" | "generating" | "succeeded" | "failed";
   generatedAssetId?: string | null;
   generatedPreviewUrl?: string | null;
   generatedAt?: string | null;
@@ -28,11 +28,13 @@ export interface ReverseExecutionTask {
 
 export interface ReverseExecutionPlan {
   id: string;
+  name?: string;
   projectId: string;
   reverseVersionId: string;
   versionId: string;
   referenceCount: number;
   sourceAssetId?: string | null;
+  auxiliarySourceAssetIds?: string[];
   productFacts?: Record<string, string>;
   parameterBrief?: string;
   parametersAssigned?: boolean;
@@ -50,6 +52,18 @@ export interface ReverseExecutionPlan {
   updatedAt: string;
 }
 
+export interface ReverseExecutionAttempt {
+  id: string; number: number; status: string; createdAt: string;
+  generatedAssetId?: string; generatedPreviewUrl?: string; error?: string; archiveError?: string;
+}
+export interface ReverseExecutionBatch {
+  id: string; planId: string; projectId: string; batchNo: number; planName: string;
+  status: "running" | "completed" | "partial" | "failed"; createdAt: string; updatedAt: string; revision: number;
+  document: { sourceAssetId?: string; auxiliarySourceAssetIds?: string[]; versionId: string; outputSettings?: ReverseExecutionPlan["outputSettings"] };
+  tasks: Array<ReverseExecutionTask & { attempts: ReverseExecutionAttempt[] }>;
+  progress: { total: number; succeeded: number; failed: number };
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { cache: "no-store", ...init });
   const payload = await response.json().catch(() => null) as { data?: T; error?: { code?: string; message?: string } } | null;
@@ -62,10 +76,12 @@ const json = (method: string, body: unknown): RequestInit => ({ method, headers:
 const path = (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/reverse-execution`;
 
 export const reverseExecutionApi = {
-  get: (projectId: string) => request<ReverseExecutionPlan | null>(path(projectId)),
-  generate: (projectId: string, versionId: string, inputs: { sourceAssetId?: string | null; productFacts?: Record<string, string>; parameterBrief?: string; outputSettings?: ReverseExecutionPlan["outputSettings"] } = {}) => request<ReverseExecutionPlan>(path(projectId), json("POST", { versionId, ...inputs })),
-  save: (projectId: string, expectedRevision: number, document: { versionId: string; referenceCount: number; tasks: ReverseExecutionTask[]; sourceAssetId?: string | null; productFacts?: Record<string, string>; parameterBrief?: string; parametersAssigned?: boolean; parameterSummary?: string; parameterWarnings?: string[]; outputSettings?: ReverseExecutionPlan["outputSettings"] }) => request<ReverseExecutionPlan>(path(projectId), json("PATCH", { expectedRevision, document })),
-  compile: (projectId: string, expectedRevision: number, productFacts: Record<string, unknown> = {}) => request<ReverseExecutionPlan>(path(projectId) + "/compile", json("POST", { expectedRevision, productFacts })),
-  assignParameters: (projectId: string, expectedRevision: number) => request<ReverseExecutionPlan>(path(projectId) + "/parameters", json("POST", { expectedRevision })),
-  generateImages: (projectId: string, expectedRevision: number, options: { taskIds?: string[]; sourceAssetId?: string; aspectRatio?: string; resolution?: string } = {}) => request<ReverseExecutionPlan>(path(projectId) + "/generate", json("POST", { expectedRevision, ...options })),
+  get: (projectId: string, planId?: string) => request<ReverseExecutionPlan | null>(path(projectId) + (planId ? `?planId=${encodeURIComponent(planId)}` : "")),
+  list: (projectId: string) => request<ReverseExecutionPlan[]>(path(projectId) + "/plans"),
+  batches: (projectId: string, planId: string) => request<ReverseExecutionBatch[]>(path(projectId) + `/batches?planId=${encodeURIComponent(planId)}`),
+  generate: (projectId: string, versionId: string, inputs: { name?: string; sourceAssetId?: string | null; auxiliarySourceAssetIds?: string[]; productFacts?: Record<string, string>; parameterBrief?: string; outputSettings?: ReverseExecutionPlan["outputSettings"] } = {}) => request<ReverseExecutionPlan>(path(projectId), json("POST", { versionId, ...inputs })),
+  save: (projectId: string, expectedRevision: number, document: { name?: string; versionId: string; referenceCount: number; tasks: ReverseExecutionTask[]; sourceAssetId?: string | null; auxiliarySourceAssetIds?: string[]; productFacts?: Record<string, string>; parameterBrief?: string; parametersAssigned?: boolean; parameterSummary?: string; parameterWarnings?: string[]; outputSettings?: ReverseExecutionPlan["outputSettings"] }, planId?: string) => request<ReverseExecutionPlan>(path(projectId), json("PATCH", { expectedRevision, document, ...(planId ? { planId } : {}) })),
+  compile: (projectId: string, expectedRevision: number, productFacts: Record<string, unknown> = {}, planId?: string) => request<ReverseExecutionPlan>(path(projectId) + "/compile", json("POST", { expectedRevision, productFacts, ...(planId ? { planId } : {}) })),
+  assignParameters: (projectId: string, expectedRevision: number, planId?: string) => request<ReverseExecutionPlan>(path(projectId) + "/parameters", json("POST", { expectedRevision, ...(planId ? { planId } : {}) })),
+  generateImages: (projectId: string, expectedRevision: number, options: { planId?: string; batchId?: string; taskIds?: string[]; sourceAssetId?: string; auxiliarySourceAssetIds?: string[]; aspectRatio?: string; resolution?: string } = {}) => request<ReverseExecutionPlan>(path(projectId) + "/generate", json("POST", { expectedRevision, ...options })),
 };

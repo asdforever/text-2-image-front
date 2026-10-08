@@ -8,6 +8,16 @@ const asset = (id: string, sourceAssetId: string | null = null): ApiProjectAsset
 const step = (id: string, outputs: string[], sources: string[], batchId?: string): ApiCanvasGenerationStep => ({ id, kind: "hero", title: id, sourceAssetIds: sources, outputAssetIds: outputs, outputVersionIds: [], finalPrompt: "", taskPrompt: "", constraints: {}, parameters: {}, batchId, batchCreatedAt: batchId === "b" ? "2026-09-29T02:00:00Z" : "2026-09-29T01:00:00Z" });
 const wb = (steps: ApiCanvasGenerationStep[]) => ({ suite: { id: "p" }, inputImages: [], tasks: [], generationSteps: steps, layout: null } as unknown as ApiWorkbench);
 
+test("反推批次显示方案名称和编号，重试结果归属于同一批次", () => {
+  const workbench = wb([{ ...step("reverse-task", ["first", "retry"], ["source"], "reverse-batch"),
+    kind: "reverse", reversePlanName: "电竞桌面方案", reverseBatchNo: 2 }]);
+  const index = imageBatchIndex(workbench, [asset("source"), asset("first"), asset("retry")]);
+  assert.match(index.batches[0].label, /电竞桌面方案.*反推批次 2/);
+  assert.equal(matchesImageBatch(index, "reverse-batch", "first"), true);
+  assert.equal(matchesImageBatch(index, "reverse-batch", "retry"), true);
+  assert.equal(canvasImages(workbench, [asset("first")])[0].category, "detail");
+});
+
 test("batch ownership follows edits and aliases but never absorbs an explicitly different batch", () => {
   const assets = [asset("source"), asset("a"), asset("b", "a"), asset("edit-2", "edit-1"), asset("edit-1", "b"), { ...asset("edit-3"), generationSnapshotId: "edit-v3" }];
   const workbench = wb([step("a-step", ["a"], ["source"], "a"), step("b-step", ["b"], ["a"], "b")]);

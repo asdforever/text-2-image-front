@@ -2,7 +2,6 @@ import React from "react";
 import type { Project } from "../api/contracts";
 import { findGenerationMarket } from "../lib/generation-config";
 import { hasPlanningInput } from "../lib/planning-master";
-import { ReverseReferencePanel } from "../features/reverse-projects/ReverseReferencePanel";
 import { selectableProductAssets, type SuiteGenerationConfig } from "../lib/generation-workspace";
 import { useGenerationConfigStore } from "../store/useGenerationConfigStore";
 import type { ModulePlanningControls } from "../hooks/useModulePlanning";
@@ -43,9 +42,6 @@ export function SuiteConfigPanel(props: {
       </ConfigSectionCard>
       <ConfigSectionCard title={regular ? "参数填写" : "规划大师"} description={regular ? "填写商品名称、规格、材质和卖点，再选择需要生成的模块" : "根据商品资料规划每张图要讲什么，再选择表达方式与构图"}>
         <textarea className="ui-textarea" aria-label={regular ? "参数填写" : "详情页商品资料"} placeholder={regular ? "例如：商品名称、规格尺寸、材质成分、核心卖点" : "例如：商品名称、规格、核心卖点、使用场景、目标人群"} value={props.config.planningBrief ?? ""} onChange={(event) => props.onChange({ planningBrief: event.target.value, modulePlanId: undefined, modulePlanFingerprint: undefined })} />
-        {!regular && <>
-        <ReverseReferencePanel projectId={props.project.id} target="suite" controls={props.planner?.references} disabled={planning} />
-        </>}
         <Button type="button" size="sm" disabled={planning || props.planner?.references?.loading || !hasPlanningInput(props.config) || props.config.selectedAssetIds.length === 0} onClick={() => void props.planner?.plan()}>{planning ? (regular ? "填写中…" : "规划中…") : regular ? "自动填写" : "自动规划"}</Button>
         {planError && <p className="generation-field-error" role="alert">{planError}</p>}
         {props.planner?.summary && <p role="status">{props.planner.summary}</p>}

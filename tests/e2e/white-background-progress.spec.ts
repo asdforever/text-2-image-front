@@ -3,16 +3,16 @@ import { expect, test, type Page } from "playwright/test";
 async function setup(page: Page, existing = false) {
   const source = { id: "source", kind: "source", state: "available", filename: "商品原图.png", width: 1280, height: 1905, createdAt: "2026-09-21", sourceAssetId: null };
   const output = { ...source, id: "white", kind: "white_background", filename: "商品白底图.png", sourceAssetId: "source" };
-  const state = { submitted: existing ? 1 : 0, status: "generating", reads: 0, networkFailure: false };
-  const task = () => ({ id: "task", sessionId: "session", revision: 1, status: state.status, sourceSnapshot: { assetId: "source", filename: source.filename }, configSnapshot: { outputKind: "white_background" }, promptSnapshot: {}, operations: [], attempts: state.status === "failed" ? [{ id: "attempt", status: "failed", error: "模型服务返回失败" }] : [], currentVersionId: state.status === "succeeded" ? "version" : null, finalVersionId: null });
+  const state = { submitted: existing ? 1 : 0, status: "generating", reads: 0, networkFailure: false, payload: null as Record<string, unknown> | null };
+  const task = () => ({ id: "task", sessionId: "session", revision: 1, status: state.status, sourceSnapshot: { assetId: "source", filename: source.filename }, configSnapshot: { outputKind: "white_background", background: state.payload?.background ?? "white" }, promptSnapshot: {}, operations: [], attempts: state.status === "failed" ? [{ id: "attempt", status: "failed", error: "模型服务返回失败" }] : [], currentVersionId: state.status === "succeeded" ? "version" : null, finalVersionId: null });
   await page.route("**/api/**", route => {
     const path = new URL(route.request().url()).pathname;
     if (!path.startsWith("/api/")) return route.fallback();
     const ok = (data: unknown) => route.fulfill({ json: { data } });
-    if (path === "/api/projects/proj-demo") return ok({ id: "proj-demo", name: "白底图项目", status: "active", assets: state.status === "succeeded" ? [source, output] : [source], selections: {} });
+    if (path === "/api/projects/proj-demo") return ok({ id: "proj-demo", name: "白底图项目", status: "active", assets: state.status === "succeeded" ? [source, { ...output, sourceSnapshot: { background: state.payload?.background ?? "white" } }] : [source], selections: {} });
     if (path.endsWith("/preview")) return route.fulfill({ path: "public/assets/gan65-product.jpg", contentType: "image/jpeg" });
     if (path === "/api/prompt-templates") return ok([{ id: "template", name: "白底图", defaultVersion: { id: "prompt-version", body: "纯白背景", versionNo: 1 } }]);
-    if (path.endsWith("/white-background-generations") && route.request().method() === "POST") { state.submitted++; return ok(task()); }
+    if (path.endsWith("/white-background-generations") && route.request().method() === "POST") { state.submitted++; state.payload = route.request().postDataJSON(); return ok(task()); }
     if (path.endsWith("/white-background-generations") || path === "/api/image-editor/tasks/task") {
       state.reads++;
       if (state.networkFailure) return route.fulfill({ status: 503, json: { error: { message: "网络暂不可用" } } });
@@ -42,6 +42,22 @@ test("白底图超过原轮询上限仍显示生成中，完成后自动补图�
   await expect(page.locator(".base-card")).toHaveCount(2);
   await expect(page.getByText("商品白底图.png", { exact: true })).toBeVisible();
   expect(state.submitted).toBe(1);
+});
+
+test("商品图直接绑定专用提示词，透明图只提交背景选项", async ({ page }) => {
+  const state = await setup(page);
+  await page.getByTitle("生成白底图", { exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("combobox")).toHaveCount(0);
+  await dialog.getByRole("radio", { name: "透明图", exact: true }).check();
+  await dialog.getByRole("button", { name: "生成透明图", exact: true }).click();
+  await expect.poll(() => state.submitted).toBe(1);
+  expect(state.payload).toEqual({ background: "transparent" });
+  await expect(page.getByText("透明图生成中", { exact: true })).toBeVisible();
+  state.status = "succeeded";
+  await page.clock.runFor(3100);
+  await expect(page.getByText("透明图", { exact: true })).toBeVisible();
+  await expect(page.locator(".base-card-image.is-transparent")).toHaveCount(1);
 });
 
 test("重新进入页面恢复后台任务，查询中断不会误报生成失败或重复提交", async ({ page }) => {

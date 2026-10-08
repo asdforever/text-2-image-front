@@ -3,14 +3,13 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import JSZip from "jszip";
 import { Download, Library, Upload } from "lucide-react";
 import type { Asset, Project } from "../api/contracts";
-import { projectApi, suiteApi, type ApiProjectDetail, type ApiPromptTemplate } from "../api/client";
+import { projectApi, type ApiProjectDetail } from "../api/client";
 import { BaseImageCard } from "../components/BaseImageCard";
 import { Button } from "../components/ui/button";
 import { isImageEditTaskActive } from "../lib/image-editing-task";
 import { useWhiteBackgroundTasks } from "../lib/use-white-background-tasks";
 import { loadWhiteBackgroundLibrary, type WhiteBackgroundLibraryItem as LibraryItem } from "../lib/white-background-library";
 import { validateProjectAssetBatch } from "../lib/project-assets";
-import { canUsePromptForDirectImage } from "../lib/prompt-usage";
 
 interface BaseImageWorkspaceProps {
   project: Project;
@@ -37,9 +36,8 @@ export function BaseImageWorkspace({ project, selectionMode, selectedIds, onSele
   const [libraryErrors, setLibraryErrors] = useState<string[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [generationSource, setGenerationSource] = useState<Asset | null>(null);
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [promptTemplates, setPromptTemplates] = useState<ApiPromptTemplate[]>([]);
-  const [selectedPromptId, setSelectedPromptId] = useState("");
+  const [background, setBackground] = useState<"white" | "transparent">("white");
+  const outputLabel = background === "transparent" ? "透明图" : "白底图";
   const [generatingSourceId, setGeneratingSourceId] = useState<string | null>(null);
   const whiteTasks = useWhiteBackgroundTasks(project.id, onRefresh);
   const activeSourceIds = new Set(whiteTasks.tasks.filter(task => isImageEditTaskActive(task.status)).map(task => String(task.sourceSnapshot.assetId)));
@@ -99,38 +97,29 @@ export function BaseImageWorkspace({ project, selectionMode, selectedIds, onSele
     try {
       const response = await fetch(item.previewUrl);
       if (!response.ok) throw new Error("图片读取失败");
-      const file = new File([await response.blob()], `${item.name.replace(/\.[^.]+$/, "")}-白底.png`, { type: "image/png" });
+      const file = new File([await response.blob()], `${item.name.replace(/\.[^.]+$/, "")}-${item.snapshot?.background === "transparent" ? "透明" : "白底"}.png`, { type: "image/png" });
       await projectApi.uploadAsset(project.id, "white_background", file, undefined, { sourceKind: item.sourceKind, sourceLibraryId: item.libraryId, sourceResourceId: item.resourceId, sourceResourceVersionId: item.resourceVersionId, sourceSnapshot: item.snapshot });
       await onRefresh(); setLibraryOpen(false); onToast(`已从${item.source}导入白底图`);
     } catch (error) { onToast(error instanceof Error ? error.message : "导入白底图失败"); }
     finally { setUploading(false); }
   };
-  const openPrompts = async (asset: Asset) => {
+  const openPrompts = (asset: Asset) => {
     if (asset.type !== "source" || activeSourceIds.has(asset.id)) return;
-    setGenerationSource(asset); setPromptLoading(true);
-    try {
-      const templates = (await suiteApi.listPromptTemplates()).filter((template) => canUsePromptForDirectImage(template.defaultVersion));
-      setPromptTemplates(templates); setSelectedPromptId((current) => templates.some((template) => template.id === current) ? current : templates[0]?.id || "");
-    } catch (error) { onToast(error instanceof Error ? error.message : "读取白底图提示词失败"); }
-    finally { setPromptLoading(false); }
+    setGenerationSource(asset); setBackground("white");
   };
   const submitWhiteBackgroundGeneration = async () => {
     const source = generationSource;
-    const template = promptTemplates.find((item) => item.id === selectedPromptId);
-    const version = template?.defaultVersion;
-    if (!source || !version) { onToast("请选择可用的白底图提示词"); return; }
+    if (!source || generatingSourceId) return;
     setGeneratingSourceId(source.id);
     try {
       const task = await projectApi.generateWhiteBackground(project.id, source.id, {
-        promptTemplateId: template.id,
-        promptVersionId: version.id,
-        promptBody: version.body,
+        background,
       });
       whiteTasks.track(task);
       setGenerationSource(null);
-      onToast("白底图任务已提交，完成后会自动显示，可离开后返回查看");
+      onToast(`${outputLabel}任务已提交，完成后会自动显示，可离开后返回查看`);
     } catch (error) {
-      onToast(error instanceof Error ? error.message : "白底图生成失败");
+      onToast(error instanceof Error ? error.message : `${outputLabel}生成失败`);
     } finally {
       setGeneratingSourceId(null);
     }
@@ -139,8 +128,8 @@ export function BaseImageWorkspace({ project, selectionMode, selectedIds, onSele
   const toggle = (id: string) => onSelectedIdsChange(selectedIds.includes(id) ? selectedIds.filter((item) => item !== id) : [...selectedIds, id]);
   const setCurrent = async (asset: Asset) => { const role = asset.type === "base" ? "white_background" : "source"; try { await projectApi.selectAsset(project.id, role, asset.id); await onRefresh(); onToast("已设为当前使用"); } catch (error) { onToast(error instanceof Error ? error.message : "设置当前图片失败"); } };
   const removeAsset = async (asset: Asset) => { if (!window.confirm(`确认删除“${asset.name}”吗？`)) return; try { await projectApi.removeAsset(project.id, asset.id); onSelectedIdsChange(selectedIds.filter((id) => id !== asset.id)); await onRefresh(); onToast("素材已删除"); } catch (error) { onToast(error instanceof Error ? error.message : "删除素材失败"); } };
-  const exportAsset = (asset: Asset) => { const link = document.createElement("a"); link.href = asset.url; link.download = `${asset.name.replace(/\.[^.]+$/, "")}-白底-v${asset.version}.png`; link.click(); };
-  const exportSelected = async () => { const zip = new JSZip(); await Promise.all(selectedIds.map(async (id) => { const asset = assets.find((item) => item.id === id); if (!asset) return; const response = await fetch(asset.url); zip.file(`${asset.name.replace(/\.[^.]+$/, "")}-白底-v${asset.version}.png`, await response.arrayBuffer()); })); const blob = await zip.generateAsync({ type: "blob" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `picagent-base-images-${selectedIds.length}.zip`; link.click(); URL.revokeObjectURL(link.href); onToast(`已导出 ${selectedIds.length} 张白底图`); };
+  const exportAsset = (asset: Asset) => { const link = document.createElement("a"); link.href = asset.url; link.download = `${asset.name.replace(/\.[^.]+$/, "")}-${asset.background === "transparent" ? "透明" : "白底"}-v${asset.version}.png`; link.click(); };
+  const exportSelected = async () => { const zip = new JSZip(); await Promise.all(selectedIds.map(async (id) => { const asset = assets.find((item) => item.id === id); if (!asset) return; const response = await fetch(asset.url); zip.file(`${asset.name.replace(/\.[^.]+$/, "")}-${asset.background === "transparent" ? "透明" : "白底"}-v${asset.version}.png`, await response.arrayBuffer()); })); const blob = await zip.generateAsync({ type: "blob" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `picagent-base-images-${selectedIds.length}.zip`; link.click(); URL.revokeObjectURL(link.href); onToast(`已导出 ${selectedIds.length} 张白底图`); };
 
   return <div className="workspace-page"><div className="c-base-layout">
     <aside className="c-base-tools"><h2>准备商品素材</h2><p>上传商品原图，生成干净的白底图；也可以直接使用已有白底图。</p><div className="toolbar-actions">
@@ -153,9 +142,9 @@ export function BaseImageWorkspace({ project, selectionMode, selectedIds, onSele
     {uploadFeedback.length > 0 && <div className="upload-feedback" role="status">{uploadFeedback.map((message) => <div key={message}>{message}</div>)}{failedUploads.length > 0 && <Button variant="secondary" size="sm" onClick={() => void uploadFiles(failedUploads, failedUploadKind)} disabled={uploading}>重试失败项</Button>}</div>}
     {whiteTasks.error && <div className="upload-feedback" role="alert">{whiteTasks.error}</div>}
     {whiteTasks.tasks.filter(task => task.status === "failed").map(task => <div className="upload-feedback" role="alert" key={task.id}>{String(task.sourceSnapshot.filename ?? "白底图")}：{task.attempts[task.attempts.length - 1]?.error || "白底图生成失败，请检查后重试"}</div>)}
-    {assets.length === 0 ? <div className="empty-workspace"><strong>暂无素材，请先上传商品原图或已有白底图</strong><span>已有白底图可以不关联原图，直接作为外部导入使用。</span><div className="empty-workspace-actions"><Button onClick={() => sourceInputRef.current?.click()} disabled={uploading}><Upload size={13} />上传第一张原图</Button><Button variant="secondary" onClick={() => whiteInputRef.current?.click()} disabled={uploading}>上传外部白底图</Button></div></div> : <div className="virtual-grid" ref={scrollRef}><div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>{virtualizer.getVirtualItems().map((row) => <div key={row.key} data-index={row.index} ref={virtualizer.measureElement} style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${row.start}px)` }}><div className="base-grid">{rows[row.index].map((asset) => <BaseImageCard key={asset.id} asset={asset} selected={selectedIds.includes(asset.id)} selectionMode={selectionMode} onSelect={() => toggle(asset.id)} onPreview={() => onSelectAsset(asset)} onExport={() => exportAsset(asset)} onDelete={() => void removeAsset(asset)} onSetCurrent={() => void setCurrent(asset)} onGenerateWhiteBackground={() => void openPrompts(asset)} isCurrent={projectDetail.selections[asset.type === "base" ? "white_background" : "source"] === asset.id} isGeneratingWhiteBackground={generatingSourceId === asset.id || activeSourceIds.has(asset.id)} />)}</div></div>)}</div></div>}
+    {assets.length === 0 ? <div className="empty-workspace"><strong>暂无素材，请先上传商品原图或已有白底图</strong><span>已有白底图可以不关联原图，直接作为外部导入使用。</span><div className="empty-workspace-actions"><Button onClick={() => sourceInputRef.current?.click()} disabled={uploading}><Upload size={13} />上传第一张原图</Button><Button variant="secondary" onClick={() => whiteInputRef.current?.click()} disabled={uploading}>上传外部白底图</Button></div></div> : <div className="virtual-grid" ref={scrollRef}><div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>{virtualizer.getVirtualItems().map((row) => <div key={row.key} data-index={row.index} ref={virtualizer.measureElement} style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${row.start}px)` }}><div className="base-grid">{rows[row.index].map((asset) => <BaseImageCard key={asset.id} asset={asset} selected={selectedIds.includes(asset.id)} selectionMode={selectionMode} onSelect={() => toggle(asset.id)} onPreview={() => onSelectAsset(asset)} onExport={() => exportAsset(asset)} onDelete={() => void removeAsset(asset)} onSetCurrent={() => void setCurrent(asset)} onGenerateWhiteBackground={() => void openPrompts(asset)} isCurrent={projectDetail.selections[asset.type === "base" ? "white_background" : "source"] === asset.id} generatingBackground={generatingSourceId === asset.id ? background : whiteTasks.tasks.find(task => String(task.sourceSnapshot.assetId) === asset.id && isImageEditTaskActive(task.status))?.configSnapshot.background === "transparent" ? "transparent" : "white"} isGeneratingWhiteBackground={generatingSourceId === asset.id || activeSourceIds.has(asset.id)} />)}</div></div>)}</div></div>}
     </section></div>
     {libraryOpen && <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setLibraryOpen(false); }}><div className="dialog-panel" role="dialog" aria-modal="true"><div className="dialog-header"><h2>选择白底图来源</h2><Button variant="ghost" onClick={() => setLibraryOpen(false)}>关闭</Button></div><p>只读取已标记为白底图的素材、已发布白底图成品和白底图测试结果。</p>{libraryErrors.length > 0 && <div role="alert">{libraryErrors.map(message => <p key={message}>{message}</p>)}<Button variant="secondary" onClick={() => void loadLibraryItems()} disabled={libraryLoading}>重新加载图库</Button></div>}{libraryLoading ? <div className="empty-workspace">正在读取已有库...</div> : libraryItems.length === 0 ? <div className="empty-workspace">暂无可用白底图</div> : <div className="library-source-list">{libraryItems.map((item) => <button className="library-source-item" key={`${item.sourceKind}-${item.libraryId}-${item.id}`} disabled={uploading} onClick={() => void importLibraryItem(item)}><img src={item.previewUrl} alt="" /><span><strong>{item.name}</strong><small>{item.source}</small></span></button>)}</div>}</div></div>}
-    {generationSource && <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setGenerationSource(null); }}><div className="dialog-panel" role="dialog" aria-modal="true" aria-label="选择白底图提示词"><div className="dialog-header"><h2>生成白底图</h2><Button variant="ghost" onClick={() => setGenerationSource(null)}>关闭</Button></div><p>为“{generationSource.name}”选择提示词后生成，结果会自动保存到当前项目。</p>{promptLoading ? <div className="empty-workspace">正在读取提示词...</div> : promptTemplates.length === 0 ? <div className="empty-workspace">暂无带默认版本的可用提示词</div> : <><select className="ui-select" aria-label="白底图提示词" value={selectedPromptId} onChange={(event) => setSelectedPromptId(event.target.value)}>{promptTemplates.map((template) => <option key={template.id} value={template.id}>{template.name} · v{template.defaultVersion?.versionNo ?? template.versionNo}</option>)}</select><div className="dialog-footer"><span>已选择 {promptTemplates.find((template) => template.id === selectedPromptId)?.name ?? "提示词"}</span><Button onClick={() => void submitWhiteBackgroundGeneration()} disabled={generatingSourceId === generationSource.id}>生成白底图</Button></div></>}</div></div>}
+    {generationSource && <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !generatingSourceId) setGenerationSource(null); }}><div className="dialog-panel" role="dialog" aria-modal="true" aria-label="生成商品图"><div className="dialog-header"><h2>生成商品图</h2><Button variant="ghost" onClick={() => setGenerationSource(null)} disabled={!!generatingSourceId}>关闭</Button></div><p>为“{generationSource.name}”生成{outputLabel}，结果会自动保存到当前项目。</p><fieldset className="product-background-options" disabled={!!generatingSourceId}><legend>背景类型</legend><label><input type="radio" name="product-background" checked={background === "white"} onChange={() => setBackground("white")} />白底图</label><label><input type="radio" name="product-background" checked={background === "transparent"} onChange={() => setBackground("transparent")} />透明图</label></fieldset><p>{background === "transparent" ? "保留商品原貌，去除背景，输出可叠加使用的透明 PNG。" : "保留商品原貌，替换为纯白背景并进行白底图精修。"}</p><div className="dialog-footer"><span>使用商品{outputLabel}专用提示词</span><Button onClick={() => void submitWhiteBackgroundGeneration()} disabled={!!generatingSourceId}>{generatingSourceId ? "提交中…" : `生成${outputLabel}`}</Button></div></div></div>}
   </div>;
 }

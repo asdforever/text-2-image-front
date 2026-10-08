@@ -63,6 +63,7 @@ export interface LibraryProjectAssetInput {
 }
 
 export interface Asset {
+  background?: "white" | "transparent";
   id: string;
   projectId: string;
   type: AssetType;

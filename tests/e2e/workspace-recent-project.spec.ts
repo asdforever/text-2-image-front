@@ -53,3 +53,51 @@ test("项目列表后台刷新失败时保留当前内容", async ({ page }) => 
   await expect(page.getByRole("alert")).toContainText("项目服务暂时不可用");
   await expect(page.getByRole("heading", { name: projectDetail.name })).toBeVisible();
 });
+
+test("删除等待期间显示进度并禁止重复提交", async ({ page }) => {
+  let deleteCalls = 0;
+  let releaseDelete!: () => void;
+  const deletion = new Promise<void>((resolve) => { releaseDelete = resolve; });
+  await page.route("**/api/projects", (route) => route.fulfill({ json: { data: [projectDetail] } }));
+  await page.route(`**/api/projects/${projectId}`, async (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback();
+    deleteCalls += 1;
+    await deletion;
+    await route.fulfill({ status: 204 });
+  });
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/projects");
+  await page.getByRole("button", { name: "删除", exact: true }).click();
+  try {
+    await expect.poll(() => deleteCalls).toBe(1);
+    await expect(page.getByRole("button", { name: "删除中…", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "归档", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "进入工作台", exact: true })).toBeDisabled();
+  } finally {
+    releaseDelete();
+  }
+});
+
+test("删除成功立即移除卡片，列表刷新失败也不恢复已删除项目", async ({ page }) => {
+  let listCalls = 0;
+  let releaseRefresh!: () => void;
+  const refresh = new Promise<void>((resolve) => { releaseRefresh = resolve; });
+  await page.route("**/api/projects", async (route) => {
+    listCalls += 1;
+    if (listCalls === 1) return route.fulfill({ json: { data: [projectDetail] } });
+    await refresh;
+    await route.fulfill({ status: 503, json: { error: { message: "项目服务暂时不可用" } } });
+  });
+  await page.route(`**/api/projects/${projectId}`, (route) => route.fulfill({ status: 204 }));
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/projects");
+  await page.getByRole("button", { name: "删除", exact: true }).click();
+  try {
+    await expect.poll(() => listCalls).toBe(2);
+    await expect(page.getByRole("heading", { name: projectDetail.name })).toHaveCount(0);
+  } finally {
+    releaseRefresh();
+  }
+  await expect(page.getByRole("alert")).toContainText("项目服务暂时不可用");
+  await expect(page.getByRole("heading", { name: projectDetail.name })).toHaveCount(0);
+});

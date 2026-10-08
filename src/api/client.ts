@@ -407,6 +407,7 @@ export interface ApiCanvasGenerationStep {
   creationMode?: "regular" | "professional";
   trackId?: string; revisionId?: string; revisionNumber?: number; batchId?: string; batchCreatedAt?: string; batchStatus?: string;
   canRegenerate?: boolean;
+  reversePlanId?: string; reversePlanName?: string; reverseBatchNo?: number;
 }
 export interface ApiCanvasRevision extends Omit<ApiCanvasGenerationStep, "outputAssetIds" | "outputVersionIds"> {
   number: number; status: "queued" | "generating" | "succeeded" | "partial" | "failed"; createdAt: string;
@@ -529,6 +530,7 @@ export function toWorkbenchProject(project: ApiProjectDetail): Project {
         id: asset.id,
         projectId: project.id,
         type,
+        ...(asset.sourceSnapshot?.background === "transparent" ? { background: "transparent" as const } : {}),
         name: asset.filename,
         dimensions: `${asset.width}x${asset.height}`,
         url,
@@ -664,7 +666,7 @@ export const projectApi = {
   listWhiteBackgroundGenerations(projectId: string) {
     return request<ApiImageEditTask[]>(`/api/projects/${encodeURIComponent(projectId)}/white-background-generations`);
   },
-  generateWhiteBackground(projectId: string, assetId: string, payload: { promptTemplateId: string; promptVersionId: string; promptBody: string }) {
+  generateWhiteBackground(projectId: string, assetId: string, payload: { background: "white" | "transparent" }) {
     return request<ApiImageEditTask>(`/api/projects/${encodeURIComponent(projectId)}/assets/${encodeURIComponent(assetId)}/white-background-generations`, {
       method: "POST",
       headers: { "content-type": "application/json", "idempotency-key": createIdempotencyKey() },
