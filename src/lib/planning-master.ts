@@ -125,5 +125,5 @@ export function applyModulePlan<T extends PlanningConfig>(config: T, plan: Modul
   const regularTasks = Object.fromEntries(plan.modules.map(item => [taskKey(item), { goal: item.reason, copy: item.suggestedCopy ?? "" }]));
   const regularTaskOverrides = Object.fromEntries(plan.modules.filter(item => preserveEdits && sameTask(item) && config.regularTaskOverrides?.[taskKey(item)]).map(item => [taskKey(item), config.regularTaskOverrides![taskKey(item)]]));
   const next = { ...config, selectedModuleIds, moduleTypes, moduleCounts, moduleParameters, moduleTaskDetails, moduleTaskOverrides, regularTasks, regularTaskOverrides, modulePlanReferences, modulePlanId: plan.id, modulePlanningRequest: undefined, modulePlanBaseline: { moduleCounts: plannedCounts, moduleParameters: plannedParameters } } as T;
-  return { ...next, modulePlanFingerprint: modulePlanInputFingerprint(next) };
+  return { ...next, planningAppliedVersionId: undefined, modulePlanFingerprint: modulePlanInputFingerprint(next) };
 }

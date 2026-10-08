@@ -1,4 +1,4 @@
-import { FolderKanban, LayoutDashboard, ListTodo, PanelLeftClose, PanelLeftOpen, Store, Image, Package, Database, SlidersHorizontal, Layers3, ScanSearch } from "lucide-react";
+import { FolderKanban, LayoutDashboard, ListTodo, PanelLeftClose, PanelLeftOpen, Store, Image, Package, SlidersHorizontal, Layers3, ScanSearch } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { ThemeToggle } from "./ThemeToggle";
@@ -11,7 +11,6 @@ const items = [
   { href: "/tasks", label: "任务中心", icon: ListTodo },
   { href: "/asset-libraries", label: "素材库", icon: Image },
   { href: "/product-libraries", label: "成品库", icon: Package },
-  { href: "/test-product-libraries", label: "测试库", icon: Database },
   { href: "/generation-config", label: "生成配置", icon: SlidersHorizontal },
 ];
 

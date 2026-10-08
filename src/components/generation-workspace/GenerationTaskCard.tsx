@@ -39,6 +39,10 @@ export function GenerationTaskCard({ taskId, moduleId, index, definition, config
 }) {
   const editorId = useId();
   const regular = config.creationMode === "regular";
+  const regularTask = config.regularTaskOverrides?.[taskId] ?? config.regularTasks?.[taskId] ?? { goal: "", copy: "" };
+  const options = config.regularTaskOptions?.[taskId] ?? {};
+  const changeRegular = (patch: Partial<typeof regularTask>) => onChange({ regularTaskOverrides: { ...config.regularTaskOverrides, [taskId]: { ...regularTask, ...patch } } });
+  const changeOptions = (patch: Partial<typeof options>) => onChange({ regularTaskOptions: { ...config.regularTaskOptions, [taskId]: { ...options, ...patch } } });
   const detail = config.moduleTaskDetails?.[taskId];
   const overrides = config.moduleTaskOverrides?.[taskId];
   const parameters = config.moduleParameters[taskId] ?? getModuleParameterPresets(moduleId);
@@ -66,6 +70,7 @@ export function GenerationTaskCard({ taskId, moduleId, index, definition, config
       </div>
     </header>
     {!expanded && (regular ? <div className="module-task-parameter-summary">
+      <p><span>内容目标：</span>{regularTask.goal || "等待自动填写"}</p><p><span>批准文案：</span>{regularTask.copy || "等待自动填写"}</p><p><span>文案策略：</span>{options.copyPolicy === "flexible" ? "允许拟写文案" : "原样使用批准文案"}</p>
       {filledParameters.length ? filledParameters.map((parameter, i) => <p key={i}><span>{parameter.key}：</span>{parameter.value}</p>) : <p>可按需补充本图参数</p>}
     </div> : <div className="module-task-overview">
       <dl className="module-task-summary">
@@ -75,7 +80,12 @@ export function GenerationTaskCard({ taskId, moduleId, index, definition, config
       <p className="module-task-meta">商品出场：{presenceLabel}{filledParameters.length > 0 && <span>已填写 {filledParameters.length} 项参数</span>}</p>
     </div>)}
     {expanded && <div className="module-task-editor" id={editorId}>
-      {regular ? parameterEditor : <>
+      {regular ? <>
+        <label>内容目标<textarea aria-label="内容目标" rows={2} maxLength={2000} value={regularTask.goal} onChange={e => changeRegular({ goal: e.target.value })} /></label>
+        <label>批准文案<textarea aria-label="批准文案" rows={2} maxLength={2000} value={regularTask.copy} onChange={e => changeRegular({ copy: e.target.value })} /></label>
+        <label><input type="checkbox" checked={options.copyPolicy === "flexible"} onChange={e => changeOptions({ copyPolicy: e.target.checked ? "flexible" : "fixed" })} />允许规划大师拟写本图文案</label>
+        <label>视觉要求（选填）<textarea aria-label="视觉要求（选填）" rows={2} maxLength={500} value={options.visualRequirements ?? ""} onChange={e => changeOptions({ visualRequirements: e.target.value })} /></label>
+        {parameterEditor}</> : <>
         <TaskDesignEditor detail={detail} overrides={overrides} onChange={changeDesign}
           onReset={() => { const next = { ...config.moduleTaskOverrides }; delete next[taskId]; onChange({ moduleTaskOverrides: next }); }} />
         <details className="module-task-disclosure">

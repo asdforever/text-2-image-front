@@ -32,6 +32,8 @@ import {
 } from "../lib/generation-workspace";
 import { createGenerationSnapshot, validateGenerationSelection } from "../lib/generation-config";
 import { canCompileRegular, needsModulePlan } from "../lib/planning-master";
+import { PlanningConversationDialog } from "../features/planning/PlanningConversationDialog";
+import { usePlanningConversation } from "../hooks/usePlanningConversation";
 import { useModulePlanning } from "../hooks/useModulePlanning";
 import { moduleReverseReference } from "../features/reverse-projects/planning";
 import { useProjectStore } from "../store/useProjectStore";
@@ -218,6 +220,8 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
   const { publishedConfig, status: generationConfigStatus, error: generationConfigError } = usePublishedGenerationConfig();
   const config = normalizeHeroConfig(record?.config as Partial<HeroGenerationConfig> | undefined);
   const modulePlanner = useModulePlanning(props.project.id, "hero");
+  const conversation = usePlanningConversation(props.project.id, "hero", config.creationMode ?? "professional");
+  const planningControls = { ...modulePlanner, openPlanning: () => conversation.setOpen(true) };
   const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
   const [attempted, setAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -225,7 +229,8 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
   const [storedTask, setTask] = useState<ApiHeroGenerationTask | null>(null);
   const [storedBatch, setBatch] = useState<ApiBatchGenerationDetail | null>(null);
   const task = belongsToCreationMode(storedTask, config.creationMode) ? storedTask : null;
-  const batch = belongsToCreationMode(storedBatch, config.creationMode) ? storedBatch : null;
+  const batch = belongsToCreationMode(storedBatch, config.creationMode)
+    && !(storedBatch?.status === "awaiting_confirmation" && heroGenerationSession?.planningAppliedVersionId !== config.planningAppliedVersionId) ? storedBatch : null;
   const resultMetadata = useGenerationResultMetadata(props.project.id, props.project.assets);
   const [moduleTaskPrompts, setModuleTaskPrompts] = useState<Record<string, string>>({});
   const [flowError, setFlowError] = useState("");
@@ -342,6 +347,7 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
       outputLanguage: effectiveConfig.outputLanguage,
       customStyle: effectiveConfig.customStyle,
       modulePlanId: effectiveConfig.modulePlanId,
+      planningAppliedVersionId: effectiveConfig.modulePlanId ? effectiveConfig.planningAppliedVersionId : undefined,
       reverseVersionId: effectiveConfig.creationMode === "regular" ? undefined : effectiveConfig.reverseVersionId,
       modules: effectiveConfig.selectedModuleIds.map((taskId) => ({
         taskId,
@@ -349,6 +355,7 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         resultCount: 1,
         moduleParameters: getCompactModuleParameters(effectiveConfig.moduleParameters, taskId),
         regularTask: effectiveConfig.creationMode === "regular" ? effectiveConfig.regularTaskOverrides?.[taskId] ?? effectiveConfig.regularTasks?.[taskId] : undefined,
+        regularOptions: effectiveConfig.creationMode === "regular" ? effectiveConfig.regularTaskOptions?.[taskId] : undefined,
         taskDesign: effectiveConfig.creationMode === "regular" ? undefined : effectiveConfig.moduleTaskOverrides?.[taskId],
         reverseReference: effectiveConfig.creationMode === "regular" ? undefined : moduleReverseReference(effectiveConfig, taskId),
       })),
@@ -365,6 +372,7 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         : null;
       const ended = previousBatch && ["succeeded", "partially_failed", "failed", "cancelled"].includes(previousBatch.status);
       const session = !restart && !ended && previousSession ? previousSession : {
+        planningAppliedVersionId: effectiveConfig.planningAppliedVersionId,
         inputFingerprint,
         compileIdempotencyKey: createIdempotencyKey(),
         confirmIdempotencyKey: createIdempotencyKey(),
@@ -511,7 +519,7 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
       <GenerationTaskStatus batch={preparing || modulePlanner.error ? null : batch} status={modulePlanner.planning ? "planning" : preparing ? "compiling_prompt" : modulePlanner.error ? "failed" : batch?.status ?? task?.status} moduleCount={preparing || modulePlanner.error ? config.selectedModuleIds.length : batch?.modules.length ?? (task ? 1 : 0)} loading={recovery.loading} reconnecting={!!recovery.error} />
       <div className="generation-result-body">
         {(recovery.error || flowError || modulePlanner.error || batch?.error?.message || task?.error?.message) && <div className="hero-generation-error" role="alert"><strong>{recovery.error ? "任务状态查询暂时中断" : "本次操作未完成"}</strong><span>{recovery.error || flowError || modulePlanner.error || batch?.error?.message || task?.error?.message}</span></div>}
-        <GenerationModulesPanel projectId={props.project.id} mode="hero" config={config} planner={modulePlanner} errors={errors} onChange={change} />
+        <GenerationModulesPanel projectId={props.project.id} mode="hero" config={config} planner={planningControls} errors={errors} onChange={change} />
         {recovery.missing && <p role="status">正在查询已提交的主图任务，尚未找到记录。不会自动重新生成。</p>}
         {task?.status === "awaiting_confirmation" && <HeroPromptConfirmation task={task} busy={busy} onConfirm={() => void confirmGeneration()} onCancel={() => { setTask(null); clearHeroGenerationSession(props.project.id); }} />}
         {(batch?.status === "awaiting_confirmation") && <details className="studio-confirmation-details" open key={batch.id}><summary>提示词已就绪 · 检查并确认生成</summary>
@@ -531,13 +539,16 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
   );
 
 
-  return (<div className="professional-workspace"><div className="professional-mode-toolbar"><CreationModeSwitch value={config.creationMode} disabled={busy || taskPending} onChange={creationMode => change({ creationMode })} /></div>
+  return (<><PlanningConversationDialog controller={conversation} planner={modulePlanner} project={props.project} config={config} mode="hero" onAssetIdsChange={selectedAssetIds => change({ selectedAssetIds })} onUpload={upload} onBriefChange={planningBrief => change({ planningBrief, modulePlanId: undefined, modulePlanFingerprint: undefined })} /><fieldset className="planning-workspace-lock" disabled={conversation.applying}><div className="professional-workspace"><div className="professional-mode-toolbar">
+    <CreationModeSwitch value={config.creationMode} disabled={busy || taskPending} onChange={creationMode => change({ creationMode })} />
+    <Button type="button" variant="secondary" size="sm" onClick={() => conversation.setOpen(true)}>打开规划大师</Button>
+  </div>
     <GenerationWorkspaceLayout
       collapsed={collapsed}
       onCollapsedChange={setCollapsed}
-      config={<HeroConfigPanel project={props.project} config={config} planner={modulePlanner} updatedAt={record?.updatedAt} errors={errors} onChange={change} onUpload={upload} onRefresh={props.onRefresh} />}
+      config={<HeroConfigPanel project={props.project} config={config} planner={planningControls} updatedAt={record?.updatedAt} errors={errors} onChange={change} onUpload={upload} onRefresh={props.onRefresh} />}
       footer={<GenerationFooter label={activeGeneration ? "当前批次处理中" : "编译提示词"} disabled={activeGeneration || !!recovery.error || config.creationMode === "regular" && (modulePlanner.planning || !canCompileRegular(config))} countLabel={`共 ${config.selectedModuleIds.length} 张 · 每项一张图`} errors={errors} busy={busy || recovery.loading || batch?.status === "compiling_prompt"} onSubmit={() => void generate()} />}
       result={result}
-    /></div>
+    /></div></fieldset></>
   );
 }

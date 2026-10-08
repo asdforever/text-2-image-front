@@ -13,6 +13,7 @@ import { GenerationDetails, GenerationNode } from "./GenerationNode";
 import { CanvasRegenerateDialog } from "./CanvasRegenerateDialog";
 import { ALL_BATCHES, ALL_MODULES, filterCanvasByBatch, imageBatchIndex, matchesCanvasImageBatch } from "./image-batches";
 import { ImageBatchFilter, ImageModuleFilter } from "./ImageBatchFilter";
+import { resolveImageFilters } from "./linked-image-filters";
 import { LongImageComposer } from "./LongImageComposer";
 import "@xyflow/react/dist/style.css";
 import "./canvas.css";
@@ -61,10 +62,10 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
   const [leftOpen, setLeftOpen] = useState(() => window.innerWidth > 760);
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [query, setQuery] = useState("");
-  const [batchSelection, setBatchSelection] = useState(() => {
+  const [storedBatchSelection, setBatchSelection] = useState(() => {
     try { return localStorage.getItem(`canvas-batch:${suiteId}`) ?? ALL_BATCHES; } catch { return ALL_BATCHES; }
   });
-  const [moduleSelection, setModuleSelection] = useState(() => {
+  const [storedModuleSelection, setModuleSelection] = useState(() => {
     try { return localStorage.getItem(`canvas-module:${suiteId}`) ?? ALL_MODULES; } catch { return ALL_MODULES; }
   });
   const [viewMode, setViewMode] = useState<"lineage" | "results">(() => {
@@ -220,18 +221,24 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
     return { ...image, version, generation: generation ?? image.generation, url: asset ? `/api/projects/${suiteId}/assets/${asset.id}/preview` : version.previewUrl, assetId: asset?.id, width: asset?.width ?? version.width, height: asset?.height ?? version.height };
   };
   const batchIndex = useMemo(() => workbench ? imageBatchIndex(workbench, assetsRef.current) : { batches: [], membership: new Map<string, Set<string>>(), modules: [], moduleMembership: new Map<string, Set<string>>() }, [workbench]);
-  const changeBatch = (value: string) => {
+  const filterImageIds = useMemo(() => [...assetsRef.current.filter(asset => asset.state === "available").map(asset => asset.id), ...images.flatMap(image => [image.assetId ?? image.version?.id ?? image.id, ...image.versions.map(version => version.id)])], [workbench, images]);
+  const filterOptions = useMemo(() => resolveImageFilters(batchIndex, filterImageIds, storedBatchSelection, storedModuleSelection), [batchIndex, filterImageIds, storedBatchSelection, storedModuleSelection]);
+  const { batchId: batchSelection, moduleId: moduleSelection } = filterOptions;
+  const changeFilters = (batch: string, module: string, preferred: "batch" | "module") => {
+    const next = resolveImageFilters(batchIndex, filterImageIds, batch, module, preferred);
     batchFitRequested.current = true;
-    setBatchSelection(value);
+    setBatchSelection(next.batchId);
+    setModuleSelection(next.moduleId);
     commitNodes(nodesRef.current.map(node => ({ ...node, selected: false })));
-    try { localStorage.setItem(`canvas-batch:${suiteId}`, value); } catch { /* Session-only filtering remains available. */ }
+    try { localStorage.setItem(`canvas-batch:${suiteId}`, next.batchId); localStorage.setItem(`canvas-module:${suiteId}`, next.moduleId); } catch { /* Session-only filtering remains available. */ }
   };
-  const changeModule = (value: string) => {
-    batchFitRequested.current = true;
-    setModuleSelection(value);
-    commitNodes(nodesRef.current.map(node => ({ ...node, selected: false })));
-    try { localStorage.setItem(`canvas-module:${suiteId}`, value); } catch { /* Session-only filtering remains available. */ }
-  };
+  const changeBatch = (value: string) => changeFilters(value, moduleSelection, "batch");
+  const changeModule = (value: string) => changeFilters(batchSelection, value, "module");
+  useEffect(() => {
+    if (!workbench || (storedBatchSelection === batchSelection && storedModuleSelection === moduleSelection)) return;
+    setBatchSelection(batchSelection); setModuleSelection(moduleSelection);
+    try { localStorage.setItem(`canvas-batch:${suiteId}`, batchSelection); localStorage.setItem(`canvas-module:${suiteId}`, moduleSelection); } catch { /* Session-only filtering remains available. */ }
+  }, [workbench, suiteId, storedBatchSelection, storedModuleSelection, batchSelection, moduleSelection]);
   useEffect(() => {
     if (!batchFitRequested.current) return;
     batchFitRequested.current = false;
@@ -395,7 +402,7 @@ function CanvasStudioInner({ suiteId, navigate, embedded, active }: { suiteId: s
 
   return <div className={`ic-studio ${embedded ? "ic-embedded" : ""} ${fullscreen ? "is-fullscreen" : ""} ${leftOpen ? "has-library" : ""} ${selectedImage && inspectorOpen ? "has-inspector" : ""}`}>
     <header className="ic-topbar"><div className="ic-project">{!embedded && <button aria-label="返回项目" onClick={() => navigate(`/suites/${suiteId}`)}><ArrowLeft size={18} /></button>}<div><strong>{workbench.suite.name}</strong><span>图片画布 <ChevronDown size={12} /></span></div></div><div className="ic-top-center"><span className="ic-live-dot" />自由创作空间</div><div className="ic-top-actions">{editInProgress ? <span className="ic-edit-progress" role="status"><Loader2 className="ic-spin" size={14} />修改图生成中</span> : latestEditImage ? <button type="button" className="ic-edit-result-action" onClick={() => add(latestEditImage.id)}><Sparkles size={15} />查看最新修改图</button> : null}<button aria-label="制作长图" onClick={() => setLongImageOpen(true)}><Images size={15} /><span>制作长图</span></button><span className={`ic-save-state ${saveState === "保存失败" ? "is-error" : ""}`}>{saveState === "已保存" ? <Check size={13} /> : <Loader2 size={13} />}{saveState}</span>{saveState === "保存失败" && <button onClick={() => setRecoverSave(true)}>重试保存</button>}<button aria-label="刷新项目图片" onClick={() => void reload()}><RotateCcw size={15} /></button><button aria-label={fullscreen ? "退出画布全屏" : "进入画布全屏"} title={fullscreen ? "退出画布全屏（Esc）" : "进入画布全屏"} onClick={() => setFullscreen((value) => !value)}>{fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}<span>{fullscreen ? "退出全屏" : "全屏"}</span></button><button className="ic-primary" disabled={!selectedPictures.some((i) => i.url) || busy} onClick={() => download(selectedPictures.filter((i) => i.url))}><Download size={14} /><span>导出选中</span></button></div></header>
-    <div className="ic-filterbar"><ImageBatchFilter label="画布批次" batches={batchIndex.batches} value={batchSelection} onChange={changeBatch} /><ImageModuleFilter label="画布模块类型" modules={batchIndex.modules} value={moduleSelection} onChange={changeModule} /><span className="ic-canvas-count">{displayNodes.filter((n) => n.type === "image" && !n.hidden).length} 张图片</span></div>
+    <div className="ic-filterbar"><ImageBatchFilter label="画布批次" batches={filterOptions.batches} includeUnassigned={filterOptions.hasUnassignedBatch} value={batchSelection} onChange={changeBatch} /><ImageModuleFilter label="画布模块类型" modules={filterOptions.modules} includeUnassigned={filterOptions.hasUnassignedModule} value={moduleSelection} onChange={changeModule} /><span className="ic-canvas-count">{displayNodes.filter((n) => n.type === "image" && !n.hidden).length} 张图片</span></div>
     <div className="ic-body">
       {leftOpen && <aside className="ic-library" aria-label="项目图片"><header><div><strong>项目图片</strong><span>{filteredImages.length} / {images.length} 张</span></div><button aria-label="关闭项目图片" onClick={() => setLeftOpen(false)}><X size={15} /></button></header><div className="ic-library-search"><Search size={14} /><input aria-label="搜索项目图片" placeholder="搜索图片" value={query} onChange={(event) => setQuery(event.target.value)} /></div><div className="ic-category"><button className={category === "all" ? "is-active" : ""} onClick={() => setCategory("all")}>全部</button>{(Object.keys(categoryNames) as ImageCategory[]).filter((c) => images.some((i) => i.category === c)).map((c) => <button key={c} className={category === c ? "is-active" : ""} onClick={() => setCategory(c)}>{categoryNames[c]}</button>)}</div><div className="ic-library-list">{assetError && <div className="ic-error" role="alert">{assetError}<button onClick={() => void reload()}>重试</button></div>}{filteredImages.map((image) => { const onCanvas = displayNodes.some((n) => n.id === image.id && !n.hidden); return <button className="ic-library-item" key={image.id} aria-label={`${onCanvas ? "定位图片" : "加入画布"} ${image.title}`} draggable onDragStart={(event) => { event.dataTransfer.setData("application/x-canvas-image", image.id); event.dataTransfer.effectAllowed = "copyMove"; }} onClick={() => add(image.id)}><div>{image.url ? <img src={image.url} alt="" loading="lazy" draggable={false} /> : <Images size={22} />}<span>{onCanvas ? <Check size={11} /> : <Plus size={11} />}</span></div><strong title={image.title}>{image.title}</strong><small>{categoryNames[image.category]}</small></button>; })}{!filteredImages.length && <p className="ic-library-empty">{query ? "没有找到匹配的图片" : "项目图片会显示在这里"}</p>}</div><footer><ImagePlus size={14} /><span>拖入画布，自由排列与对比</span></footer></aside>}
       <main className={`ic-canvas${holdPan.panning ? " is-hold-panning" : ""}`} aria-label="图片画布"

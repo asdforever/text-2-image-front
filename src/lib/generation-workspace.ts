@@ -3,6 +3,7 @@ import type { Asset, AssetType } from "../api/contracts";
 export type GenerationMode = "hero" | "suite";
 export type CreationMode = "regular" | "professional";
 export interface RegularTask { goal: string; copy: string }
+export interface RegularTaskOptions { copyPolicy?: "fixed" | "flexible"; visualRequirements?: string }
 export type GenerationMarket = string;
 const LEGACY_MARKET_SELECTIONS: Record<string, string> = { domestic: "taobao", international: "amazon" };
 export function normalizeGenerationMarket(value: string | undefined): GenerationMarket {
@@ -61,6 +62,9 @@ export interface CommonGenerationConfig {
   userNotes?: string;
   regularTasks?: Record<string, RegularTask>;
   regularTaskOverrides?: Record<string, RegularTask>;
+  regularTaskOptions?: Record<string, RegularTaskOptions>;
+  planningConversationId?: string;
+  planningAppliedVersionId?: string;
   moduleTaskOverrides?: Record<string, GenerationTaskDesign>;
   moduleTaskDetails?: Record<string, { title: string; informationQuestion: string; productPresence: string; visualMechanism: string; compositionAdvice: string }>;
   selectedAssetIds: string[];

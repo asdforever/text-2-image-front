@@ -176,6 +176,7 @@ export type ApiBatchGenerationSlotStatus =
   | "needs_retry";
 export interface ApiBatchHeroModuleInput {
   regularTask?: import("../lib/generation-workspace").RegularTask;
+  regularOptions?: import("../lib/generation-workspace").RegularTaskOptions;
   taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign;
   moduleId: string;
   reverseReference?: { versionId: string; moduleId: string };
@@ -184,6 +185,7 @@ export interface ApiBatchHeroModuleInput {
   moduleParameters: Array<{ key: string; value: string }>;
 }
 export interface ApiBatchHeroPromptCompileInput {
+  planningAppliedVersionId?: string;
   creationMode?: import("../lib/generation-workspace").CreationMode;
   userNotes?: string;
   sourceAssetId: string;
@@ -256,8 +258,9 @@ export interface ApiBatchGenerationDetail extends ApiBatchGeneration {
 }
 export type ApiSuitePlanStatus = "compiling" | "awaiting_confirmation" | "confirmed" | "failed";
 export interface ApiSuitePlanReferenceInput { referenceId: string; version: string }
-export interface ApiSuitePlanModuleCompileInput { moduleId: string; taskId?: string; resultCount: number; moduleParameters: Array<{ key: string; value: string }>; reverseReference?: { versionId: string; moduleId: string }; taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign; regularTask?: import("../lib/generation-workspace").RegularTask }
+export interface ApiSuitePlanModuleCompileInput { moduleId: string; taskId?: string; resultCount: number; moduleParameters: Array<{ key: string; value: string }>; reverseReference?: { versionId: string; moduleId: string }; taskDesign?: import("../lib/generation-workspace").GenerationTaskDesign; regularTask?: import("../lib/generation-workspace").RegularTask; regularOptions?: import("../lib/generation-workspace").RegularTaskOptions }
 export interface ApiSuitePlanCompileInput {
+  planningAppliedVersionId?: string;
   creationMode?: import("../lib/generation-workspace").CreationMode;
   reverseVersionId?: string;
   sourceAssetIds: string[]; marketId: string; modelId: string; styleId: string;
@@ -489,7 +492,7 @@ export class ApiResultUnknownError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, { ...init, cache: "no-store" });
   const payload = await response.json().catch(() => null) as { data?: T; error?: { message?: string; code?: string } } | null;
   if (!response.ok) throw Object.assign(new Error(payload?.error?.message ?? "请求失败"), { status: response.status, code: payload?.error?.code });

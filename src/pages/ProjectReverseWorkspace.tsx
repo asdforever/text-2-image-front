@@ -28,7 +28,7 @@ function TaskParameterEditor({ parameters, onChange }: { parameters: Array<{ key
   const update = (index: number, patch: Partial<{ key: string; value: string }>) => onChange(parameters.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
   return <section className="module-parameter-editor project-reverse-task-parameters" aria-label="补充参数">
     <div className="module-parameter-heading"><div><strong>补充参数</strong><span>只会写入这一张图的提示词</span></div><small>{parameters.length}/20</small></div>
-    <div className="module-parameter-rows">{parameters.map((parameter, index) => <div className="module-parameter-row" key={`${index}-${parameter.key}`}>
+    <div className="module-parameter-rows">{parameters.map((parameter, index) => <div className="module-parameter-row" key={index}>
       <label><span>参数名</span><input value={parameter.key} maxLength={60} placeholder="例如：场景地点" onChange={(event) => update(index, { key: event.target.value })} /></label>
       <label className="module-parameter-value"><span>参数值</span><textarea value={parameter.value} maxLength={500} rows={2} placeholder="填写具体要求" onChange={(event) => update(index, { value: event.target.value })} /></label>
       <button type="button" className="module-parameter-remove" title="删除参数" aria-label={`删除${parameter.key || "此参数"}`} onClick={() => onChange(parameters.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={13} /></button>

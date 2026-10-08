@@ -8,9 +8,9 @@ const testList = readFileSync("src/pages/TestProductLibrariesPage.tsx", "utf8");
 const testDetail = readFileSync("src/pages/TestProductLibraryDetailPage.tsx", "utf8");
 const client = readFileSync("src/api/client.ts", "utf8");
 
-test("仓库导航同时暴露素材库、测试库和正式成品库", () => {
+test("仓库导航展示素材库和正式成品库，移除测试库入口", () => {
   assert.match(sidebar, /素材库/);
-  assert.match(sidebar, /测试库/);
+  assert.doesNotMatch(sidebar, /测试库/);
   assert.match(sidebar, /成品库/);
   assert.match(router, /\/test-product-libraries/);
 });

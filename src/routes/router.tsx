@@ -58,7 +58,7 @@ const reverseProjectRoute = createRoute({
 const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/projects/$projectId",
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { tab: string } => ({
     tab: search.tab === "hero" || search.tab === "suite" || search.tab === "reverse" || search.tab === "video" || search.tab === "canvas" ? search.tab : "base",
   }),
   beforeLoad: ({ search, params }) => {

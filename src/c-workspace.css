@@ -124,3 +124,16 @@
 .c-base-results .base-grid { padding-bottom: 18px; }
 
 @media (max-width: 1200px) { .global-sidebar:not(.collapsed) .global-nav-item > svg { display: block; } }
+
+/* Main and detail generation share the page scrollbar on desktop. */
+@media (min-width: 1024px) {
+  .c-workbench .workspace-content:has(.professional-workspace) { height:auto; overflow:visible; }
+  .c-workbench .workspace-content:has(.professional-workspace) .resizable-workspace { height:auto !important; overflow:visible !important; }
+  .c-workbench .workspace-content:has(.professional-workspace) .resizable-workspace > [data-panel] { overflow:visible !important; }
+  .c-workbench .planning-workspace-lock, .c-workbench .professional-workspace { height:auto; }
+  .c-workbench .professional-workspace > .generation-workspace { height:auto; overflow:visible; align-items:start; flex:none; }
+  .c-workbench .professional-workspace .generation-config { overflow:visible; grid-template-rows:auto auto auto; }
+  .c-workbench .professional-workspace .generation-config-scroll { overflow:visible; overscroll-behavior:auto; scrollbar-gutter:auto; }
+  .c-workbench .professional-workspace .generation-result, .c-workbench .professional-workspace .generation-result-shell { height:auto; overflow:visible; }
+  .c-workbench .professional-workspace .generation-result-body { overflow:visible; overscroll-behavior:auto; flex:none; }
+}

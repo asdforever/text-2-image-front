@@ -1,4 +1,4 @@
-import { expect, test } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 import { createDefaultGenerationConfig } from "../../src/lib/generation-config";
 
 for (const mode of ["hero", "suite"] as const) {
@@ -62,7 +62,7 @@ for (const mode of ["hero", "suite"] as const) {
     const geometry = () => page.evaluate(() => {
       const rect = (selector: string) => {
         const box = document.querySelector(selector)!.getBoundingClientRect();
-        return { x: box.x, y: box.y, width: box.width, height: box.height };
+        return { x: box.x, width: box.width };
       };
       return [".generation-config", ".generation-config-footer", ".generation-result", ".studio-result-topbar"].map(rect);
     });
@@ -83,31 +83,33 @@ for (const mode of ["hero", "suite"] as const) {
     expect(await geometry()).toEqual(regularGeometry);
     await expect(page.locator(".generation-result").getByRole("button", { name: `添加${chosen.label}`, exact: true })).toBeVisible();
     await expect(page.locator(".generation-config .module-selector")).toHaveCount(0);
-    expect(await page.locator(".generation-section-title").allTextContents()).toEqual(regularHeadings.map(title => title === "参数填写" ? "规划大师" : title));
-    await expect(page.getByRole("button", { name: "自动规划", exact: true })).toHaveCount(1);
+    expect(await page.locator(".generation-section-title").allTextContents()).toEqual(regularHeadings);
+    await expect(page.getByRole("button", { name: "打开规划大师", exact: true })).toHaveCount(1);
     await page.screenshot({ path: testInfo.outputPath("aligned-professional-desktop.png") });
     await page.getByRole("button", { name: "常规版", exact: true }).click();
     await page.getByRole("button", { name: "选择产品素材", exact: true }).click();
     await page.getByRole("button", { name: /商品正面.jpg 可用/ }).click();
     await page.getByRole("button", { name: "收起素材选择", exact: true }).click();
-    await page.getByLabel("参数填写", { exact: true }).fill("商品名称：随行杯\n容量：500ml\n材质：不锈钢");
+    await editProductBrief(page, "商品名称：随行杯\n容量：500ml\n材质：不锈钢");
     await page.getByRole("button", { name: config.styleCategories[0].styles[0].label, exact: true }).click();
     await page.getByRole("button", { name: `添加${chosen.label}`, exact: true }).click();
-    await expect(page.getByRole("button", { name: "自动规划", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "打开规划大师", exact: true })).toHaveCount(1);
     await expect(page.getByLabel("本图要讲什么", { exact: true })).toHaveCount(0);
     await expect(page.getByLabel("建议文案", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "编译提示词", exact: true })).toBeEnabled();
-    await page.getByLabel("参数填写", { exact: true }).fill("商品名称：随行杯\n容量：500ml\n材质：不锈钢\n颜色：银色");
+    await editProductBrief(page, "商品名称：随行杯\n容量：500ml\n材质：不锈钢\n颜色：银色");
     await page.reload();
-    await expect(page.getByLabel("参数填写", { exact: true })).toContainText("银色");
+    await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+    await expect(page.getByLabel("商品信息与规划需求", { exact: true })).toHaveValue(/银色/);
+    await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
     await expect(page.getByRole("button", { name: "编译提示词", exact: true })).toBeEnabled();
     expect(planningCalls).toBe(0);
     await page.screenshot({ path: testInfo.outputPath("regular-desktop.png"), fullPage: true });
-    await page.getByRole("button", { name: "自动填写", exact: true }).click();
+    await triggerInitialPlanning(page);
     await expect.poll(() => planningCalls).toBe(1);
     await expect(page.locator(".generation-config-footer").getByRole("button")).toBeDisabled();
     releasePlanning();
-    await expect(page.getByRole("button", { name: "自动填写", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "打开规划大师", exact: true })).toBeEnabled();
     const filled = await page.evaluate(({ mode }) => JSON.parse(localStorage.getItem("picagent-project-store")!).state.generationDrafts[`regular-demo:${mode}`].config, { mode });
     expect(filled.moduleParameters[chosen.id]).toContainEqual({ key: "容量", value: "500ml" });
     expect(compileInput).toBeUndefined();
@@ -136,6 +138,20 @@ for (const mode of ["hero", "suite"] as const) {
     await expect(page.getByRole("button", { name: "专业版", exact: true })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "常规版", exact: true }).click();
     await page.getByRole("button", { name: "展开配置", exact: true }).click();
-    await expect(page.getByLabel("参数填写", { exact: true })).toContainText("银色");
+    await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+    await expect(page.getByLabel("商品信息与规划需求", { exact: true })).toHaveValue(/银色/);
+    await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
   });
+}
+
+async function triggerInitialPlanning(page: Page) {
+  await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+  await page.getByRole("button", { name: "初始规划", exact: true }).click();
+  await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
+}
+
+async function editProductBrief(page: Page, value: string) {
+  await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+  await page.getByLabel("商品信息与规划需求", { exact: true }).fill(value);
+  await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
 }

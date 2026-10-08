@@ -6,6 +6,7 @@ import { useProjectStore } from "../store/useProjectStore";
 import { useReverseBindings, type ReverseBindingControls } from "../features/reverse-projects/useReverseBindings";
 
 export interface ModulePlanningControls {
+  openPlanning?: () => void;
   planning: boolean;
   error: string;
   summary?: string;

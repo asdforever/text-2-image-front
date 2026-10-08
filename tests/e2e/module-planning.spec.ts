@@ -54,7 +54,7 @@ for (const mode of ["hero", "suite"] as const) {
     });
     await page.setViewportSize({ width: 1600, height: 1100 });
     await page.goto(`/projects/proj-demo?tab=${mode}`);
-    await page.getByRole("button", { name: "自动规划", exact: true }).click();
+    await triggerInitialPlanning(page);
     const cards = page.locator(".studio-module.is-selected");
     await expect(cards).toHaveCount(mode === "hero" ? 2 : 6);
     await expect(cards.getByRole("textbox")).toHaveCount(0);
@@ -199,7 +199,7 @@ for (const mode of ["hero", "suite"] as const) {
       return saved ? route.fulfill({ json: { data: saved } }) : route.fulfill({ status: 404, json: { error: { message: "尚无规划" } } });
     });
     await page.goto(`/projects/proj-demo?tab=${mode}`);
-    await page.getByRole("button", { name: "自动规划", exact: true }).click();
+    await triggerInitialPlanning(page);
     await expect.poll(async () => (await draft(page, mode)).selectedModuleIds).toEqual(["detail-lid", "detail-base"]);
     const cards = page.locator(".studio-module.is-selected");
     await expect(page.getByRole("combobox", { name: /生成张数/ })).toHaveCount(0);
@@ -234,11 +234,15 @@ for (const mode of ["hero", "suite"] as const) {
       await route.fulfill({ json: { data: saved } });
     });
     await page.goto(`/projects/proj-demo?tab=${mode}`);
-    await page.getByLabel(mode === "hero" ? "主图商品资料" : "详情页商品资料").blur();
+    await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+    await page.getByLabel("商品信息与规划需求", { exact: true }).blur();
+    await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
     expect(plans).toBe(0);
-    await page.getByRole("button", { name: "自动规划", exact: true }).click();
+    await triggerInitialPlanning(page);
+    await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "先解释通勤价值" })).toBeVisible();
     await expect(page.getByText("续航需要核实", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
     const applied = await draft(page, mode);
     expect(applied.selectedModuleIds).toEqual(saved!.modules.map((item) => item.moduleId));
     expect(Object.values(applied.moduleCounts)).toEqual(saved!.modules.map(() => 1));
@@ -292,11 +296,13 @@ for (const mode of ["hero", "suite"] as const) {
       await route.fulfill({ json: { data: planFor(input) } });
     });
     await page.goto(`/projects/proj-demo?tab=${mode}`);
-    await page.getByRole("button", { name: "自动规划", exact: true }).click();
+    await triggerInitialPlanning(page);
     await expect.poll(() => submitted).toBe(true);
-    await page.getByLabel(mode === "hero" ? "主图商品资料" : "详情页商品资料").fill("新的运动场景资料");
+    await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+    await page.getByLabel("商品信息与规划需求", { exact: true }).fill("新的运动场景资料");
+    await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
     release();
-    await expect(page.getByRole("button", { name: "自动规划", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "打开规划大师", exact: true })).toBeEnabled();
     expect((await draft(page, mode)).modulePlanId).toBeUndefined();
     let reads = 0;
     await page.route("**/api/projects/proj-demo/module-plans/**", async (route) => {
@@ -322,10 +328,16 @@ test("失败重试保留传输失败的幂等键，确定的规划失败允许�
   });
   await page.goto("/projects/proj-demo?tab=hero");
   for (let attempt = 0; attempt < 3; attempt++) {
-    await page.getByRole("button", { name: "自动规划", exact: true }).click();
-    await expect(page.getByRole("button", { name: "自动规划", exact: true })).toBeEnabled();
+    await triggerInitialPlanning(page);
+    await expect(page.getByRole("button", { name: "打开规划大师", exact: true })).toBeEnabled();
   }
   await expect.poll(async () => (await draft(page, "hero")).modulePlanId).toBe("master-1");
   expect(keys[0]).toBe(keys[1]);
   expect(keys[1]).not.toBe(keys[2]);
 });
+
+async function triggerInitialPlanning(page: Page) {
+  await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+  await page.getByRole("button", { name: "初始规划", exact: true }).click();
+  await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
+}

@@ -6,6 +6,7 @@ import "./long-image.css";
 import { LongImageStylePanel } from "./LongImageStylePanel";
 import { ALL_BATCHES, ALL_MODULES, imageBatchIndex, matchesImageFilters } from "./image-batches";
 import { ImageBatchFilter, ImageModuleFilter } from "./ImageBatchFilter";
+import { resolveImageFilters } from "./linked-image-filters";
 import { LongImagePlanningAdvice } from "./LongImagePlanningAdvice";
 
 const initialRecipe = (): ApiLongImageRecipe => ({ title: "详情长图", width: 750, gap: 0, background: "#ffffff", items: [] });
@@ -25,8 +26,8 @@ export function LongImageComposer({ projectId, assets, workbench, close, saved, 
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [query, setQuery] = useState("");
-  const [batchSelection, setBatchSelection] = useState(initialBatchId);
-  const [moduleSelection, setModuleSelection] = useState(initialModuleId);
+  const [storedBatchSelection, setBatchSelection] = useState(initialBatchId);
+  const [storedModuleSelection, setModuleSelection] = useState(initialModuleId);
   const [sliceHeight, setSliceHeight] = useState(2000);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [failedImages, setFailedImages] = useState<string[]>([]);
@@ -40,6 +41,17 @@ export function LongImageComposer({ projectId, assets, workbench, close, saved, 
   const orientedAssets = useMemo(() => [...assets, ...candidateAssets.filter((candidate) => !assets.some((asset) => asset.id === candidate.id))].map((asset) => ({ ...asset, ...dimensions[asset.id] })), [assets, candidateAssets, dimensions]);
   const sources = useMemo(() => longImageSources(workbench, orientedAssets), [workbench, orientedAssets]);
   const batchIndex = useMemo(() => imageBatchIndex(workbench, orientedAssets), [workbench, orientedAssets]);
+  const filterImageIds = useMemo(() => sources.map(source => source.asset.id), [sources]);
+  const filterOptions = useMemo(() => resolveImageFilters(batchIndex, filterImageIds, storedBatchSelection, storedModuleSelection), [batchIndex, filterImageIds, storedBatchSelection, storedModuleSelection]);
+  const { batchId: batchSelection, moduleId: moduleSelection } = filterOptions;
+  const changeFilters = (batch: string, module: string, preferred: "batch" | "module") => {
+    const next = resolveImageFilters(batchIndex, filterImageIds, batch, module, preferred);
+    setBatchSelection(next.batchId); setModuleSelection(next.moduleId);
+  };
+  useEffect(() => {
+    if (storedBatchSelection !== batchSelection) setBatchSelection(batchSelection);
+    if (storedModuleSelection !== moduleSelection) setModuleSelection(moduleSelection);
+  }, [storedBatchSelection, storedModuleSelection, batchSelection, moduleSelection]);
   const visibleSources = sources.filter(source => matchesImageFilters(batchIndex, batchSelection, moduleSelection, source.asset.id) && source.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   const layout = useMemo(() => longImageLayout(recipe, orientedAssets), [recipe, orientedAssets]);
   const fingerprint = JSON.stringify(recipe);
@@ -145,7 +157,7 @@ export function LongImageComposer({ projectId, assets, workbench, close, saved, 
           <label>背景颜色<input aria-label="背景颜色" type="color" value={recipe.background} onChange={(event) => setRecipe({ ...recipe, background: event.target.value })} /></label>
         </fieldset>
         <LongImagePlanningAdvice projectId={projectId} />
-        <section className="lic-sources" aria-label="选择图片版本"><h3>选择图片版本 <small>可选同一模块的多张图片</small></h3><div className="lic-image-filters"><ImageBatchFilter label="长图批次" batches={batchIndex.batches} value={batchSelection} onChange={setBatchSelection} /><ImageModuleFilter label="长图模块类型" modules={batchIndex.modules} value={moduleSelection} onChange={setModuleSelection} /></div><input aria-label="搜索可选图片" placeholder="搜索模块、版本或文件名" value={query} onChange={(event) => setQuery(event.target.value)} />
+        <section className="lic-sources" aria-label="选择图片版本"><h3>选择图片版本 <small>可选同一模块的多张图片</small></h3><div className="lic-image-filters"><ImageBatchFilter label="长图批次" batches={filterOptions.batches} includeUnassigned={filterOptions.hasUnassignedBatch} value={batchSelection} onChange={value => changeFilters(value, moduleSelection, "batch")} /><ImageModuleFilter label="长图模块类型" modules={filterOptions.modules} includeUnassigned={filterOptions.hasUnassignedModule} value={moduleSelection} onChange={value => changeFilters(batchSelection, value, "module")} /></div><input aria-label="搜索可选图片" placeholder="搜索模块、版本或文件名" value={query} onChange={(event) => setQuery(event.target.value)} />
           <div className="lic-source-grid">{visibleSources.map((source) => <button key={source.asset.id} disabled={busy || recipe.items.length >= 20} aria-label={`添加 ${source.title}`} onClick={() => setRecipe({ ...recipe, items: [...recipe.items, newLongImageItem(source.asset.id)] })}><img src={source.url} alt="" loading="lazy" onError={() => setFailedImages((current) => current.includes(source.asset.id) ? current : [...current, source.asset.id])} /><span>{source.title}<small>{source.asset.width} × {source.asset.height}</small></span><Plus size={16} /></button>)}</div>
           {!visibleSources.length && <p className="lic-muted">{sources.length ? "没有同时符合批次、模块类型和搜索条件的图片，请调整筛选。" : "项目暂无可用图片，请先返回项目上传或生成图片。"}</p>}
         </section>

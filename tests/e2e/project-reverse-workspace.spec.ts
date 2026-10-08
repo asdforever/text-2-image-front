@@ -79,6 +79,36 @@ async function setup(page: Page, projects: unknown[], hasAssets = true, failGene
   });
 }
 
+test("反推补充参数可以连续输入名称和值，保存刷新后仍保留", async ({ page }) => {
+  await setup(page, [published]);
+  await page.goto("/projects/project-one?tab=reverse");
+  await page.getByRole("button", { name: "生成项目方案", exact: true }).click();
+  const editor = page.locator(".project-reverse-task-parameters");
+  await editor.getByRole("button", { name: "添加参数", exact: true }).click();
+  const name = editor.getByRole("textbox", { name: "参数名", exact: true });
+  const value = editor.getByRole("textbox", { name: "参数值", exact: true });
+  await value.click();
+  await page.keyboard.type("Keep the product shape unchanged");
+  await expect(value).toHaveValue("Keep the product shape unchanged");
+  await expect(value).toBeFocused();
+  await name.click();
+  await page.keyboard.type("scene");
+  await expect(name).toHaveValue("scene");
+  await expect(name).toBeFocused();
+  await value.click();
+  await page.keyboard.type(" and preserve details");
+  await expect(value).toHaveValue("Keep the product shape unchanged and preserve details");
+  await expect(value).toBeFocused();
+  await name.fill("场景要求");
+  await value.fill("保持商品外观，使用参考图原有场景");
+  const saved = page.waitForRequest(request => request.method() === "PATCH" && new URL(request.url()).pathname.endsWith("/reverse-execution"));
+  await page.getByRole("button", { name: "保存方案", exact: true }).click();
+  expect((await saved).postDataJSON().document.tasks[0].moduleParameters).toEqual([{ key: "场景要求", value: "保持商品外观，使用参考图原有场景" }]);
+  await page.reload();
+  await expect(name).toHaveValue("场景要求");
+  await expect(value).toHaveValue("保持商品外观，使用参考图原有场景");
+});
+
 test("项目未绑定也能直接选择已发布版本并生成方案，刷新保留来源", async ({ page }) => {
   await setup(page, [published, { ...published, id: "draft-one", name: "未发布参考", versions: [], latestVersionId: null }]);
   await page.goto("/projects/project-one?tab=reverse");

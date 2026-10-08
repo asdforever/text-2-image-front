@@ -55,6 +55,7 @@ export interface GenerationPlanItem {
 }
 
 export interface HeroGenerationSession {
+  planningAppliedVersionId?: string;
   inputFingerprint: string;
   compileIdempotencyKey: string;
   confirmIdempotencyKey: string;
@@ -66,6 +67,8 @@ export interface HeroGenerationSession {
 }
 
 export interface SuiteGenerationSession {
+  inputFingerprint?: string;
+  planningAppliedVersionId?: string;
   compileIdempotencyKey: string;
   planId?: string;
 }
@@ -281,15 +284,33 @@ export const useProjectStore = create<ProjectStore>()(
       addAssetVersion: (assetId, nextVersion) => set((state) => ({ projects: state.projects.map((project) => ({ ...project, assets: project.assets.map((asset) => asset.id === assetId ? { ...asset, url: nextVersion.url, version: nextVersion.version, status: "ready", versions: [...asset.versions, nextVersion] } : asset) })) })),
       updateGenerationDraft: (projectId, mode, patch) => set((state) => {
         const key = `${projectId}:${mode}`;
-        const current = state.generationDrafts[key]?.config;
+        const currentRecord = state.generationDrafts[key];
+        const current = currentRecord?.config;
+        const normalized = mode === "hero" ? normalizeHeroConfig(current) : normalizeSuiteConfig(current);
+        const previousCreation = normalized.creationMode ?? "regular";
+        const creation = patch.creationMode ?? previousCreation;
+        const drafts = { ...state.generationDrafts };
+        if (currentRecord) drafts[`${key}:${previousCreation}`] = currentRecord;
+        const saved = drafts[`${key}:${creation}`]?.config;
+        const source = creation === previousCreation ? normalized : saved ?? {
+          ...normalized, creationMode: creation, modulePlanId: undefined, modulePlanFingerprint: undefined,
+          modulePlanBaseline: undefined, modulePlanningRequest: undefined, planningConversationId: undefined,
+          planningAppliedVersionId: undefined, moduleTaskDetails: {}, moduleTaskOverrides: {},
+          regularTasks: {}, regularTaskOverrides: {}, regularTaskOptions: {}, modulePlanReferences: {},
+        };
         const config = mode === "hero"
-          ? normalizeHeroConfig({ ...normalizeHeroConfig(current), ...(patch as Partial<HeroGenerationConfig>) })
-          : normalizeSuiteConfig({ ...normalizeSuiteConfig(current), ...(patch as Partial<SuiteGenerationConfig>) });
-        return { generationDrafts: { ...state.generationDrafts, [key]: { config, updatedAt: new Date().toISOString() } } };
+          ? normalizeHeroConfig({ ...source, ...(patch as Partial<HeroGenerationConfig>) })
+          : normalizeSuiteConfig({ ...source, ...(patch as Partial<SuiteGenerationConfig>) });
+        const record = { config, updatedAt: new Date().toISOString() };
+        drafts[key] = record;
+        drafts[`${key}:${creation}`] = record;
+        return { generationDrafts: drafts };
       }),
       clearGenerationDraft: (projectId, mode) => set((state) => {
         const next = { ...state.generationDrafts };
         delete next[`${projectId}:${mode}`];
+        delete next[`${projectId}:${mode}:regular`];
+        delete next[`${projectId}:${mode}:professional`];
         return { generationDrafts: next };
       }),
       updateGenerationPlans: (projectId, mode, plans) => set((state) => ({
