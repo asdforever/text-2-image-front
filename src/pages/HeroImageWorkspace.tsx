@@ -1,4 +1,5 @@
 import { belongsToCreationMode } from "../lib/creation-mode-label";
+import { suiteConfirmationKey } from "../lib/suite-prompt-draft";
 import React, { useEffect, useRef, useState } from "react";
 import { GenerationWorkerNotice } from "../components/generation-workspace/GenerationWorkerNotice";
 import { getRetryableBatchSlotIds } from "../lib/batch-retry";
@@ -60,12 +61,14 @@ interface HeroImageWorkspaceProps {
 
 export function HeroPromptConfirmation(_props: {
   task: ApiHeroGenerationTask;
+  prompt?: string;
+  onPromptChange?: (value: string) => void;
   busy: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
   const props = _props;
-  const prompt = props.task.compiledTaskPrompt ?? "";
+  const prompt = props.prompt ?? props.task.compiledTaskPrompt ?? "";
   const cards = [
     ["商品真实性约束", props.task.constraints.authenticity],
     ["具体电商平台约束", props.task.constraints.market],
@@ -84,8 +87,8 @@ export function HeroPromptConfirmation(_props: {
       </div>
       </details>
       {props.task.unconfirmedItems.length > 0 && <p className="studio-unconfirmed">待核实：{props.task.unconfirmedItems.join("、")}</p>}
-      <p>提示词已统一合成；如需调整，请修改模块参数后重新编译。</p>
-      <label className="hero-task-prompt-field">实时任务提示词<textarea value={prompt} readOnly disabled={props.busy} /></label>
+      <p>可直接修改提示词，用于本次生成；下次按最新参数重新编译。</p>
+      <label className="hero-task-prompt-field">实时任务提示词<textarea value={prompt} onChange={event => props.onPromptChange?.(event.target.value)} disabled={props.busy} /></label>
       <footer><span>确认后将调用生图模型并生成 1 张图片</span><Button type="button" disabled={props.busy || !prompt.trim()} onClick={props.onConfirm}>{props.busy ? "生成中..." : "确认并生成"}</Button></footer>
     </section>
   );
@@ -93,6 +96,8 @@ export function HeroPromptConfirmation(_props: {
 
 export function BatchPromptConfirmation(_props: {
   batch: ApiBatchGenerationDetail;
+  prompts?: Record<string, string>;
+  onPromptChange?: (moduleKey: string, value: string) => void;
   busy: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -100,12 +105,12 @@ export function BatchPromptConfirmation(_props: {
   const props = _props;
   const total = props.batch.modules.reduce((sum, module) => sum + module.resultCount, 0);
   const modulePrompt = (module: ApiBatchGenerationDetail["modules"][number]) =>
-    module.compiledTaskPrompt ?? "";
+    props.prompts?.[module.moduleKey] ?? module.compiledTaskPrompt ?? "";
   const hasEmptyPrompt = props.batch.modules.some((module) => !modulePrompt(module).trim());
   return (
     <section className="hero-prompt-confirmation" aria-label="批次主图提示词确认">
       <header><div><span>生成前确认</span><h2>逐个检查模块实时任务提示词</h2></div><button type="button" onClick={props.onCancel} disabled={props.busy}>取消</button></header>
-      <p>提示词已统一合成；如需调整，请修改模块参数后重新编译。</p>
+      <p>可直接修改提示词，用于本次生成；下次按最新参数重新编译。</p>
       <div className="hero-batch-prompt-list">
         {props.batch.modules.map((module) => {
           const cards = [
@@ -126,7 +131,7 @@ export function BatchPromptConfirmation(_props: {
             </div>
             </details>
             {module.unconfirmedItems.length > 0 && <p className="studio-unconfirmed">待核实：{module.unconfirmedItems.join("、")}</p>}
-            <label className="hero-task-prompt-field">实时任务提示词<textarea value={modulePrompt(module)} readOnly disabled={props.busy} /></label>
+            <label className="hero-task-prompt-field">实时任务提示词<textarea value={modulePrompt(module)} onChange={event => props.onPromptChange?.(module.moduleKey, event.target.value)} disabled={props.busy} /></label>
           </article>;
         })}
       </div>
@@ -252,7 +257,7 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
       if (saved?.compileIdempotencyKey === heroGenerationSession?.compileIdempotencyKey) {
         if (saved.batchId !== recovered.id) saveHeroGenerationSession(props.project.id, { ...saved, batchId: recovered.id });
         setModuleTaskPrompts(Object.fromEntries(recovered.modules.map((module) => [module.moduleKey,
-          module.confirmedTaskPrompt ?? module.compiledTaskPrompt ?? "",
+          module.confirmedTaskPrompt ?? (saved.promptBatchId === recovered.id ? saved.moduleTaskPrompts?.[module.moduleKey] : undefined) ?? module.compiledTaskPrompt ?? "",
         ])));
       }
       const successes = recovered.slots.filter((slot) => slot.status === "succeeded" && !seenSuccessfulBatchSlotIds.current.has(slot.id));
@@ -416,13 +421,15 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         confirmIdempotencyKey: createIdempotencyKey(),
         batchId: batch.id,
       };
-      const savedSession = { ...session, batchId: batch.id };
+      const prompts = Object.fromEntries(batch.modules.map(module => [module.moduleKey, moduleTaskPrompts[module.moduleKey] ?? module.compiledTaskPrompt ?? ""]));
+      const confirmation = suiteConfirmationKey({ prompts, confirmKey: session.confirmIdempotencyKey, confirmFingerprint: session.confirmPromptFingerprint }, batch.id, prompts);
+      const savedSession = { ...session, batchId: batch.id, promptBatchId: batch.id, moduleTaskPrompts: prompts, confirmIdempotencyKey: confirmation.confirmKey!, confirmPromptFingerprint: confirmation.confirmFingerprint };
       saveHeroGenerationSession(props.project.id, savedSession);
       const confirmed = await confirmBatchHeroGenerationFlow(
         batchGenerationApi,
         props.project.id,
         batch.id,
-        Object.fromEntries(batch.modules.map((module) => [module.moduleKey, module.compiledTaskPrompt ?? ""])),
+        prompts,
         savedSession.confirmIdempotencyKey,
       );
       setBatch(confirmed);
@@ -483,8 +490,9 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         confirmIdempotencyKey: createIdempotencyKey(),
         taskId: task.id,
       };
-      const prompt = task.compiledTaskPrompt ?? "";
-      const savedSession = { ...session, taskId: task.id, taskPrompt: prompt };
+      const prompt = (session.taskId === task.id ? session.taskPrompt : undefined) ?? task.compiledTaskPrompt ?? "";
+      const confirmation = suiteConfirmationKey({ prompts: {}, confirmKey: session.confirmIdempotencyKey, confirmFingerprint: session.confirmPromptFingerprint }, task.id, { task: prompt });
+      const savedSession = { ...session, taskId: task.id, taskPrompt: prompt, confirmIdempotencyKey: confirmation.confirmKey!, confirmPromptFingerprint: confirmation.confirmFingerprint };
       saveHeroGenerationSession(props.project.id, savedSession);
       const completed = await confirmHeroGenerationFlow(heroGenerationApi, props.project.id, task.id, prompt, savedSession.confirmIdempotencyKey);
       setTask(completed);
@@ -521,9 +529,14 @@ export function HeroImageWorkspace(props: HeroImageWorkspaceProps) {
         {(recovery.error || flowError || modulePlanner.error || batch?.error?.message || task?.error?.message) && <div className="hero-generation-error" role="alert"><strong>{recovery.error ? "任务状态查询暂时中断" : "本次操作未完成"}</strong><span>{recovery.error || flowError || modulePlanner.error || batch?.error?.message || task?.error?.message}</span></div>}
         <GenerationModulesPanel projectId={props.project.id} mode="hero" config={config} planner={planningControls} errors={errors} onChange={change} />
         {recovery.missing && <p role="status">正在查询已提交的主图任务，尚未找到记录。不会自动重新生成。</p>}
-        {task?.status === "awaiting_confirmation" && <HeroPromptConfirmation task={task} busy={busy} onConfirm={() => void confirmGeneration()} onCancel={() => { setTask(null); clearHeroGenerationSession(props.project.id); }} />}
+        {task?.status === "awaiting_confirmation" && <HeroPromptConfirmation task={task} prompt={heroGenerationSession?.taskId === task.id ? heroGenerationSession.taskPrompt : undefined} onPromptChange={value => {
+          if (heroGenerationSession) saveHeroGenerationSession(props.project.id, { ...heroGenerationSession, taskId: task.id, taskPrompt: value });
+        }} busy={busy} onConfirm={() => void confirmGeneration()} onCancel={() => { setTask(null); clearHeroGenerationSession(props.project.id); }} />}
         {(batch?.status === "awaiting_confirmation") && <details className="studio-confirmation-details" open key={batch.id}><summary>提示词已就绪 · 检查并确认生成</summary>
-          <BatchPromptConfirmation batch={batch} busy={busy} onConfirm={() => void confirmBatchGeneration()} onCancel={() => { setBatch(null); setModuleTaskPrompts({}); clearHeroGenerationSession(props.project.id); }} />
+          <BatchPromptConfirmation batch={batch} prompts={moduleTaskPrompts} onPromptChange={(moduleKey, value) => {
+            const prompts = { ...moduleTaskPrompts, [moduleKey]: value }; setModuleTaskPrompts(prompts);
+            if (heroGenerationSession) saveHeroGenerationSession(props.project.id, { ...heroGenerationSession, promptBatchId: batch.id, moduleTaskPrompts: prompts });
+          }} busy={busy} onConfirm={() => void confirmBatchGeneration()} onCancel={() => { setBatch(null); setModuleTaskPrompts({}); clearHeroGenerationSession(props.project.id); }} />
         </details>}
         {!preparing && batch && !["awaiting_confirmation", "compiling_prompt"].includes(batch.status) && <details className="studio-task-details" open={["failed", "partially_failed"].includes(batch.status)}><summary>批次进度与重试</summary><BatchGenerationStatus batch={batch} busy={busy} onCancel={() => void cancelBatchGeneration()} onRetry={(slotId) => void retryBatchSlot(slotId)} onRecompile={() => void generate(true)} /></details>}
         {task?.status === "generating" && <div className="generation-empty-state" role="status"><strong>正在生成主图</strong><span>已锁定平台、风格和商品真实性约束，请稍候。</span></div>}

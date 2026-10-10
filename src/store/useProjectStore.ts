@@ -59,6 +59,7 @@ export interface HeroGenerationSession {
   inputFingerprint: string;
   compileIdempotencyKey: string;
   confirmIdempotencyKey: string;
+  confirmPromptFingerprint?: string;
   batchId?: string;
   taskId?: string;
   taskPrompt?: string;

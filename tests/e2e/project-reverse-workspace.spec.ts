@@ -250,7 +250,7 @@ test("保存新尺寸后单张生成使用当前设置，历史重试失败后�
   expect((await saved).postDataJSON().expectedRevision).toBe(5);
 });
 
-test("编译只提供只读预览，保存和新生成不复用预览提示词", async ({ page }) => {
+test("反推提示词可修改但参数变化后重新编译，方案不保存提示词", async ({ page }) => {
   await setup(page, [published]);
   let compilations = 0;
   page.on("request", request => { if (new URL(request.url()).pathname.endsWith("/reverse-execution/compile")) compilations += 1; });
@@ -259,7 +259,8 @@ test("编译只提供只读预览，保存和新生成不复用预览提示词",
   await page.getByRole("button", { name: "编译提示词", exact: true }).click();
   const preview = page.getByRole("textbox", { name: "提示词预览", exact: true });
   await expect(preview).toHaveValue("商品：鼠标项目");
-  await expect(preview).toHaveAttribute("readonly", "");
+  await expect(preview).toBeEditable();
+  await preview.fill("本次手动提示词");
   await page.getByRole("textbox", { name: "场景与构图", exact: true }).fill("修改后的新布局");
   await expect(preview).toHaveValue("");
   const saving = page.waitForRequest(request => request.method() === "PATCH" && new URL(request.url()).pathname.endsWith("/reverse-execution"));
@@ -269,6 +270,27 @@ test("编译只提供只读预览，保存和新生成不复用预览提示词",
   await generation;
   await expect(page.getByRole("img", { name: "图 1 生成结果" })).toBeVisible();
   expect(compilations).toBe(1);
+});
+
+test("反推手动提示词只提交本次生成，保存方案和下次生成不复用", async ({ page }) => {
+  await setup(page, [published]);
+  await page.goto("/projects/project-one?tab=reverse");
+  await page.getByRole("button", { name: "生成项目方案", exact: true }).click();
+  await page.getByRole("button", { name: "编译提示词", exact: true }).click();
+  await page.getByRole("textbox", { name: "方案名称", exact: true }).fill("本次方案");
+  const prompt = page.getByRole("textbox", { name: "提示词预览", exact: true });
+  await prompt.fill("本次商品向左，保留真实结构。");
+  const saving = page.waitForRequest(r => r.method() === "PATCH" && new URL(r.url()).pathname.endsWith("/reverse-execution"));
+  await page.getByRole("button", { name: "保存方案", exact: true }).click();
+  expect((await saving).postDataJSON().document.tasks[0].promptDraft).toBe("");
+  await expect(prompt).toHaveValue("本次商品向左，保留真实结构。");
+  const first = page.waitForRequest(r => new URL(r.url()).pathname.endsWith("/reverse-execution/generate"));
+  await page.getByRole("button", { name: "生成此张", exact: true }).click();
+  expect((await first).postDataJSON().promptOverrides).toEqual({ "task-one": "本次商品向左，保留真实结构。" });
+  await expect(page.getByRole("img", { name: "图 1 生成结果" })).toBeVisible();
+  const second = page.waitForRequest(r => new URL(r.url()).pathname.endsWith("/reverse-execution/generate"));
+  await page.getByRole("button", { name: "生成此张", exact: true }).click();
+  expect((await second).postDataJSON().promptOverrides ?? {}).toEqual({});
 });
 
 test("自动分配提交后生成失败仍能按最新修订保存", async ({ page }) => {

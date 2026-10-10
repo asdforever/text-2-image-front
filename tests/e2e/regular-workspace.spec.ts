@@ -47,7 +47,7 @@ for (const mode of ["hero", "suite"] as const) {
       }
       if (path.endsWith("/confirm")) {
         confirmCalls++;
-        expect(body.moduleTaskPrompts[chosen.id]).toBe("Frozen 500ml 随行杯");
+        expect(body.moduleTaskPrompts[chosen.id]).toBe("本次使用手动修改的描述");
         compiled = { ...compiled, status: mode === "suite" ? "confirmed" : "succeeded", generationBatchId: mode === "suite" ? "batch-1" : null };
         return data(compiled);
       }
@@ -118,8 +118,11 @@ for (const mode of ["hero", "suite"] as const) {
     await expect(confirmation).toBeEnabled();
     expect(planningCalls).toBe(1);
     expect(confirmCalls).toBe(0);
+    const prompt = page.getByRole("textbox", { name: mode === "hero" ? "实时任务提示词" : `${chosen.label}提示词`, exact: true });
+    await prompt.fill("本次使用手动修改的描述");
     await page.reload();
     await expect(confirmation).toBeEnabled();
+    await expect(prompt).toHaveValue("本次使用手动修改的描述");
     expect(confirmCalls).toBe(0);
     await confirmation.click();
     await expect.poll(() => confirmCalls).toBe(1);

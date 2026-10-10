@@ -7,12 +7,15 @@ async function recoverLegacyTask(page: Page, taskId: string) {
   await page.addInitScript((id) => {
     if (sessionStorage.getItem("legacy-task-ready")) return;
     localStorage.clear();
-    localStorage.setItem("picagent-project-store", JSON.stringify({ state: { heroGenerationSessions: {
+    localStorage.setItem("picagent-project-store", JSON.stringify({ state: { generationDrafts: {
+      "proj-demo:hero": { config: { creationMode: "professional" } },
+    }, heroGenerationSessions: {
       "proj-demo": { taskId: id, inputFingerprint: "legacy", compileIdempotencyKey: "legacy-compile", confirmIdempotencyKey: "legacy-confirm" },
     } }, version: 0 }));
     sessionStorage.setItem("legacy-task-ready", "1");
   }, taskId);
   await page.route("**/api/projects/proj-demo/assets/*/preview", (route) => route.fulfill({ path: "public/assets/gan65-product.jpg", contentType: "image/jpeg" }));
+  await page.route("**/api/suites/proj-demo/workbench", route => route.fulfill({ json: { data: { generationSteps: [] } } }));
 }
 
 test("恢复旧主图任务后仍需确认才能生图，并展示真实结果", async ({ page }) => {
@@ -43,6 +46,7 @@ test("恢复旧主图任务后仍需确认才能生图，并展示真实结果",
     }, requestId: "task-1" } });
   });
   await page.route("**/api/projects/proj-demo/hero-generations/task-1/confirm", async (route) => {
+    expect(route.request().postDataJSON().taskPrompt).toBe("用户补充：右侧留白");
     confirmCalls += 1;
     includeGenerated = true;
     await route.fulfill({ json: { data: {
@@ -141,14 +145,14 @@ test("确认生图失败时展示安全错误且保留历史结果", async ({ pa
   });
 
   await page.goto("/projects/proj-demo?tab=hero");
-  await expect(page.getByRole("region", { name: "图片预览" }).getByText("历史主图.png", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "图片预览" })).toContainText("历史模型 · 历史风格");
+  await expect(page.getByRole("button", { name: "查看 历史主图.png", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "生成结果", exact: true })).toContainText("历史模型 · 历史风格");
   await page.getByText("查看固定约束与图片分析", { exact: true }).click();
   await expect(page.getByText("商品真实性约束")).toBeVisible();
   await page.getByRole("button", { name: "确认并生成" }).click();
 
   await expect(page.locator(".hero-generation-error")).toContainText("图片生成服务暂时不可用，请稍后重试");
-  await expect(page.getByRole("region", { name: "图片预览" }).getByText("历史主图.png", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "查看 历史主图.png", exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("alert")).toContainText("图片生成服务暂时不可用，请稍后重试");
 });

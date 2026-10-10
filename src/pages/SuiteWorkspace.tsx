@@ -86,7 +86,7 @@ export function SuiteWorkspace(props: {
     title: module.title,
     copy: module.copySummary,
     visual: module.visualDirection,
-    taskPrompt: module.compiledTaskPrompt ?? "",
+    taskPrompt: (draft.planId === remotePlan.id ? draft.prompts[module.moduleKey] : undefined) ?? module.compiledTaskPrompt ?? "",
     moduleParameters: module.moduleParameters,
   })) ?? [];
   const resultMetadata = useGenerationResultMetadata(props.project.id, props.project.assets);
@@ -407,7 +407,7 @@ export function SuiteWorkspace(props: {
         {recovery.missing && <p role="status">正在查询已提交的套图任务，尚未找到记录。不会自动重新生成。</p>}
         {awaitingConfirmation && remotePlan && <section className="suite-prompt-confirmation" aria-label="套图提示词确认">
           <header className="suite-section-heading"><div><h2>检查套图提示词</h2><p>共 {total} 张。检查每张图的提示词，最终拼接顺序在画布中调整。</p></div></header>
-          <p>提示词已统一合成；如需调整，请修改模块参数后重新编译。</p>
+          <p>可直接修改提示词，用于本次生成；下次按最新参数重新编译。</p>
           <details className="studio-prompt-context suite-global-constraints"><summary>查看平台、风格与商品约束</summary>
             <div className="suite-constraint-cards">{Object.entries(remotePlan.constraints).map(([key, card]) => <article key={key}><strong>{key === "market" ? "电商平台约束" : key === "style" ? "全局风格约束" : key === "authenticity" ? "商品真实性约束" : key}</strong><p>{card.content}</p></article>)}</div>
           </details>
@@ -416,7 +416,11 @@ export function SuiteWorkspace(props: {
             return <article className="suite-prompt-card" key={plan.moduleId}>
               <header><div className="suite-prompt-title"><span className="suite-order-number">{String(index + 1).padStart(2, "0")}</span><div><strong>{plan.title}</strong><small>生成 {plan.count} 张</small></div></div>
               </header>
-              <label className="hero-task-prompt-field"><span>任务提示词</span><textarea aria-label={`${plan.title}提示词`} value={plan.taskPrompt} readOnly disabled={busy} /></label>
+              <label className="hero-task-prompt-field"><span>任务提示词</span><textarea aria-label={`${plan.title}提示词`} value={plan.taskPrompt} disabled={busy} onChange={event => {
+                if (!remotePlan) return;
+                const next = { ...draft, planId: remotePlan.id, prompts: { ...draft.prompts, [plan.moduleId]: event.target.value } };
+                setDraft(next); saveSuitePromptDraft(props.project.id, next);
+              }} /></label>
               {module.unconfirmedItems.length > 0 && <p className="studio-unconfirmed">待核实：{module.unconfirmedItems.join("、")}</p>}
               <details className="studio-prompt-context"><summary>查看规划依据</summary><dl className="suite-plan-reference"><dt>文案摘要</dt><dd>{plan.copy || "无"}</dd><dt>画面说明</dt><dd>{plan.visual || "无"}</dd><dt>可见事实</dt><dd>{module.visibleFacts.join("、") || "无"}</dd>{plan.moduleParameters.length > 0 && <><dt>补充参数</dt><dd>{plan.moduleParameters.filter((item) => item.value).map((item) => `${item.key}：${item.value}`).join("；") || "无"}</dd></>}</dl></details>
             </article>;

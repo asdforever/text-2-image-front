@@ -265,6 +265,7 @@ test("刷新后从最新规划和关联批次恢复套图结果", async ({ page 
   state.plan.generationBatchId = "suite-batch-1";
   state.batchMode = "complete";
   await page.reload();
+  await page.getByText("批次进度与重试", { exact: true }).click();
   await expect(page.getByRole("region", { name: "批次图片进度" }).locator("img")).toHaveCount(3);
   await expect(page.getByRole("button", { name: "确认并生成 3 张" })).toHaveCount(0);
   expect(state.confirmCalls).toBe(0);
@@ -322,6 +323,7 @@ test("确认失败保留提示词，直接确认无需失焦保存，重试使�
   await page.reload();
   await expect(prompt).toHaveValue("刚输入的提示词，不触发失焦保存");
   await page.getByRole("button", { name: "确认并生成 3 张" }).click();
+  await page.getByText("批次进度与重试", { exact: true }).click();
   await expect(page.getByRole("region", { name: "批次图片进度" }).locator("img")).toHaveCount(3);
   expect(requests).toHaveLength(2);
   expect(requests[1].key).toBe(requests[0].key);
@@ -371,6 +373,13 @@ function createSuiteApiState(): SuiteApiState {
 }
 
 async function mockSuiteApis(page: Page, state: SuiteApiState) {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem("professional-suite-initialized")) return;
+    const saved = JSON.parse(localStorage.getItem("picagent-project-store") ?? "{}");
+    saved.state = { ...saved.state, generationDrafts: { ...saved.state?.generationDrafts, "proj-demo:suite": { config: { creationMode: "professional" } } } };
+    localStorage.setItem("picagent-project-store", JSON.stringify({ ...saved, version: 0 }));
+    sessionStorage.setItem("professional-suite-initialized", "1");
+  });
   await page.route("**/api/projects/proj-demo/suite-plans/suite-plan-1", (route) => route.fulfill({ json: { data: state.plan } }));
   await page.route("**/api/projects/proj-demo", (route) => route.fulfill({ json: { data: {
     ...projectDetail,

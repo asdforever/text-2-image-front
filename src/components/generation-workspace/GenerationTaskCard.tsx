@@ -70,7 +70,7 @@ export function GenerationTaskCard({ taskId, moduleId, index, definition, config
       </div>
     </header>
     {!expanded && (regular ? <div className="module-task-parameter-summary">
-      <p><span>内容目标：</span>{regularTask.goal || "等待自动填写"}</p><p><span>批准文案：</span>{regularTask.copy || "等待自动填写"}</p><p><span>文案策略：</span>{options.copyPolicy === "flexible" ? "允许拟写文案" : "原样使用批准文案"}</p>
+      <p><span>内容目标：</span>{regularTask.goal || "等待自动填写"}</p><p><span>{options.copyPolicy === "fixed" ? "锁定文案：" : "参考文案："}</span>{regularTask.copy || "等待自动填写"}</p><p><span>文案策略：</span>{options.copyPolicy === "fixed" ? "原样使用锁定文案" : "根据当前参数组织文案"}</p>
       {filledParameters.length ? filledParameters.map((parameter, i) => <p key={i}><span>{parameter.key}：</span>{parameter.value}</p>) : <p>可按需补充本图参数</p>}
     </div> : <div className="module-task-overview">
       <dl className="module-task-summary">
@@ -82,8 +82,9 @@ export function GenerationTaskCard({ taskId, moduleId, index, definition, config
     {expanded && <div className="module-task-editor" id={editorId}>
       {regular ? <>
         <label>内容目标<textarea aria-label="内容目标" rows={2} maxLength={2000} value={regularTask.goal} onChange={e => changeRegular({ goal: e.target.value })} /></label>
-        <label>批准文案<textarea aria-label="批准文案" rows={2} maxLength={2000} value={regularTask.copy} onChange={e => changeRegular({ copy: e.target.value })} /></label>
-        <label><input type="checkbox" checked={options.copyPolicy === "flexible"} onChange={e => changeOptions({ copyPolicy: e.target.checked ? "flexible" : "fixed" })} />允许规划大师拟写本图文案</label>
+        <label>{options.copyPolicy === "fixed" ? "锁定文案" : "参考文案"}<textarea aria-label={options.copyPolicy === "fixed" ? "锁定文案" : "参考文案"} rows={2} maxLength={2000} value={regularTask.copy} onChange={e => changeRegular({ copy: e.target.value })} /></label>
+        <label><input type="checkbox" checked={options.copyPolicy === "fixed"} onChange={e => changeOptions({ copyPolicy: e.target.checked ? "fixed" : "flexible" })} />锁定本图文案，原样使用</label>
+        <p>默认根据当前补充参数组织文案，不添加未提供的商品信息或承诺。</p>
         <label>视觉要求（选填）<textarea aria-label="视觉要求（选填）" rows={2} maxLength={500} value={options.visualRequirements ?? ""} onChange={e => changeOptions({ visualRequirements: e.target.value })} /></label>
         {parameterEditor}</> : <>
         <TaskDesignEditor detail={detail} overrides={overrides} onChange={changeDesign}

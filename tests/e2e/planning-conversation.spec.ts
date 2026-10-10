@@ -238,8 +238,14 @@ test("manual edits use latest parameters and explicit copy permission, then inpu
   const stub = await installPlanningConversationApiStub(page); await page.goto("/projects/proj-demo?tab=suite"); await openDialog(page);
   await send(page, "只改第二张"); await expect(page.getByRole("heading", { name: "修改预览", exact: true })).toBeVisible(); await page.keyboard.press("Escape");
   const card = page.locator(".module-task-card").first(); await card.getByRole("button", { name: "编辑第 1 张任务", exact: true }).click();
-  await card.getByLabel("内容目标", { exact: true }).fill("最新人工目标"); await card.getByLabel("批准文案", { exact: true }).fill("人工批准文案");
-  await card.getByLabel("允许规划大师拟写本图文案").check(); await card.getByLabel("视觉要求（选填）").fill("左侧留白");
+  const lock = card.getByLabel("锁定本图文案，原样使用");
+  await expect(lock).not.toBeChecked();
+  await lock.check(); await expect(lock).toBeChecked();
+  await card.getByLabel("锁定文案", { exact: true }).fill("人工批准文案");
+  await lock.uncheck();
+  await card.getByLabel("内容目标", { exact: true }).fill("最新人工目标");
+  await card.getByLabel("参考文案", { exact: true }).fill("人工批准文案");
+  await card.getByLabel("视觉要求（选填）").fill("左侧留白");
   await card.getByLabel("参数名", { exact: true }).fill("任意新参数名"); await card.getByRole("textbox", { name: "参数值", exact: true }).fill("人工新值");
   await openDialog(page); await send(page, "其余保持"); await expect(page.getByRole("heading", { name: "修改预览", exact: true })).toBeVisible();
   const body = stub.requests.filter(r => r.path.endsWith("/turns")).at(-1)!.body;

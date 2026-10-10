@@ -2,6 +2,16 @@
 
 PicAgent Studio 的前端（React 19 + Vite）。后端在另一个仓库。
 
+## 项目文档
+
+前后端保持同级目录时，可阅读后端仓库统一维护的项目文档：
+
+- [项目演示稿](../text-2-image/docs/project/project-demo.md)。
+- [学习与开发交接](../text-2-image/docs/project/learning-and-handoff.md)。
+- [面试与项目讲解](../text-2-image/docs/project/interview-and-presentation.md)。
+
+单独浏览本仓库时，请在后端仓库的 `docs/project/` 查阅。
+
 ## 本地运行
 
 ```bash

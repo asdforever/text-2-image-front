@@ -161,7 +161,7 @@ test("确认面板只允许编辑实时任务提示词，三张约束卡和事�
 });
 
 
-test("批次确认面板按模块显示只读提示词、事实和数量", () => {
+test("批次确认面板按模块显示可编辑提示词、只读事实和数量", () => {
   const html = renderToStaticMarkup(
     <BatchPromptConfirmation
       batch={batchDetail}
@@ -183,7 +183,7 @@ test("批次确认面板按模块显示只读提示词、事实和数量", () =>
   assert.match(html, /KV 任务/);
   assert.match(html, /场景任务/);
   assert.doesNotMatch(html, /已编辑 KV 任务/);
-  assert.match(html, /readOnly/);
+  assert.doesNotMatch(html, /readOnly/);
   assert.match(html, /确认并开始批次生成/);
 });
 

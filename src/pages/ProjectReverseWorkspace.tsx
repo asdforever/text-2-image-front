@@ -48,6 +48,7 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
   const [versions, setVersions] = useState<VersionOption[]>([]);
   const [selectedVersionId, setSelectedVersionId] = useState("");
   const [tasks, setTasks] = useState<ReverseExecutionTask[]>([]);
+  const [promptEdits, setPromptEdits] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [generatingTaskId, setGeneratingTaskId] = useState<string | null>(null);
@@ -101,6 +102,7 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
   useEffect(() => { void load(); }, [project.id]);
 
   const applyPlan = (next: ReverseExecutionPlan | null) => {
+    setPromptEdits({});
     setPlan(next); setTasks(next?.tasks ?? []); setPlanName(next?.name ?? "反推方案");
     setSelectedVersionId(next?.versionId ?? ""); setDirty(false); setShowNewPlan(false);
     setSourceAssetId(next?.sourceAssetId ?? defaultSourceId);
@@ -157,6 +159,7 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
   const selectedVersion = useMemo(() => versions.find((item) => item.id === selectedVersionId), [versions, selectedVersionId]);
   const document = () => ({ name: planName, versionId: plan?.versionId ?? selectedVersionId, referenceCount: tasks.length, tasks: tasks.map(task => ({ ...task, promptDraft: "" })), sourceAssetId: sourceAssetId || null, auxiliarySourceAssetIds, productFacts: confirmedFacts(), parameterBrief: parameterBrief.trim(), parametersAssigned: plan?.parametersAssigned ?? false, parameterSummary: plan?.parameterSummary ?? "", parameterWarnings: plan?.parameterWarnings ?? [], outputSettings });
   const invalidatePreview = () => {
+    setPromptEdits({});
     setTasks(current => current.map(task => ({ ...task, promptDraft: "" })));
     setDirty(true);
   };
@@ -195,6 +198,7 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
     invalidatePreview();
   };
   const mutateTask = (taskId: string, patch: Partial<ReverseExecutionTask>) => {
+    setPromptEdits(current => Object.fromEntries(Object.entries(current).filter(([id]) => id !== taskId)));
     setTasks((current) => current.map((task) => task.id === taskId ? { ...task, ...patch, promptDraft: "" } : task));
     setDirty(true);
   };
@@ -217,7 +221,7 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
       const saved = dirty ? await reverseExecutionApi.save(project.id, plan.revision, document(), plan.id) : plan;
       setPlan(saved); setTasks(saved.tasks); setDirty(false);
       const assigned = await reverseExecutionApi.assignParameters(project.id, saved.revision, plan.id);
-      setPlan(assigned); setTasks(assigned.tasks); setDirty(false); onToast?.("已按每张图的模块分配补充参数");
+      setPlan(assigned); setTasks(assigned.tasks); setPromptEdits({}); setDirty(false); onToast?.("已按每张图的模块分配补充参数");
     } catch (nextError) { setError(nextError instanceof Error ? nextError.message : "自动填写失败"); }
     finally { setAssigning(false); }
   };
@@ -238,13 +242,15 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
       const saved = dirty ? await reverseExecutionApi.save(project.id, plan.revision, document(), plan.id) : plan;
       setPlan(saved); setTasks(saved.tasks); setDirty(false);
       const compiled = await reverseExecutionApi.compile(project.id, saved.revision, confirmedFacts(), plan.id);
-      setPlan(compiled); setTasks(compiled.tasks); setDirty(false); onToast?.("提示词预览已生成，出图时会按当前输入重新编译");
+      setPlan(compiled); setTasks(compiled.tasks); setPromptEdits({}); setDirty(false); onToast?.("提示词预览已生成，可修改后用于本次生成");
     } catch (nextError) { setError(nextError instanceof Error ? nextError.message : "提示词编译失败"); }
     finally { setWorking(false); }
   };
   const generateImages = async (taskId?: string) => {
     if (!plan) return;
     if (!hasSource) { onToast?.("请先选择商品原图或上传白底图"); return; }
+    const promptOverrides = Object.fromEntries(Object.entries(promptEdits).filter(([id]) => !taskId || id === taskId));
+    if (Object.values(promptOverrides).some(value => !value.trim())) { onToast?.("本次提示词不能为空，请填写或重新编译"); return; }
     setWorking(true); setError("");
     let generationSubmitted = false;
     try {
@@ -252,8 +258,9 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
       if (dirty) { setPlan(current); setTasks(current.tasks); setDirty(false); }
       setGeneratingTaskId(taskId ?? null);
       generationSubmitted = true;
-      const generated = await reverseExecutionApi.generateImages(project.id, current.revision, { planId: plan.id, ...(taskId ? { taskIds: [taskId] } : {}), sourceAssetId, auxiliarySourceAssetIds, aspectRatio: outputSettings.aspectRatio, resolution: outputSettings.resolution });
+      const generated = await reverseExecutionApi.generateImages(project.id, current.revision, { planId: plan.id, ...(taskId ? { taskIds: [taskId] } : {}), ...(Object.keys(promptOverrides).length ? { promptOverrides } : {}), sourceAssetId, auxiliarySourceAssetIds, aspectRatio: outputSettings.aspectRatio, resolution: outputSettings.resolution });
       setPlan(generated); setTasks(generated.tasks); setDirty(false);
+      setPromptEdits(current => Object.fromEntries(Object.entries(current).filter(([id]) => taskId && id !== taskId)));
       const history = await reverseExecutionApi.batches(project.id, plan.id);
       setBatches(history); setSelectedBatchId(history[0]?.id ?? "");
       const failed = history[0]?.progress.failed ?? generated.tasks.filter(task => task.status === "failed").length;
@@ -322,7 +329,7 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
       <div className="project-reverse-summary"><strong>{tasks.length} 张模板图 · 每次生成重新编译</strong><span>来源：{selectedVersion ? versionLabel(selectedVersion) : `反推版本 ${plan.versionId}`}</span></div>
       <div className="project-reverse-list">{tasks.map((task) => <article className="project-reverse-card" key={task.id}>
         <div className="project-reverse-card-head"><span>图 {task.ordinal}</span><h2>{task.title}</h2><em>{task.referenceModuleId ?? "未匹配模块"}</em><Button size="sm" variant="secondary" disabled={busy || !hasSource} onClick={() => void generateImages(task.id)}>{generatingTaskId === task.id ? "生成中…" : "生成此张"}</Button></div>
-        <div className="project-reverse-card-grid"><div className="project-reverse-reference"><img src={task.referencePreviewUrl ?? ""} alt={task.referenceFilename} /><small>{task.referenceFilename}</small>{task.generatedPreviewUrl ? <div className="project-reverse-result"><img src={task.generatedPreviewUrl} alt={`图 ${task.ordinal} 生成结果`} /><small>生成结果 · 已归档</small></div> : <div className="project-reverse-result-placeholder">{task.status === "failed" ? task.error : "尚未生成结果"}</div>}</div><div className="project-reverse-fields">{STRUCTURE_FIELDS.map(([key, label]) => <label key={key}><span>{label}</span><textarea value={task.structure[key]} onChange={(event) => mutateStructure(task, key, event.target.value)} rows={2} /></label>)}<TaskParameterEditor parameters={task.moduleParameters ?? []} onChange={(parameters) => mutateParameters(task, parameters)} /><label className="project-reverse-prompt"><span>提示词预览</span><textarea value={task.promptDraft} readOnly rows={7} placeholder="可点击“编译提示词”预览；预览不保存，生成时会重新编译。需要调整内容请修改模块拆解或补充参数。" /></label></div></div>
+        <div className="project-reverse-card-grid"><div className="project-reverse-reference"><img src={task.referencePreviewUrl ?? ""} alt={task.referenceFilename} /><small>{task.referenceFilename}</small>{task.generatedPreviewUrl ? <div className="project-reverse-result"><img src={task.generatedPreviewUrl} alt={`图 ${task.ordinal} 生成结果`} /><small>生成结果 · 已归档</small></div> : <div className="project-reverse-result-placeholder">{task.status === "failed" ? task.error : "尚未生成结果"}</div>}</div><div className="project-reverse-fields">{STRUCTURE_FIELDS.map(([key, label]) => <label key={key}><span>{label}</span><textarea value={task.structure[key]} onChange={(event) => mutateStructure(task, key, event.target.value)} rows={2} /></label>)}<TaskParameterEditor parameters={task.moduleParameters ?? []} onChange={(parameters) => mutateParameters(task, parameters)} /><label className="project-reverse-prompt"><span>提示词预览</span><textarea aria-label="提示词预览" value={promptEdits[task.id] ?? task.promptDraft} disabled={busy} maxLength={50000} onChange={event => setPromptEdits(current => ({ ...current, [task.id]: event.target.value }))} rows={7} placeholder="可编译后修改，用于本次生成；方案不保存提示词，下次按最新参数重新编译。" /><small>手动修改只用于本次生成，实际提示词保留在批次记录中；下次重新编译。</small></label></div></div>
       </article>)}</div>
       <ReverseExecutionHistory projectId={project.id} batches={batches} selectedId={selectedBatchId} busy={busy} onSelect={setSelectedBatchId} onRetry={(batch, id) => void retryBatch(batch, id)} />
     </>}
