@@ -1,0 +1,146 @@
+/* The active project uses the same dark surfaces as the reference home and libraries. */
+:root .reference-project-workbench {
+  --page-bg:#141414; --surface-1:#0d0d0d; --surface-2:#171717; --surface-3:#222;
+  --text:#ededed; --muted:#999; --border:#292929; --studio-accent:#fff; --studio-soft:#ffffff0d; --accent:#a6cfff;
+  background:var(--page-bg); color:var(--text); color-scheme:dark;
+}
+.reference-project-workbench :is(.workbench,.workspace-content,.workspace-shell) { min-width:0; }
+:root .reference-project-workbench .app-topbar { background:#141414; border-color:#292929; }
+.reference-project-workbench .studio-breadcrumb { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reference-project-workbench .c-project-heading { padding-block:20px; }
+:root .reference-project-workbench .c-project-heading h1 { color:#f0f0f0; font-size:20px; }
+.reference-project-workbench .c-project-heading p { color:#888; font-size:12px; }
+:root .reference-project-workbench .workspace-header { background:transparent; border-color:#292929; }
+.reference-project-workbench .workspace-tabs { min-width:0; }
+.reference-project-workbench .studio-stage-viewport { background:#1b1b1d; }
+.reference-project-workbench .studio-result-context select { color:#ccc; background:#171717; border-color:#333; }
+:root .reference-project-workbench .workspace-tab { color:#888; font-size:13px; }
+:root .reference-project-workbench .workspace-tab.active { color:#fff; border-color:#fff; }
+:root body .app-shell.reference-project-workbench .ui-button-default { color:#111; background:#fff; border-color:#fff; }
+:root body .app-shell.reference-project-workbench .ui-button-secondary { color:#ddd; background:#1b1b1d; border-color:#333; }
+:root body .app-shell.reference-project-workbench .ui-button-ghost { color:#999; }
+:root body .app-shell.reference-project-workbench .ui-button-ghost:hover { color:#fff; background:#ffffff0a; }
+.reference-project-workbench :is(button,a,input,select,textarea):focus-visible { outline:2px solid #a6cfff; outline-offset:3px; }
+.reference-project-workbench .c-base-layout { grid-template-columns:240px minmax(0,1fr); gap:24px; }
+.reference-project-workbench .c-base-tools { padding:22px; background:#0d0d0d; border-color:#292929; }
+.reference-project-workbench .c-base-tools h2 { color:#eee; font-size:15px; }
+.reference-project-workbench .c-base-tools p { font-size:12px; }
+.reference-project-workbench .c-base-tools .toolbar-actions { gap:10px; }
+.reference-project-workbench .c-base-results > header { padding-bottom:16px; }
+.reference-project-workbench .c-base-results h1 { font-size:15px; color:#eee; }
+.reference-project-workbench .c-base-results header p { margin:7px 0 0; color:#888; font-size:11px; }
+.reference-project-workbench .c-base-results .virtual-grid { flex:1; min-height:0; height:auto; scrollbar-width:thin; }
+:root .reference-project-workbench .base-card { border-color:#292929; background:#0d0d0d; transition:border-color .2s; }
+.reference-project-workbench .base-card:is(:hover,:focus-within) { border-color:#555; }
+.reference-project-workbench .base-card.selected { border-color:#a6cfff; box-shadow:0 0 0 1px #a6cfff; }
+:root .reference-project-workbench .base-card-image { height:240px; padding:14px; background:#1b1b1d; }
+:root .reference-project-workbench .base-card-image.is-transparent { background-image:conic-gradient(#262626 25%,#343434 0 50%,#262626 0 75%,#343434 0); background-size:20px 20px; }
+.reference-project-workbench .base-card-preview { position:absolute; inset:14px; display:block; width:calc(100% - 28px); height:calc(100% - 28px); min-width:0; min-height:0; padding:0; border:0; background:transparent; cursor:zoom-in; }
+.reference-project-workbench .base-card-image img { display:block; width:100%; height:100%; min-width:0; min-height:0; object-fit:contain; }
+.reference-project-workbench .base-card-hover { flex-wrap:wrap; gap:5px; }
+.reference-project-workbench .base-card-hover .ui-button { width:30px; min-height:30px; padding:0; background:#0d0d0de6; border-color:#444; color:#ddd; backdrop-filter:blur(8px); }
+.reference-project-workbench .base-card-hover .ui-button-danger { color:#f69b9b; }
+.reference-project-workbench .base-card-meta { padding:15px; }
+.reference-project-workbench .base-card-meta strong { color:#ddd; font-size:12px; }
+.reference-project-workbench .base-card-meta span { color:#888; }
+.reference-project-workbench .base-card-meta .status-label { color:#aaa; font-size:10px; }
+.reference-project-workbench .base-card-meta .progress-bar { background:#333; }
+.reference-project-workbench .base-card-meta .progress-bar i { background:#a6cfff; }
+.reference-project-workbench .empty-workspace { padding:30px 18px; border:1px dashed #333; border-radius:12px; background:#0d0d0d; color:#999; }
+.reference-project-workbench .empty-workspace strong { color:#ddd; font-size:14px; }
+.reference-project-workbench .empty-workspace span { max-width:100%; line-height:1.8; }
+.reference-project-workbench .empty-workspace-actions { flex-wrap:wrap; justify-content:center; }
+.reference-project-workbench .upload-feedback { padding:12px; margin-bottom:12px; border:1px solid #333; border-radius:8px; color:#ccc; background:#1b1b1d; font-size:12px; overflow-wrap:anywhere; }
+.reference-project-workbench .upload-feedback[role="alert"] { color:#f6a0a0; border-color:#ef444447; background:#ef444414; }
+:root .reference-project-workbench .dialog-panel { color:#ddd; background:#141414; border-color:#333; }
+.reference-project-workbench .dialog-header { border-color:#292929; }
+.reference-project-workbench .dialog-header h2 { color:#eee; }
+.reference-project-workbench .dialog-header .eyebrow { color:#888; }
+.reference-project-workbench .dialog-footer { padding:16px 21px; margin:0; border-top:1px solid #292929; gap:12px; flex-wrap:wrap; }
+.reference-project-workbench .dialog-footer > span { color:#888; font-size:11px; }
+.reference-base-dialog { display:grid; gap:18px; }
+.reference-base-dialog > p { margin:0; font-size:12px; color:#999; line-height:1.8; overflow-wrap:anywhere; }
+.reference-base-source { display:flex; align-items:center; gap:16px; min-width:0; }
+.reference-base-source > img { flex:none; width:86px; height:86px; padding:8px; border:1px solid #292929; border-radius:8px; background:#1b1b1d; object-fit:contain; }
+.reference-base-source > div { min-width:0; }
+.reference-base-source strong { color:#ddd; font-size:13px; overflow-wrap:anywhere; }
+.reference-base-source p { font-size:12px; line-height:1.8; color:#999; }
+.reference-base-dialog .product-background-options { margin:0; border-color:#333; color:#bbb; }
+.reference-base-dialog .product-background-options label { background:#1b1b1d; border-color:#333; }
+.reference-base-dialog .product-background-options label:has(input:checked) { border-color:#a6cfff; background:#a6cfff0d; color:#eee; }
+.reference-base-dialog .library-source-list { max-height:50dvh; overflow:auto; scrollbar-width:thin; }
+.reference-base-dialog .library-source-item { min-width:0; background:#1b1b1d; border-color:#333; color:#ddd; }
+.reference-base-dialog .library-source-item > span { min-width:0; }
+.reference-base-dialog .library-source-item strong { overflow-wrap:anywhere; }
+
+/* Reverse execution: separate the product, scheme and individual image edits. */
+.reference-project-workbench .project-reverse-workspace { min-width:0; padding:0 0 32px; background:transparent; }
+.reference-project-workbench .project-reverse-header { gap:16px; margin-bottom:20px; }
+.reference-project-workbench .project-reverse-header > div:first-child { min-width:0; }
+.reference-project-workbench .project-reverse-header h1 { font-size:17px; color:#eee; margin:0 0 8px; }
+.reference-project-workbench .project-reverse-header p { max-width:80ch; font-size:12px; line-height:1.8; margin:0; }
+.reference-project-workbench .project-reverse-actions { flex:none; gap:8px; }
+.reference-project-workbench .project-reverse-plan-controls { grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; padding:18px; border:1px solid #292929; border-radius:10px; background:#0d0d0d; }
+.reference-project-workbench .project-reverse-inputs { gap:24px; padding:22px; border-color:#292929; background:#0d0d0d; }
+.reference-project-workbench .project-reverse-inputs legend { color:#ccc; font-size:13px; padding-inline:8px; }
+.reference-project-workbench .project-reverse-product-preview { background:#1b1b1d; border:1px solid #292929; border-radius:8px; }
+.reference-project-workbench .project-reverse-product-preview img { object-fit:contain; }
+.reference-project-workbench .project-reverse-workspace :is(input:not([type=checkbox],[type=file]),select,textarea) { color:#ddd; background:#171717; border-color:#333; font-size:12px; line-height:1.7; }
+.reference-project-workbench .project-reverse-workspace label > span { color:#aaa; font-size:12px; }
+.reference-project-workbench .project-reverse-workspace :is(p,small,pre) { overflow-wrap:anywhere; }
+.reference-project-workbench .project-reverse-workspace textarea:focus { border-color:#a6cfff; box-shadow:none; }
+.reference-project-workbench .project-reverse-workspace textarea { resize:vertical; }
+.reference-project-workbench .project-reverse-view-option { background:#171717; border-color:#333; }
+.reference-project-workbench .project-reverse-view-option:has(input:checked) { border-color:#a6cfff; }
+.reference-project-workbench .project-reverse-view-option input[type=checkbox] { width:16px; height:16px; flex:none; }
+.reference-project-workbench .project-reverse-summary { color:#ccc; font-size:12px; background:#171717; border-color:#292929; }
+.reference-project-workbench :is(.project-reverse-card,.project-reverse-new-plan,.project-reverse-history) { min-width:0; border-color:#292929; background:#0d0d0d; }
+.reference-project-workbench .project-reverse-card { padding:22px; }
+.reference-project-workbench .project-reverse-card-head { flex-wrap:wrap; }
+.reference-project-workbench .project-reverse-card-head h2 { color:#ddd; font-size:15px; }
+.reference-project-workbench .project-reverse-card-head em { min-width:0; max-width:100%; overflow-wrap:anywhere; border-radius:5px; }
+.reference-project-workbench .project-reverse-card-grid { grid-template-columns:minmax(160px,.7fr) minmax(0,2fr); gap:24px; }
+.reference-project-workbench .project-reverse-reference { min-width:0; }
+.reference-project-workbench .project-reverse-reference img { aspect-ratio:1; object-fit:contain; padding:12px; background:#1b1b1d; border:1px solid #292929; }
+.reference-project-workbench .project-reverse-fields { gap:16px; }
+.reference-project-workbench .project-reverse-fields textarea { min-width:0; line-height:1.8; }
+.reference-project-workbench .project-reverse-task-parameters { min-width:0; border-color:#292929; background:#171717; }
+.reference-project-workbench .project-reverse-task-parameter-row { min-width:0; }
+.reference-project-workbench .project-reverse-error { color:#f6a0a0; border-color:#ef444447; background:#ef444414; }
+.reference-project-workbench .project-reverse-empty { min-height:220px; padding:24px; background:#0d0d0d; border-color:#333; text-align:center; }
+.reference-project-workbench .project-reverse-start select { min-width:0; width:min(320px,100%); }
+.reference-project-workbench .project-reverse-workspace a { color:#a6cfff; }
+.reference-project-workbench .project-reverse-history-head h2 { color:#ddd; font-size:15px; }
+.reference-project-workbench .project-reverse-history-task { min-width:0; background:#171717; border-color:#292929; }
+.reference-project-workbench .project-reverse-history-task h3 { color:#ddd; font-size:13px; }
+.reference-project-workbench .project-reverse-history-task pre { white-space:pre-wrap; }
+@media(hover:none) { .reference-project-workbench .base-card-hover { opacity:1; transform:none; } }
+@media(max-width:1100px) {
+  .reference-project-workbench .c-base-layout { grid-template-columns:210px minmax(0,1fr); gap:18px; }
+  .reference-project-workbench .project-reverse-header { flex-direction:column; }
+  .reference-project-workbench .project-reverse-card-grid { grid-template-columns:170px minmax(0,1fr); gap:18px; }
+}
+@media(max-width:600px) {
+  .reference-project-workbench .app-topbar { padding-inline:12px; gap:12px; }
+  .reference-project-workbench .app-topbar .topbar-meta > span { display:none; }
+  .reference-project-workbench .c-base-layout { display:flex; gap:18px; }
+  .reference-project-workbench .c-base-tools { padding:16px; }
+  .reference-project-workbench .c-base-tools .toolbar-actions { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .reference-project-workbench .c-base-tools .toolbar-actions > button:first-of-type { grid-column:1 / -1; }
+  .reference-project-workbench .c-base-results { flex:1 0 560px; }
+  :root .reference-project-workbench .base-card-image { height:190px; }
+  .reference-project-workbench .base-card-hover { opacity:1; transform:none; }
+  .reference-project-workbench .c-base-results .base-grid { grid-template-columns:minmax(0,1fr); }
+  .reference-project-workbench .project-reverse-plan-controls { grid-template-columns:minmax(0,1fr); }
+  .reference-project-workbench .project-reverse-new-plan { grid-template-columns:minmax(0,1fr); }
+  .reference-project-workbench .project-reverse-inputs { padding:16px; gap:20px; }
+  .reference-project-workbench .project-reverse-card { padding:16px; }
+  .reference-project-workbench .project-reverse-card-grid { grid-template-columns:minmax(0,1fr); }
+  .reference-project-workbench .project-reverse-reference { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
+  .reference-project-workbench .project-reverse-reference > small { grid-column:1; }
+  .reference-project-workbench .project-reverse-reference > :is(.project-reverse-result,.project-reverse-result-placeholder) { grid-column:2; grid-row:1 / 3; margin:0; }
+  .reference-project-workbench .project-reverse-reference img { padding:8px; }
+  .reference-project-workbench .project-reverse-task-parameter-row { flex-wrap:wrap; }
+  .reference-project-workbench .project-reverse-task-parameter-row > * { min-width:0; }
+}
+@media(prefers-reduced-motion:reduce) { .reference-project-workbench * { animation:none!important; transition:none!important; } }

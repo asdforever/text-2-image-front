@@ -26,15 +26,16 @@ export function PromptSidebar({ items, selectedId, onSelect, searchQuery, catego
       <div className="prompt-sidebar-content">
         <div className="prompt-category-section">
           <div className="prompt-category-toolbar"><strong>业务分类</strong><button type="button" title="分类管理" aria-label="分类管理" onClick={onManageCategories}><Settings2 size={13} /></button></div>
-          <button type="button" className={`prompt-category-item ${activeCategory === "all" ? "active" : ""}`} onClick={() => onCategorySelect("all")}><span>全部</span><em>{items.length}</em></button>
-          <button type="button" className={`prompt-category-item ${activeCategory === "uncategorized" ? "active" : ""}`} onClick={() => onCategorySelect("uncategorized")}><span>未分类</span><em>{items.filter((item) => !item.categoryId).length}</em></button>
-          {categories.map((category) => <button type="button" key={category.id} title={category.name} className={`prompt-category-item ${activeCategory === category.id ? "active" : ""}`} onClick={() => onCategorySelect(category.id)}><span>{category.name}</span><em>{category.templateCount}</em></button>)}
+          <button type="button" aria-pressed={activeCategory === "all"} className={`prompt-category-item ${activeCategory === "all" ? "active" : ""}`} onClick={() => onCategorySelect("all")}><span>全部</span><em>{items.length}</em></button>
+          <button type="button" aria-pressed={activeCategory === "uncategorized"} className={`prompt-category-item ${activeCategory === "uncategorized" ? "active" : ""}`} onClick={() => onCategorySelect("uncategorized")}><span>未分类</span><em>{items.filter((item) => !item.categoryId).length}</em></button>
+          {categories.map((category) => <button type="button" key={category.id} title={category.name} aria-pressed={activeCategory === category.id} className={`prompt-category-item ${activeCategory === category.id ? "active" : ""}`} onClick={() => onCategorySelect(category.id)}><span>{category.name}</span><em>{category.templateCount}</em></button>)}
           <button type="button" className="prompt-category-add" onClick={onManageCategories}><FolderPlus size={13} />管理分类</button>
         </div>
         <div className="prompt-list">
           {filteredItems.map((item) => (
             <button
               key={item.id}
+              aria-pressed={selectedId === item.id}
               className={`prompt-list-item ${selectedId === item.id ? "selected" : ""}`}
               onClick={() => onSelect(item.id)}
             >

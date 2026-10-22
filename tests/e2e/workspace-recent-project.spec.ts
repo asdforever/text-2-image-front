@@ -15,7 +15,7 @@ const projectDetail = {
 test("工作台最近项目使用真实项目 ID 进入项目", async ({ page }) => {
   let listCalls = 0;
   await page.addInitScript(() => window.localStorage.clear());
-  await page.route("**/api/projects", async (route) => {
+  await page.route(url => url.pathname === "/api/projects", async (route) => {
     if (route.request().method() !== "GET") return route.fallback();
     listCalls += 1;
     await route.fulfill({ json: { data: [projectDetail] } });
@@ -39,7 +39,7 @@ test("工作台最近项目使用真实项目 ID 进入项目", async ({ page })
 
 test("项目列表后台刷新失败时保留当前内容", async ({ page }) => {
   let listCalls = 0;
-  await page.route("**/api/projects", async (route) => {
+  await page.route(url => url.pathname === "/api/projects", async (route) => {
     if (route.request().method() !== "GET") return route.fallback();
     listCalls += 1;
     if (listCalls > 1) return route.fulfill({ status: 503, json: { error: { message: "项目服务暂时不可用" } } });
@@ -58,7 +58,7 @@ test("删除等待期间显示进度并禁止重复提交", async ({ page }) => 
   let deleteCalls = 0;
   let releaseDelete!: () => void;
   const deletion = new Promise<void>((resolve) => { releaseDelete = resolve; });
-  await page.route("**/api/projects", (route) => route.fulfill({ json: { data: [projectDetail] } }));
+  await page.route(url => url.pathname === "/api/projects", (route) => route.fulfill({ json: { data: [projectDetail] } }));
   await page.route(`**/api/projects/${projectId}`, async (route) => {
     if (route.request().method() !== "DELETE") return route.fallback();
     deleteCalls += 1;
@@ -82,7 +82,7 @@ test("删除成功立即移除卡片，列表刷新失败也不恢复已删除�
   let listCalls = 0;
   let releaseRefresh!: () => void;
   const refresh = new Promise<void>((resolve) => { releaseRefresh = resolve; });
-  await page.route("**/api/projects", async (route) => {
+  await page.route(url => url.pathname === "/api/projects", async (route) => {
     listCalls += 1;
     if (listCalls === 1) return route.fulfill({ json: { data: [projectDetail] } });
     await refresh;

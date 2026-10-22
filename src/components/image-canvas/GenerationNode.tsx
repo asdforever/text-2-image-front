@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, Sparkles, X } from "lucide-react";
 import type { CanvasNode, GenerationStep } from "./model";
+import { CanvasPorts } from "./CanvasPorts";
 import { DesignBrief, presenceLabel, readDesignBrief } from "./DesignBrief";
 
 const nameOf = (value: unknown): string => typeof value === "string" ? value : value && typeof value === "object" ? String((value as Record<string, unknown>).name ?? (value as Record<string, unknown>).label ?? "") : "";
@@ -11,14 +12,14 @@ function parameters(step: GenerationStep) {
   return [nameOf(p.providerModel || p.modelPreset), nameOf(p.aspectRatio || p.ratio), nameOf(p.resolution || p.size)].filter(Boolean);
 }
 
-export function GenerationNode({ data, selected }: NodeProps<CanvasNode>) {
+export function GenerationNode({ id, data, selected }: NodeProps<CanvasNode>) {
   const step = data.step!;
   const brief = readDesignBrief(step.parameters);
   const summary = [brief.informationQuestion, brief.visualMechanism, brief.productPresence ? `商品：${presenceLabel(brief.productPresence)}` : "", brief.compositionBrief, ...(Array.isArray(brief.compositionRequirements) ? brief.compositionRequirements : [])].filter(Boolean).join(" · ");
   const isStyle = step.kind === "style-harmonization";
   const originalRunning = !!step.batchStatus && !["succeeded", "failed", "partially_failed", "cancelled"].includes(step.batchStatus);
   return <article className={`ic-generation-node ${selected ? "is-selected" : ""}`}>
-    <Handle type="target" position={Position.Left} isConnectable={false} />
+    <CanvasPorts id={id} data={data} />
     <header><span><Sparkles size={14} />{isStyle ? "风格统一" : step.kind === "white" ? "白底图生成" : step.kind === "hero" ? "主图生成" : step.kind === "suite" ? "详情套图生成" : step.kind === "edit" ? "图片修改" : "生成步骤"}</span><small>{step.outputNodeIds.length} 张</small></header>
     <h3>{step.title} {!isStyle && <small>V{step.revisionNumber ?? 1}</small>}</h3>
     {isStyle && <div className="ic-step-params"><span>{styleModes[String(step.parameters.styleMode)] ?? "风格候选"}</span><span>独立候选 · 原图保留</span></div>}
@@ -32,7 +33,6 @@ export function GenerationNode({ data, selected }: NodeProps<CanvasNode>) {
     {data.regenerateStep && step.canRegenerate !== false && !isStyle && <button className="nodrag nopan ic-regenerate-action" disabled={originalRunning || step.missingSource || step.id.startsWith("unknown:")} onClick={() => data.regenerateStep?.(step)}><Sparkles size={13} />{originalRunning ? "原批次生成中" : "修改提示词并生成"}</button>}
     {isStyle && <p className="ic-note">可在“制作长图”中查看、采用或重新提交风格候选。</p>}
     {data.generationStatus && ["queued", "generating", "failed", "partial"].includes(data.generationStatus) && <p className="ic-lineage-warning">V{data.latestRevisionNumber} · {data.generationStatus === "queued" ? "等待生成" : data.generationStatus === "generating" ? "生成中，保留当前图片" : data.generationStatus === "partial" ? "部分失败，可打开提示词重新提交" : "生成失败，可打开提示词重新提交"}</p>}
-    <Handle type="source" position={Position.Right} isConnectable={false} />
   </article>;
 }
 

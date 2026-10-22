@@ -1,0 +1,167 @@
+/* Editor chrome only: image dimensions, mask coordinates and long-image SVG stay intrinsic. */
+:root .reference-editor.reference-editor,
+:root .dialog-panel:has(.reference-editor-legacy) {
+  --suite-ink: #ededed; --suite-muted: #999; --suite-line: #292929;
+  --ic-text: #ededed; --ic-muted: #999; --ic-panel: #141414; --ic-line: #292929;
+  color: #ededed; background: #141414; border: 1px solid #292929;
+  border-radius: 16px; color-scheme: dark; font: 13px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  box-shadow: 0 28px 100px #0009;
+}
+:root .reference-editor-backdrop,
+:root .dialog-backdrop:has(.reference-editor-legacy) { background: #000a; backdrop-filter: blur(5px); z-index: 1200; }
+:root dialog.reference-editor::backdrop { background: #000a; backdrop-filter: blur(5px); }
+:root .reference-editor.reference-editor *, :root .reference-editor-legacy * { box-sizing: border-box; }
+:root .reference-editor.reference-editor :is(button,input,select,textarea),
+:root .reference-editor-legacy :is(button,input,select,textarea) { font: inherit; }
+:root .reference-editor.reference-editor button,
+:root .reference-editor-legacy .ui-button-secondary {
+  min-height: 34px; border: 1px solid #292929; border-radius: 8px; background: #1b1b1b;
+  color: #ddd; padding: 7px 11px; cursor: pointer; transition: background .15s, border-color .15s;
+}
+:root .reference-editor.reference-editor button:hover:not(:disabled) { background: #252525; border-color: #555; }
+:root .reference-editor.reference-editor button:disabled { opacity: .42; cursor: not-allowed; }
+:root .reference-editor.reference-editor :is(input,select,textarea),
+:root .reference-editor-legacy :is(input,textarea) {
+  min-width: 0; color: #ededed; background: #171717; border: 1px solid #292929;
+  border-radius: 8px; padding: 9px 11px; accent-color: #a6cfff;
+}
+:root .reference-editor.reference-editor :is(input,textarea)::placeholder { color: #737373; }
+:root .reference-editor.reference-editor input[type="range"] { padding: 0; min-height: 24px; border: 0; }
+:root .reference-editor.reference-editor input[type="checkbox"] { width: 16px; min-height: 16px; padding: 0; }
+:root .reference-editor.reference-editor :is(button,input,select,textarea,summary):focus-visible,
+:root .reference-editor-legacy :is(button,input,textarea):focus-visible { outline: 2px solid #a6cfff; outline-offset: 2px; }
+:root .reference-editor.reference-editor :is(label,.ic-note,.lic-muted,.lic-header p,.wb-editor-head small) { color: #999; }
+:root .reference-editor.reference-editor :is(h2,h3,legend,strong) { color: #ededed; }
+:root .reference-editor.reference-editor :is(.wb-primary-action,.ic-primary,.lic-primary),
+:root .reference-editor-legacy .ui-button-default { color: #111; background: #fff; border-color: #fff; font-weight: 600; }
+:root .reference-editor.reference-editor :is(.wb-primary-action,.ic-primary,.lic-primary):hover:not(:disabled) { background: #dedede; border-color: #dedede; }
+/* Existing workbench primaries use !important in the shared legacy stylesheet. */
+:root .reference-editor.reference-editor .wb-primary-action { color: #111 !important; background: #fff !important; border-color: #fff !important; }
+:root .reference-editor.reference-editor .wb-primary-action:hover:not(:disabled) { background: #dedede !important; border-color: #dedede !important; }
+:root .reference-editor.reference-editor :is(.wb-editor-error,.ic-error,.lic-error),
+:root .reference-editor.reference-editor [role="alert"] { color: #ffb4ad; border-color: #a24d444d; background: #301d1c; border-radius: 8px; padding: 10px 12px; overflow-wrap: anywhere; }
+
+/* The editing stage is the largest region; controls use quiet, separate rails. */
+:root .reference-editor.wb-editor-modal { width: min(1360px, calc(100vw - 40px)); height: min(920px, calc(100dvh - 40px)); }
+:root .reference-editor .wb-editor-head { padding: 18px 24px; border-color: #292929; background: #141414; }
+:root .reference-editor .wb-editor-head strong { font-size: 16px; font-weight: 600; }
+:root .reference-editor .wb-editor-head small { font-size: 11px; margin-top: 4px; }
+:root .reference-editor .wb-editor-head button { flex-shrink: 0; width: 34px; height: 34px; padding: 7px; }
+:root .reference-editor .wb-editor-head button svg { width: 16px; height: 16px; }
+:root .reference-editor .wb-editor-body { grid-template-columns: 160px minmax(0,1fr) 280px; }
+:root .reference-editor :is(.wb-editor-tools,.wb-editor-options) { background: #0d0d0d; border-color: #292929; padding: 20px 16px; }
+:root .reference-editor .wb-editor-tools > strong { color: #999; font-size: 11px; margin: 0 8px 14px; font-weight: 500; }
+:root .reference-editor .wb-editor-tools button { justify-content: space-between; text-align: left; min-height: 42px; padding: 8px 10px; border-color: transparent; background: transparent; font-size: 12px; }
+:root .reference-editor .wb-editor-tools button.is-active { color: #fff; background: #252525; border-color: #444; font-weight: 600; }
+:root .reference-editor .wb-editor-tools small { font-size: 9px; font-weight: 400; color: #999; }
+:root .reference-editor .wb-editor-tools p { color: #777; font-size: 11px; line-height: 1.8; }
+:root .reference-editor .wb-editor-stage { background: #141414; padding: 20px; }
+:root .reference-editor .ie-preview-tools { margin-bottom: 12px; }
+:root .reference-editor .ie-preview-tools span { color: #999; font-size: 11px; }
+:root .reference-editor .wb-editor-canvas { border-color: #292929; border-radius: 10px; background: #090909; }
+:root .reference-editor :is(.ie-preview-tools button[aria-pressed=true],.wb-mask-mode button[aria-pressed=true]) { color: #fff; border-color: #777; background: #303030; }
+:root .reference-editor .wb-editor-bottom { margin-top: 12px; }
+:root .reference-editor .wb-editor-options label { font-size: 12px; gap: 8px; }
+:root .reference-editor .wb-editor-options :is(p,small) { color: #999; font-size: 11px; line-height: 1.8; }
+:root .reference-editor .wb-editor-options output { color: #ededed; font-size: 12px; }
+:root .reference-editor .ie-fields { gap: 16px; }
+:root .reference-editor :is(.ie-region-details,.wb-editor-operations) { border-color: #292929; padding-top: 16px; }
+:root .reference-editor .ie-region-details summary { color: #bbb; }
+:root .reference-editor .wb-editor-operations > strong { font-size: 12px; font-weight: 500; }
+:root .reference-editor .wb-editor-operations button { font-size: 11px; }
+:root .reference-editor .wb-editor-footer { background: #141414; border-color: #292929; padding: 14px 20px; gap: 10px; box-shadow: 0 -8px 20px #0002; }
+:root .reference-editor .wb-editor-footer > span { color: #aaa; font-size: 11px; }
+:root .reference-editor .wb-editor-footer small { font-size: 10px; color: #777; }
+:root .reference-editor .wb-editor-footer > strong { font-size: 11px; }
+
+/* Prompt iteration keeps source and frozen constraints above the editable prompt. */
+:root .reference-editor.ic-regenerate-dialog { width: min(780px, calc(100vw - 40px)); max-height: calc(100dvh - 40px); }
+:root .reference-editor.ic-regenerate-dialog > header { padding: 20px 24px; background: #141414; border-color: #292929; }
+:root .reference-editor.ic-regenerate-dialog h2 { font-size: 18px; margin: 4px 0 0; font-weight: 600; }
+:root .reference-editor.ic-regenerate-dialog header small { color: #999; }
+:root .reference-editor .ic-generation-detail-body { padding: 24px; }
+:root .reference-editor .ic-generation-detail-body :is(section,details) { margin-bottom: 20px; }
+:root .reference-editor .ic-generation-detail-body h3 { font-size: 12px; margin: 0 0 12px; }
+:root .reference-editor .ic-generation-detail-body section p { background: #0d0d0d; color: #aaa; border-color: #292929; border-radius: 8px; }
+:root .reference-editor .ic-generation-detail-body section p b { color: #ddd; }
+:root .reference-editor .ic-version-field { font-size: 12px; gap: 9px; }
+:root .reference-editor .ic-regenerate-sources > div { border-color: #292929; background: #0d0d0d; border-radius: 10px; padding: 10px; }
+:root .reference-editor .ic-regenerate-sources img { background: #090909; border-radius: 6px; }
+:root .reference-editor .ic-prompt-preview { padding: 12px 14px; border: 1px solid #292929; border-radius: 8px; color: #aaa; background: #0d0d0d; }
+:root .reference-editor .ic-prompt-preview pre { background: transparent; color: #aaa; font: inherit; font-size: 12px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+:root .reference-editor.ic-regenerate-dialog > footer { border-color: #292929; padding: 16px 24px; background: #141414; }
+
+/* Long-image recipe and visual preview stay separate; actual preview color comes from the recipe. */
+:root .reference-editor.lic-dialog { width: min(1320px,100%); height: min(960px,calc(100dvh - 48px)); }
+:root .reference-editor :is(.lic-header,.lic-footer) { background: #141414; border-color: #292929; padding: 18px 24px; }
+:root .reference-editor .lic-header h2 { font-size: 18px; letter-spacing: 0; font-weight: 600; }
+:root .reference-editor .lic-header p { font-size: 12px; }
+:root .reference-editor .lic-body { grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); }
+:root .reference-editor .lic-editor { background: #0d0d0d; padding: 24px; }
+:root .reference-editor .lic-fields { gap: 14px; margin: 24px 0; padding-bottom: 24px; border-bottom: 1px solid #292929; }
+:root .reference-editor :is(.lic-source-grid button,.lic-item,.lic-style-job,.lic-planning-advice) { border-color: #292929; background: #141414; }
+:root .reference-editor .lic-source-grid { max-height: 240px; gap: 8px; }
+:root .reference-editor .lic-source-grid img { background: #090909; width: 44px; height: 52px; }
+:root .reference-editor :is(.lic-source-grid small,.lic-item legend,.lic-dialog h3 small,.lic-planning-advice li p) { color: #999; }
+:root .reference-editor .lic-item { padding: 14px; margin-bottom: 12px; }
+:root .reference-editor .lic-item > header button { min-height: 28px; padding: 5px; background: transparent; }
+:root .reference-editor .lic-item > header .lic-drag { color: #999; }
+:root .reference-editor .lic-preview-panel { background: #141414; border-color: #292929; padding: 24px; }
+:root .reference-editor .lic-preview-panel > header span { color: #999; font-size: 11px; }
+:root .reference-editor .lic-preview-scroll { padding: 16px 20px; }
+:root .reference-editor .lic-preview { box-shadow: 0 8px 30px #0008; }
+:root .reference-editor :is(.lic-preview-notes,.lic-empty,.lic-footer-actions > span,.lic-style-job > header,.lic-candidate-pair figcaption) { color: #999; }
+:root .reference-editor .lic-preview-notes .lic-validation { color: #ffb4ad; }
+:root .reference-editor .lic-success { color: #b7d9c1; }
+:root .reference-editor .lic-style { border-color: #292929; padding-top: 24px; }
+:root .reference-editor .lic-candidate-pair img { background: #090909; border-radius: 6px; }
+:root .reference-editor .lic-confirm-shade { z-index: 3; background: #000a; backdrop-filter: blur(4px); }
+:root .reference-editor .lic-confirm { background: #171717; color: #ededed; border: 1px solid #333; box-shadow: 0 24px 80px #0008; }
+:root .reference-editor .lic-confirm p { color: #aaa; }
+:root .reference-editor .lic-prompt-preview { background: #0d0d0d; border: 1px solid #292929; color: #bbb; }
+
+/* The legacy image dialog uses the same chrome without touching its Konva stage. */
+:root .dialog-panel:has(.reference-editor-legacy) .dialog-header { border-color: #292929; }
+:root .dialog-panel:has(.reference-editor-legacy) .dialog-header h2 { color: #ededed; }
+:root .reference-editor-legacy .form-field label { color: #999; }
+
+@media (max-width: 1000px) {
+  :root .reference-editor .wb-editor-body { grid-template-columns: 130px minmax(0,1fr); overflow: auto; grid-template-rows: auto; }
+  :root .reference-editor .wb-editor-options { grid-column: 1 / -1; border-left: 0; border-top: 1px solid #292929; overflow: visible; }
+  :root .reference-editor .wb-editor-stage { min-height: 420px; }
+  :root .reference-editor .wb-editor-tools { overflow: visible; }
+  :root .reference-editor .wb-editor-footer { flex-wrap: wrap; }
+  :root .reference-editor .wb-editor-footer > span, :root .reference-editor .wb-editor-footer > strong { flex-basis: 100%; max-width: none; }
+}
+@media (max-width: 760px) {
+  :root .reference-editor-backdrop { padding: 0; }
+  :root .reference-editor.wb-editor-modal, :root .reference-editor.lic-dialog { width: 100%; height: 100dvh; border-radius: 0; border: 0; }
+  :root .reference-editor :is(.wb-editor-head,.lic-header,.lic-footer) { padding: 16px; }
+  :root .reference-editor .lic-editor, :root .reference-editor .lic-preview-panel { padding: 16px; }
+  :root .reference-editor .lic-preview-panel { height: 440px; }
+  :root .reference-editor .lic-footer-actions { align-items: flex-start; flex-wrap: wrap; }
+  :root .reference-editor .lic-footer-actions > span { flex-basis: 100%; }
+  :root .reference-editor .lic-footer-actions > button { margin-left: auto; }
+  :root .reference-editor.ic-regenerate-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 12px; }
+  :root .reference-editor.ic-regenerate-dialog > header, :root .reference-editor.ic-regenerate-dialog > footer, :root .reference-editor .ic-generation-detail-body { padding: 16px; }
+}
+@media (max-width: 600px) {
+  :root .reference-editor .wb-editor-body { grid-template-columns: minmax(0,1fr); }
+  :root .reference-editor .wb-editor-tools { display: flex; flex-wrap: wrap; padding: 10px 12px; gap: 6px; border-right: 0; border-bottom: 1px solid #292929; }
+  :root .reference-editor .wb-editor-tools button { width: auto; margin: 0; min-height: 36px; padding: 7px 10px; }
+  :root .reference-editor .wb-editor-tools button small { display: none; }
+  :root .reference-editor .wb-editor-stage { padding: 12px; min-height: 380px; }
+  :root .reference-editor .wb-editor-options { padding: 18px 16px; }
+  :root .reference-editor .wb-editor-footer { padding: 12px; gap: 8px; }
+  :root .reference-editor .wb-editor-footer button { padding: 8px 10px; font-size: 12px; }
+  :root .reference-editor .wb-mask-mode { flex-wrap: wrap; }
+  :root .reference-editor .lic-source-grid { grid-template-columns: minmax(0,1fr); }
+  :root .reference-editor .lic-item { padding: 10px; }
+  :root .reference-editor .lic-crop-fields { gap: 6px; }
+  :root .reference-editor .lic-crop-fields input { padding: 8px 6px; }
+  :root .reference-editor .lic-confirm > div { flex-wrap: wrap; }
+  :root .reference-editor .lic-confirm { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .reference-editor *, :root .reference-editor *::before { transition: none !important; animation: none !important; }
+}

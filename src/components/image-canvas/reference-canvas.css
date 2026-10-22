@@ -1,0 +1,217 @@
+/* Match the local iToVideo canvas without changing image/graph dimensions. */
+body:has(.reference-canvas-workbench) .global-sidebar { display: none; }
+:root .app-shell.reference-canvas-workbench {
+  margin-left: 0; width: 100%; height: 100dvh; min-height: 0;
+  background: #141414; color: #fff; overflow: hidden;
+  --text: #fff; --muted: #a0a0a0; --border: #ffffff12; --surface-1: #171717;
+  --ic-panel: #171717; --ic-line: #ffffff12; --ic-text: #fff; --ic-muted: #ffffff73; --ic-green: #fff;
+}
+.reference-canvas-workbench > .app-topbar,
+.reference-canvas-workbench .c-project-heading { display: none; }
+.reference-canvas-workbench .workbench { padding: 0; min-height: 0; flex: 1; overflow: hidden; }
+.reference-canvas-workbench .workspace-shell { min-height: 0; height: 100%; display: flex; flex-direction: column; }
+:root .reference-canvas-workbench .workspace-header {
+  height: 56px; min-height: 56px; margin: 0; padding: 0 14px;
+  gap: 24px; background: #171717d1; border-bottom: 1px solid #ffffff0f;
+}
+.reference-canvas-project { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.reference-canvas-project strong { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.reference-canvas-project .ui-button { color: #ffffffa6; }
+.reference-canvas-workbench .workspace-tabs { gap: 16px; flex-shrink: 0; }
+.reference-canvas-workbench .workspace-tab { padding: 0; height: 56px; font-size: 12px; color: #ffffff73; border: 0; }
+.reference-canvas-workbench .workspace-tab.active { color: #fff; border-bottom: 2px solid #fff; background: transparent; }
+.reference-canvas-workbench .workspace-header > .topbar-meta { display: none; }
+.reference-canvas-workbench .workspace-content { overflow: visible; min-height: 0; }
+.reference-canvas-workbench .workspace-tab-content { overflow: visible; }
+.reference-canvas-workbench .ic-loading { height: 100%; background: #141414; color: #a0a0a0; }
+.ic-studio.ic-reference {
+  --ic-bg: #141414; --ic-panel: #171717; --ic-line: #ffffff12;
+  --ic-text: #fff; --ic-muted: #ffffff73; --ic-green: #fff;
+  position: relative; overflow: visible; color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.ic-studio.ic-reference.is-fullscreen { position: fixed; inset: 0; height: 100dvh; }
+.ic-reference.is-fullscreen .ic-filterbar { top: 72px; }
+.ic-reference .ic-topbar { height: 56px; min-height: 56px; background: #171717d1; border-color: #ffffff0f; }
+.reference-canvas-actions { margin-left: auto; min-width: 0; }
+.ic-topbar.ic-reference { height: 56px; min-height: 56px; border: 0; background: transparent; padding: 0; font-size: 12px; }
+.ic-reference.is-fullscreen .ic-topbar { padding: 0 20px; border-bottom: 1px solid #ffffff0f; justify-content: flex-end; }
+.ic-topbar.ic-reference .ic-project, .ic-topbar.ic-reference .ic-top-center { display: none; }
+.ic-topbar.ic-reference button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid transparent; color: inherit; font: inherit; cursor: pointer; border-radius: 8px; padding: 7px 9px; background: transparent; }
+.ic-topbar.ic-reference button:disabled { opacity: .4; cursor: not-allowed; }
+.ic-topbar.ic-reference button.ic-primary { color: #141414; background: #fff; }
+.ic-topbar.ic-reference button:hover:not(:disabled) { background: #ffffff12; }
+.ic-topbar.ic-reference button.ic-primary:hover:not(:disabled) { background: #dedede; }
+
+.ic-reference.ic-embedded .ic-project, .ic-reference .ic-top-center { display: none; }
+.ic-reference .ic-top-actions { gap: 7px; font-size: 12px; }
+.ic-reference button { transition: background .15s, border-color .15s; }
+.ic-reference button:hover { background: #ffffff0d; }
+.ic-reference button:focus-visible, .ic-reference :is(input,select,textarea):focus-visible { outline-color: #ffffffb3; }
+.ic-reference button.ic-primary { background: #fff; border-color: #fff; color: #141414; }
+.ic-reference button.ic-primary:hover { background: #dedede; }
+.ic-reference :is(input, select, textarea) { background: #1f1f1f; border-color: #ffffff1f; border-radius: 8px; }
+.ic-reference .ic-filterbar {
+  position: absolute; top: 16px; left: 20px; right: 20px; z-index: 6;
+  padding: 0; border: 0; background: transparent; gap: 12px; pointer-events: none;
+}
+.ic-reference .ic-filterbar label { pointer-events: auto; }
+.ic-reference .ic-filterbar .image-batch-filter { padding: 6px 10px; background: #171717e6; border: 1px solid #ffffff1f; border-radius: 8px; }
+.ic-reference .ic-filterbar select { width: 210px; padding: 3px 6px; border: 0; background: transparent; }
+.ic-reference .ic-filterbar .image-module-filter select { width: 140px; }
+.ic-reference .ic-body { overflow: hidden; }
+.ic-reference .ic-canvas { background: #141414; }
+.ic-reference .react-flow__pane { cursor: grab; }
+.ic-reference .react-flow__pane.dragging { cursor: grabbing; }
+.ic-reference .react-flow__selection { background: #ffffff0d; border-color: #ffffff80; }
+.ic-reference .react-flow__edge-path { stroke: #3b4658 !important; stroke-width: 2; }
+.ic-reference .react-flow__edge:hover .react-flow__edge-path,
+.ic-reference .react-flow__edge.selected .react-flow__edge-path { stroke: #fff !important; filter: drop-shadow(0 0 4px #ffffff40); }
+.ic-reference .react-flow__connection-path { stroke: #fff; stroke-width: 2; }
+.ic-reference .react-flow__handle { background: #333; border-color: #ffffff40; }
+.ic-reference .ic-image-node, .ic-reference .ic-generation-node { overflow: visible; position: relative; }
+.ic-reference .ic-node-picture { border-radius: 11px 11px 0 0; }
+.ic-reference .ic-generation-node > header { border-radius: 11px 11px 0 0; }
+.ic-reference .ic-image-node .ic-port, .ic-reference .ic-generation-node .ic-port {
+  width: 13px; height: 13px; border-radius: 50%; border: 2px solid #141414;
+  background: #5b6a83; z-index: 3; cursor: crosshair; transition: background .15s, box-shadow .15s;
+}
+.ic-reference .ic-port::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+.ic-reference .ic-port:hover, .ic-reference .is-selected .ic-port { background: #fff; box-shadow: 0 0 0 4px #ffffff24; }
+.ic-reference .ic-image-node .ic-port-in, .ic-reference .ic-generation-node .ic-port-in { background: transparent; border-color: transparent; }
+.ic-reference .ic-image-node:hover .ic-port-in, .ic-reference .ic-generation-node:hover .ic-port-in,
+.ic-reference .is-selected .ic-port-in, .ic-reference .ic-port-in.connectingto { background: #5b6a83; border-color: #141414; }
+.ic-reference .ic-connect-slot { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; visibility: hidden; }
+.ic-reference .ic-connect-slot.is-left { left: -56px; }
+.ic-reference .ic-connect-slot.is-right { right: -56px; }
+.ic-reference .ic-connect-slot::before { content: ""; position: absolute; top: -12px; bottom: -12px; width: 28px; }
+.ic-reference .ic-connect-slot.is-left::before { left: 100%; }
+.ic-reference .ic-connect-slot.is-right::before { right: 100%; }
+.ic-reference .ic-image-node:hover .ic-connect-slot, .ic-reference .ic-generation-node:hover .ic-connect-slot,
+.ic-reference .is-selected .ic-connect-slot, .ic-reference .ic-connect-slot.is-open { visibility: visible; }
+.ic-reference .ic-connect-add { width: 28px; height: 28px; padding: 0; border: 1px dashed #ffffff40; border-radius: 7px; background: #171717; color: #ffffffa6; }
+.ic-reference .ic-connect-menu { position: absolute; top: 34px; left: 0; width: 220px; max-height: 280px; display: flex; flex-direction: column; background: #1f1f1f; border: 1px solid #ffffff26; border-radius: 10px; box-shadow: 0 10px 30px #0008; overflow: hidden; }
+.ic-reference .is-left .ic-connect-menu { left: auto; right: 0; }
+.ic-reference .ic-connect-menu > header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #ffffff12; font-size: 12px; }
+.ic-reference .ic-connect-menu > div { overflow-y: auto; padding: 5px; }
+.ic-reference .ic-connect-menu > div > button { display: block; width: 100%; padding: 9px; text-align: left; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic-reference .ic-connect-menu p { padding: 12px; color: #ffffff73; font-size: 12px; }
+.ic-reference .ic-reference-dock {
+  position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 7;
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  border: 1px solid #ffffff1f; border-radius: 14px; background: #171717e6;
+  backdrop-filter: blur(16px); box-shadow: 0 12px 34px #0009, 0 0 0 1px #ffffff0b;
+}
+.ic-reference .ic-reference-dock button { width: 48px; height: 48px; padding: 0; border-radius: 10px; color: #ffffffa6; flex-shrink: 0; }
+.ic-reference .ic-reference-dock button:hover, .ic-reference .ic-reference-dock button.is-active { background: #ffffff0d; color: #fff; border-color: #ffffff1f; }
+.ic-reference .ic-reference-dock .ic-dock-add { background: #fff; color: #141414; border-color: #fff; }
+.ic-reference .ic-reference-dock .ic-dock-add:hover { background: #dedede; color: #141414; }
+.ic-reference .ic-reference-dock .ic-dock-percent { width: 52px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ic-reference .ic-reference-help { position: absolute; left: 20px; bottom: 8px; font-size: 10px; color: #ffffff45; pointer-events: none; }
+.ic-reference .ic-library {
+  position: absolute; inset: 0 0 0 auto; width: 360px; max-width: 90%; z-index: 9;
+  display: flex; border-right: 0; border-left: 1px solid #ffffff0f;
+  background: #171717eb; backdrop-filter: blur(16px); box-shadow: -16px 0 35px #0003;
+}
+.ic-reference .ic-library > header, .ic-reference .ic-inspector > header { padding: 16px 20px; border-bottom: 1px solid #ffffff0f; }
+.ic-reference .ic-library header strong, .ic-reference .ic-inspector header strong { font-size: 14px; }
+.ic-reference .ic-library-search { margin: 16px 20px; }
+.ic-reference .ic-library-search input { padding-block: 9px; background: #ffffff08; border-color: #ffffff12; }
+.ic-reference .ic-library-search > svg { top: 12px; }
+.ic-reference .ic-category { padding: 0 20px 16px; gap: 6px; }
+.ic-reference .ic-category button { color: #ffffffa6; font-size: 11px; }
+.ic-reference .ic-category button.is-active { color: #fff; background: #ffffff12; }
+.ic-reference .ic-library-list { padding: 20px; gap: 20px 14px; }
+.ic-reference .ic-library-item > div { background: #1f1f1f; border-radius: 10px; }
+.ic-reference .ic-library-item strong { font-size: 12px; }
+.ic-reference .ic-library-item small { font-size: 10px; }
+.ic-reference .ic-library-item > div > span { background: #fff; color: #141414; }
+.ic-reference .ic-inspector { width: 340px; flex-basis: 340px; background: #171717eb; backdrop-filter: blur(16px); }
+.ic-reference.is-fullscreen .ic-library, .ic-reference.is-fullscreen .ic-inspector { display: flex; }
+.ic-reference .ic-inspector-scroll { padding: 20px; }
+.ic-reference .ic-inspector label { color: #ffffffa6; }
+.ic-reference .ic-detail-title h2 { font-size: 15px; }
+.ic-reference .ic-detail-title > span { color: #ffffffa6; }
+.ic-reference .ic-detail-preview { background: #1f1f1f; }
+.ic-reference .ic-detail-preview svg { background: #171717cc; }
+.ic-reference .ic-version-list button.is-active { background: #ffffff0d; border-color: #ffffff73; }
+.ic-reference .ic-version-list img { background: #1f1f1f; }
+.ic-reference .ic-image-node { background: #1f1f1f; border: 1px solid #ffffff1a; border-radius: 12px; overflow: visible; box-shadow: 0 4px 18px #0005; }
+.ic-reference .ic-node-picture { border-radius: 11px 11px 0 0; background: #1a1a1a; box-shadow: none; outline: 0; }
+.ic-reference .ic-image-node footer { padding: 12px 14px; gap: 4px; }
+.ic-reference .ic-image-node h3 { font-size: 12px; }
+.ic-reference .ic-image-node footer > span { font-size: 10px; }
+.ic-reference .ic-image-node.is-selected { border-color: #ffffffcc; box-shadow: 0 0 0 1px #ffffff59, 0 4px 18px #0005; }
+.ic-reference .ic-image-node.is-selected .ic-node-picture { outline: 0; box-shadow: none; }
+.ic-reference .ic-selected-mark { color: #141414; background: #fff; }
+.ic-reference .ic-final { color: #fff; background: #171717d9; }
+.ic-reference .ic-image-empty { color: #ffffff73; background: #1f1f1f; }
+.ic-reference .ic-group-node { background: #ffffff04; border-color: #ffffff26; }
+.ic-reference .ic-group-heading { color: #ffffffa6; }
+.ic-reference .react-flow__node-imageGroup.selected { outline-color: #ffffff80; }
+.ic-reference .ic-generation-node { background: #1f1f1f; color: #fff; border-color: #ffffff1a; box-shadow: 0 4px 18px #0005; }
+.ic-reference .ic-generation-node.is-selected { outline-color: #ffffffb3; }
+.ic-reference .ic-generation-node header { color: #ffffffa6; background: #ffffff05; }
+.ic-reference :is(.ic-constraint b,.ic-design-brief b,.ic-design-details p strong) { color: #ffffffa6; }
+.ic-reference :is(.ic-constraint p,.ic-design-brief p,.ic-design-details p,.ic-step-prompt > span) { color: #ffffff73; }
+.ic-reference .ic-step-prompt { border-color: #ffffff0f; }
+.ic-reference .ic-step-params span { background: #ffffff08; color: #ffffffa6; }
+.ic-reference .ic-generation-node > button { color: #ffffffa6; border-color: #ffffff0f; }
+.ic-reference .ic-generation-node > .ic-regenerate-action { color: #fff; background: #ffffff08; }
+.ic-reference .ic-selection-bar { bottom: 110px; background: #171717eb; border-color: #ffffff1f; border-radius: 12px; box-shadow: 0 8px 24px #0005; }
+.ic-reference .ic-toast { background: #282828; border: 1px solid #ffffff1f; bottom: 118px; }
+.ic-reference .ic-overlay { background: #0009; }
+.ic-reference .ic-generation-dialog { background: #171717; color: #fff; border-color: #ffffff1f; }
+.ic-reference .ic-generation-dialog header, .ic-reference .ic-generation-dialog footer { border-color: #ffffff12; }
+.ic-reference .ic-generation-detail-body section p, .ic-reference .ic-prompt-preview pre { background: #1f1f1f; color: #ffffffa6; }
+.ic-reference .ic-generation-detail-body h3, .ic-reference .ic-prompt-preview summary { color: #fff; }
+.ic-reference .ic-constraint-restore button { background: #ffffff08; color: #fff; border-color: #ffffff1f; }
+.ic-reference .ic-compare-prompt { color: #ffffffa6; }
+.ic-reference .ic-compare-prompt :is(summary,pre) { color: #ffffffa6; }
+.ic-reference .ic-edit-result-action { background: #ffffff08; color: #fff; border-color: #ffffff1f; }
+.ic-reference .ic-load-warning { top: 70px; color: #ffd698; background: #29231a; }
+.ic-reference .ic-regenerate-sources > div, .ic-reference .ic-regenerate-sources select { border-color: #ffffff12; }
+.ic-reference .ic-regenerate-sources img { background: #1f1f1f; }
+.ic-reference .wb-editor-tools button.is-active { color: #fff; background: #ffffff12; border-color: #ffffff40; }
+.ic-reference .wb-primary-action { color: #141414; background: #fff; }
+.ic-reference .lic-overlay { background: #0009; color: #fff; }
+.ic-reference .lic-dialog { background: #171717; border-color: #ffffff1f; }
+.ic-reference .lic-dialog button { background: #1f1f1f; border-color: #ffffff1f; color: #fff; }
+.ic-reference .lic-dialog button:hover:not(:disabled) { background: #292929; border-color: #ffffff40; }
+.ic-reference :is(.lic-header,.lic-footer,.lic-preview-panel) { border-color: #ffffff12; background: #171717; }
+.ic-reference :is(.lic-item,.lic-planning-advice) { background: #1f1f1f; border-color: #ffffff1f; }
+.ic-reference :is(.lic-muted,.lic-header p,.lic-preview-panel > header span,.lic-planning-advice li p,.lic-footer-actions > span) { color: #ffffff73; }
+.ic-reference .lic-dialog .lic-primary { background: #fff; color: #141414; border-color: #fff; }
+.ic-reference .lic-dialog .lic-primary:hover:not(:disabled) { background: #dedede; }
+@media (max-width: 1200px) {
+  :root .reference-canvas-workbench .workspace-header { gap: 12px; }
+  .reference-canvas-project strong { max-width: 120px; }
+  .reference-canvas-workbench .workspace-tabs { gap: 12px; }
+  .ic-reference .ic-top-actions { gap: 2px; }
+  .ic-reference .ic-top-actions > button > span { display: none; }
+}
+@media (max-width: 900px) {
+  :root .reference-canvas-workbench .workspace-header { padding: 0 12px; height: 92px; min-height: 92px; flex-wrap: wrap; align-content: center; gap: 0; }
+  .reference-canvas-project { width: 100%; height: 42px; }
+  .reference-canvas-project strong { max-width: calc(100vw - 80px); }
+  .reference-canvas-workbench .workspace-tabs { height: 42px; gap: 20px; }
+  .reference-canvas-workbench .workspace-tab { height: 42px; }
+  .reference-canvas-actions { position: absolute; top: 0; right: 12px; margin: 0; }
+  .reference-canvas-actions .ic-topbar { height: 42px; min-height: 42px; }
+  .reference-canvas-actions .ic-save-state { display: none; }
+  .reference-canvas-project strong { max-width: calc(100vw - 280px); }
+
+  .ic-reference .ic-filterbar { top: 12px; left: 12px; right: 12px; gap: 8px; }
+  .ic-reference .ic-filterbar .image-batch-filter { max-width: 100%; width: auto; font-size: 11px; gap: 4px; padding: 5px 6px; }
+  .ic-reference .ic-filterbar .image-batch-filter select { width: 140px; flex: 1; }
+  .ic-reference .ic-filterbar .image-module-filter select { width: 110px; }
+  .ic-reference .ic-filterbar > .ic-canvas-count { display: none; }
+  .ic-reference .ic-reference-help { display: none; }
+  .ic-reference .ic-reference-dock { max-width: calc(100% - 24px); bottom: 20px; padding: 8px; gap: 2px; }
+  .ic-reference .ic-reference-dock button { width: 36px; height: 40px; border-radius: 8px; }
+  .ic-reference .ic-reference-dock .ic-dock-percent { width: 42px; font-size: 11px; }
+  .ic-reference .ic-reference-dock i { margin: 0 2px; }
+  .ic-reference .ic-inspector { position: absolute; inset: 0 0 0 auto; width: min(340px,90vw); box-shadow: -16px 0 35px #0005; }
+  .ic-reference .ic-selection-bar { bottom: 88px; }
+  .ic-reference .ic-top-actions .ic-save-state { display: flex; }
+}

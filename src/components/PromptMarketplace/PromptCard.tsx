@@ -23,6 +23,7 @@ export function PromptCard({ item, isSelected, batchMode, onEdit, onTest, onDupl
             <input
               type="checkbox"
               checked={isSelected}
+              aria-label={`选择提示词 ${item.name}`}
               onChange={(e) => {
                 e.stopPropagation();
                 onToggleSelect(item.id);
@@ -41,6 +42,7 @@ export function PromptCard({ item, isSelected, batchMode, onEdit, onTest, onDupl
               onEdit(item);
             }}
             title="编辑"
+            aria-label={`编辑提示词 ${item.name}`}
           >
             <Edit3 size={13} />
           </Button>
@@ -52,6 +54,7 @@ export function PromptCard({ item, isSelected, batchMode, onEdit, onTest, onDupl
               onTest(item);
             }}
             title="快速测试"
+            aria-label={`测试提示词 ${item.name}`}
           >
             <Play size={13} />
           </Button>
@@ -63,6 +66,7 @@ export function PromptCard({ item, isSelected, batchMode, onEdit, onTest, onDupl
               onDuplicate(item);
             }}
             title="创建新版本"
+            aria-label={`查看版本 ${item.name}`}
           >
             <Copy size={13} />
           </Button>
@@ -75,6 +79,7 @@ export function PromptCard({ item, isSelected, batchMode, onEdit, onTest, onDupl
                 onDelete(item.id);
               }}
               title="删除"
+              aria-label={`删除提示词 ${item.name}`}
               className="prompt-delete-btn"
             >
               <Trash2 size={13} />
@@ -82,8 +87,8 @@ export function PromptCard({ item, isSelected, batchMode, onEdit, onTest, onDupl
           )}
         </div>
       </div>
-      <div onClick={() => onClick(item)} style={{ cursor: "pointer", flex: 1 }}>
-        <h2>{item.name}</h2>
+      <div className="prompt-card-body">
+        <h2><button type="button" className="prompt-card-open" aria-label={`查看提示词 ${item.name}`} onClick={() => onClick(item)}>{item.name}</button></h2>
         <p>
           {item.code} · 默认 v{item.defaultVersion?.versionNo ?? "-"} · {item.versionCount} 个版本
         </p>

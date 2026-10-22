@@ -107,6 +107,40 @@ test("工作台支持编辑、拖动、刷新恢复和版本选择且不调用�
   expect(calls.provider).toBe(0);
 });
 
+test("空白处直接左键拖动保存视野，图片抽屉在全屏仍可使用", async ({ page }) => {
+  const state = createState();
+  await page.addInitScript(() => localStorage.clear());
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.route("**/api/projects/proj-demo/assets", route => route.fulfill({ json: { data: [] } }));
+  await page.route("**/api/suites/proj-demo/workbench", route => route.fulfill({ json: { data: state.workbench } }));
+  await page.route("**/api/suites/proj-demo/workbench/layout", route => {
+    state.layout = { ...state.layout, ...route.request().postDataJSON(), layoutVersion: state.layout.layoutVersion + 1 };
+    state.workbench.layout = state.layout;
+    return route.fulfill({ json: { data: state.layout } });
+  });
+  await page.goto("/projects/proj-demo?tab=canvas");
+  await expect(page.locator(".react-flow")).toBeVisible();
+  const canvas = await page.getByLabel("图片画布", { exact: true }).boundingBox();
+  await page.mouse.move(canvas!.x + 900, canvas!.y + 500);
+  await page.mouse.down();
+  await page.mouse.move(canvas!.x + 980, canvas!.y + 560, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(() => state.layout.viewport.x).toBeCloseTo(80, 0);
+  await expect.poll(() => state.layout.viewport.y).toBeCloseTo(60, 0);
+  await page.reload();
+  await expect(page.locator(".react-flow__viewport")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 80, 60)");
+  await expect(page.getByRole("complementary", { name: "项目图片" })).toHaveCount(0);
+  await page.getByRole("button", { name: "进入画布全屏" }).click();
+  await expect(page.locator(".ic-studio")).toHaveCSS("position", "fixed");
+  expect(await page.locator(".ic-studio").boundingBox()).toMatchObject({ x: 0, y: 0, width: 1440, height: 1000 });
+  await page.getByRole("button", { name: "项目图片", exact: true }).click();
+  await expect(page.getByRole("complementary", { name: "项目图片" })).toBeVisible();
+  await page.getByRole("button", { name: "关闭项目图片" }).click();
+  await expect(page.getByRole("complementary", { name: "项目图片" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "进入画布全屏" })).toBeVisible();
+});
+
 function createState() {
   const inputImage = { id: "source-1", suiteId: "proj-demo", ordinal: 1, originalObjectKey: "", thumbnailObjectKey: "", sha256: "b".repeat(64), width: 1200, height: 800, mimeType: "image/png", originalFilename: "产品图.png", currentBaseVersionId: null, createdAt: now, originalPreviewUrl: "", thumbnailPreviewUrl: "" };
   const versions = [

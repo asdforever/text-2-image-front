@@ -1,0 +1,123 @@
+/* Reverse reference workbench: the same dark chrome, with room to compare image and brief. */
+.reference-reverse-detail { --surface-3:#1a1a20; --studio-soft:#4a9eff14; }
+.reference-reverse-detail .rp-main { width:100%; max-width:1600px; margin-inline:auto; padding:28px 48px 56px; }
+.reference-reverse-detail .rp-detail-back { display:inline-flex; align-items:center; gap:7px; margin-bottom:20px; color:#9a9a9a; font-size:12px; text-decoration:none; }
+.reference-reverse-detail .rp-detail-back:hover { color:#fff; }
+.reference-reverse-detail .rp-detail-heading { margin-bottom:14px; gap:20px; }
+.reference-reverse-detail .rp-detail-heading > div:first-child { min-width:0; flex:1; }
+:root .reference-reverse-detail.app-shell .rp-detail-heading h1 { margin:0; color:#f0f0f0; font-size:20px; font-weight:600; }
+.reference-reverse-detail .rp-detail-heading .rp-actions { gap:8px; }
+.reference-reverse-detail .rp-detail-heading > .rp-actions { justify-content:flex-end; }
+.reference-reverse-detail .rp-detail-heading p { margin-top:12px; font-size:12px; color:#999; line-height:1.7; overflow-wrap:anywhere; }
+.rp-detail-meta { display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; margin:0 0 22px; padding:12px 0; border-block:1px solid #252525; font-size:11px; color:#85858d; }
+.rp-detail-meta span { display:inline-flex; align-items:center; gap:6px; }
+.rp-detail-meta span:first-child { min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.rp-detail-meta span:last-child { margin-left:auto; }
+.reference-reverse-detail .rp-badge { background:#25252c; color:#a9a9b2; font-size:10px; }
+.reference-reverse-detail .rp-badge.is-published { background:#34d3991a; color:#70dcb7; }
+.reference-reverse-detail .rp-tabs { gap:6px; padding:4px; margin:0 0 24px; border:1px solid #252525; border-radius:9px; background:#0d0d0d; width:max-content; max-width:100%; }
+.reference-reverse-detail .rp-tabs button { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:9px 15px; border:0; border-radius:6px; color:#888; font-size:12px; white-space:nowrap; transition:background .18s,color .18s; }
+.reference-reverse-detail .rp-tabs button[aria-selected="true"] { background:#292929; color:#eee; }
+.reference-reverse-detail .rp-two-col { grid-template-columns:minmax(0,1fr) 290px; gap:20px; }
+.reference-reverse-detail .rp-panel { padding:22px; border-color:#27272c; border-radius:12px; background:#0d0d0f; }
+.reference-reverse-detail .rp-two-col > aside { position:sticky; top:0; }
+.reference-reverse-detail .rp-panel-head { padding-bottom:16px; margin-bottom:18px; border-bottom:1px solid #24242a; }
+:root .reference-reverse-detail .rp-panel h2 { color:#e8f0ff; font-size:15px; }
+:root .reference-reverse-detail .rp-panel h3 { color:#e8f0ff; font-size:14px; }
+.reference-reverse-detail .rp-panel p { color:#888992; font-size:12px; }
+.reference-reverse-detail .rp-definition > div { border-color:#25252a; padding:17px 0; }
+.reference-reverse-detail .rp-definition dt { color:#c8d3df; font-size:12px; }
+.reference-reverse-detail .rp-definition dd { color:#9a9ca6; font-size:12px; line-height:1.9; }
+.reference-reverse-detail .rp-thumbnail-grid { grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr)); gap:16px; }
+.reference-reverse-detail .rp-image-card { border-color:#29292f; border-radius:10px; background:#141416; transition:border-color .2s,box-shadow .2s; }
+.reference-reverse-detail .rp-image-card:is(:hover,:focus-within) { border-color:#4a9eff66; box-shadow:0 5px 18px #0005; }
+.reference-reverse-detail .rp-image-preview { display:block; height:auto; aspect-ratio:1; background:#1a1a20; }
+.reference-reverse-detail .rp-image-caption { gap:9px; padding:14px; }
+.reference-reverse-detail .rp-image-caption strong { color:#d4dbe5; font-size:12px; }
+.reference-reverse-detail .rp-image-caption small { color:#81848d; font-size:10px; }
+.reference-reverse-detail .rp-mini-actions button { border-color:#38383e; background:#1a1a20; color:#aaa; }
+.reference-reverse-detail .rp-mini-actions button:hover:not(:disabled) { border-color:#6a9bc9; color:#a6cfff; }
+.reference-reverse-detail .rp-upload { border-color:#383840; background:#141416; padding:26px 18px; color:#a6cfff; transition:border-color .2s,background .2s; }
+.reference-reverse-detail .rp-upload:hover { border-color:#4a9eff80; background:#4a9eff0d; }
+.reference-reverse-detail .rp-upload strong { color:#d5dbe3; font-size:12px; }
+.reference-reverse-detail .rp-upload span { font-size:11px; color:#868994; }
+.reference-reverse-detail .rp-upload-log > div { flex-wrap:wrap; padding:9px 10px; border:1px solid #26262d; border-radius:6px; background:#141416; color:#999; font-size:11px; }
+.reference-reverse-detail .rp-version-list button { background:#171719; border-color:#29292f; font-size:12px; }
+.reference-reverse-detail .rp-version-list button[aria-pressed="true"] { border-color:#4a9eff66; color:#a6cfff; background:#4a9eff0d; }
+.reference-reverse-detail .rp-module-layout { grid-template-columns:180px minmax(0,1fr); gap:22px; }
+.reference-reverse-detail .rp-module-list { position:sticky; top:0; max-height:75dvh; overflow:auto; padding:2px; scrollbar-width:thin; }
+.reference-reverse-detail .rp-module-list button { background:#171719; border-color:#29292f; padding:10px; }
+.reference-reverse-detail .rp-module-list button[aria-pressed="true"] { background:#4a9eff0d; border-color:#4a9eff80; color:#a6cfff; }
+.reference-reverse-detail .rp-module-list img { height:106px; background:#202028; }
+.reference-reverse-detail .rp-module-list span { overflow-wrap:anywhere; line-height:1.6; }
+.rp-module-content { min-width:0; }
+.rp-module-design { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); align-items:start; gap:24px; }
+.rp-module-reference-preview { position:sticky; top:0; min-width:0; margin:0; border:1px solid #29292f; border-radius:10px; overflow:hidden; background:#171719; }
+.rp-module-reference-preview button { position:relative; display:block; width:100%; padding:16px; border:0; background:#1a1a20; cursor:zoom-in; }
+.rp-module-reference-preview img { display:block; width:100%; height:420px; max-height:55dvh; object-fit:contain; }
+.rp-module-reference-preview button > span { position:absolute; bottom:12px; left:12px; padding:5px 8px; border:1px solid #ffffff24; border-radius:5px; background:#000b; color:#eee; font-size:10px; }
+.rp-module-reference-preview figcaption { display:grid; gap:6px; padding:14px; }
+.rp-module-reference-preview figcaption strong { color:#cdd7e3; font-size:12px; overflow-wrap:anywhere; }
+.rp-module-reference-preview figcaption > span { color:#80848e; font-size:10px; }
+.rp-module-reference-empty { display:grid; place-content:center; justify-items:center; gap:14px; min-height:220px; color:#777; font-size:12px; }
+.reference-reverse-detail .rp-module-definition > div:first-child { padding-top:0; }
+.reference-reverse-detail .rp-module-definition dt { padding-left:9px; border-left:2px solid #4a9eff; }
+.reference-reverse-detail .rp-binding-item { gap:16px; padding:18px; background:#171719; border-color:#29292f; border-radius:9px; }
+.reference-reverse-detail .rp-binding-item > div:first-child { min-width:0; }
+.reference-reverse-detail .rp-binding-item strong { color:#d6e0ed; font-size:13px; overflow-wrap:anywhere; }
+.reference-reverse-detail .rp-binding-item .rp-actions { flex:none; }
+.reference-reverse-detail .rp-notice { border:1px solid #4a9eff33; background:#4a9eff0d; color:#a6cfff; font-size:12px; }
+.reference-reverse-detail .rp-notice > button[aria-label="关闭提示"] { border:0; background:transparent; color:#a6cfff; font-size:20px; cursor:pointer; }
+.reference-reverse-detail .rp-error { border-color:#ef444447; background:#ef444414; color:#f87171; font-size:12px; }
+.reference-reverse-detail .rp-empty { border-color:#303038; background:#171719; min-height:210px; }
+.reference-reverse-detail .rp-list-note { border-color:#25252a; font-size:11px; }
+.reference-reverse-detail :is(button,a,input,textarea,select):focus-visible { outline:2px solid #a6cfff; outline-offset:3px; }
+:root .reference-reverse-detail .dialog-panel { border-color:#34343a; border-radius:12px; background:#141414; color:#ddd; }
+.reference-reverse-detail .dialog-header { border-color:#292929; }
+:root .reference-reverse-detail .dialog-header h2 { color:#ededed; font-size:16px; }
+.reference-reverse-detail .rp-dialog-form { padding:20px 22px; max-height:74dvh; }
+.reference-reverse-detail .rp-field { color:#ccc; }
+.reference-reverse-detail .rp-field :is(input,textarea,select) { border-color:#33333a; background:#0d0d0d; color:#ddd; font-size:12px; border-radius:7px; }
+.reference-reverse-detail .rp-dialog-actions { margin-top:4px; padding:16px 0 0; border-color:#292929; background:#141414; }
+.reference-reverse-detail .rp-version-note { color:#a6cfff; border:1px solid #4a9eff33; background:#4a9eff0d; }
+.reference-reverse-detail .rp-destination { border:0; padding:0; margin:0; }
+.reference-reverse-detail .rp-destination label { border-color:#33333a; color:#aaa; font-size:12px; }
+.reference-reverse-detail .rp-destination label:has(input:checked) { color:#a6cfff; background:#4a9eff0d; border-color:#4a9eff66; }
+.reference-reverse-detail .rp-destination input { accent-color:#4a9eff; }
+.reference-reverse-detail .dialog-backdrop:has(.rp-detail-preview-body) .dialog-panel { width:min(1000px,100%); }
+.rp-detail-preview-body { display:grid; gap:16px; padding:20px 22px; }
+.rp-detail-preview-body .rp-preview { width:100%; height:60dvh; max-height:60dvh; border-radius:6px; background:#1a1a20; }
+.rp-detail-preview-body a { display:inline-flex; align-items:center; justify-self:start; gap:7px; color:#a6cfff; font-size:12px; }
+@media(max-width:1200px) {
+  .reference-reverse-detail .rp-detail-heading { flex-wrap:wrap; }
+  .reference-reverse-detail .rp-detail-heading > div:first-child { flex-basis:100%; }
+  .reference-reverse-detail .rp-detail-heading > .rp-actions { justify-content:flex-start; }
+  .rp-module-design { grid-template-columns:minmax(0,1fr); }
+  .rp-module-reference-preview { position:static; }
+  .rp-module-reference-preview img { height:300px; }
+}
+@media(max-width:1024px) {
+  .reference-reverse-detail .rp-main { padding:20px 24px 40px; }
+  .reference-reverse-detail .rp-two-col { grid-template-columns:minmax(0,1fr); }
+  .reference-reverse-detail .rp-two-col > aside { position:static; }
+}
+@media(max-width:600px) {
+  .reference-reverse-detail .rp-main { padding:20px 12px 36px; }
+  .reference-reverse-detail .rp-detail-heading > .rp-actions { display:grid; width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .reference-reverse-detail .rp-detail-heading > .rp-actions .ui-button { font-size:11px; padding-inline:7px; }
+  .rp-detail-meta { gap:10px 14px; }
+  .rp-detail-meta span:last-child { margin-left:0; }
+  .reference-reverse-detail .rp-tabs { width:100%; gap:3px; }
+  .reference-reverse-detail .rp-tabs button { flex:1; padding:9px 4px; font-size:11px; }
+  .reference-reverse-detail .rp-tabs button svg { display:none; }
+  .reference-reverse-detail .rp-panel { padding:16px; }
+  .reference-reverse-detail .rp-module-layout { grid-template-columns:minmax(0,1fr); }
+  .reference-reverse-detail .rp-module-list { position:static; display:flex; max-height:none; gap:10px; overflow-x:auto; }
+  .reference-reverse-detail .rp-module-list button { flex:0 0 130px; }
+  .reference-reverse-detail .rp-module-list img { height:80px; }
+  .reference-reverse-detail .rp-binding-item { align-items:flex-start; flex-direction:column; padding:14px; }
+  .reference-reverse-detail .rp-binding-item .rp-actions { flex-wrap:wrap; }
+  .reference-reverse-detail .rp-dialog-form { padding:18px 16px; }
+  .rp-detail-preview-body { padding:16px; }
+  .rp-detail-preview-body .rp-preview { height:50dvh; }
+}

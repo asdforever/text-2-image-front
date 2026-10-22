@@ -47,6 +47,7 @@ export function GenerationImageStage({ images, source, emptyTitle, onInspect, on
         </div> : <div className="studio-stage-empty">
           <Image size={36} strokeWidth={1} />
           <strong>{current ? "图片加载失败" : emptyTitle}</strong>
+          <p>{current ? "请检查网络后重试加载，已生成的图片仍保留在项目中。" : "选择产品素材、设置风格并添加图片任务，再编译提示词。"}</p>
           {current && <button onClick={() => setFailedUrl(undefined)}>重试加载</button>}
         </div>}
       </div>

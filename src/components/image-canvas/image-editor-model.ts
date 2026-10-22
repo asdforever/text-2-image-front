@@ -1,3 +1,5 @@
+import { createIdempotencyKey } from "../../api/client";
+
 export type EditTool = "none" | "prompt_edit" | "add_text" | "change_text" | "inpaint" | "crop_resize";
 export type Region = { x: number; y: number; width: number; height: number; rotation: number };
 export type MaskStroke = { mode: "draw" | "erase"; points: { x: number; y: number }[]; width: number };
@@ -8,7 +10,7 @@ export type EditorDraft = {
   region: Region; strokes: MaskStroke[]; feather: number; action: "redraw" | "erase";
   textStyle?: TextStyle; crop: Region; width: number; height: number; lockRatio: boolean;
 };
-export const freshId = () => globalThis.crypto.randomUUID();
+export const freshId = () => createIdempotencyKey();
 export const defaultRegion: Region = { x: .2, y: .4, width: .6, height: .15, rotation: 0 };
 export const fullRegion: Region = { x: 0, y: 0, width: 1, height: 1, rotation: 0 };
 export function initialDraft(width: number, height: number): EditorDraft {

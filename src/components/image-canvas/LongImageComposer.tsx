@@ -144,7 +144,7 @@ export function LongImageComposer({ projectId, assets, workbench, close, saved, 
     } catch (cause) { setError(messageOf(cause)); }
     finally { setDownloading(false); }
   };
-  return <div className="lic-overlay"><div className="lic-dialog" role="dialog" aria-modal="true" aria-label="制作长图" tabIndex={-1} ref={dialogRef}>
+  return <div className="lic-overlay reference-editor-backdrop"><div className="lic-dialog reference-editor" role="dialog" aria-modal="true" aria-label="制作长图" aria-busy={busy || downloading} tabIndex={-1} ref={dialogRef}>
     <header className="lic-header"><div><h2>制作长图</h2><p>挑选满意的版本，排成完整详情页</p></div><button aria-label="关闭长图制作" disabled={busy || downloading} onClick={attemptClose}><X size={20} /></button></header>
     <div className="lic-body">
       <div className="lic-editor">

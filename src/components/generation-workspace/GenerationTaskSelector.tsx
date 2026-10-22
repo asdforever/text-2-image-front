@@ -39,7 +39,7 @@ export function GenerationTaskSelector(props: {
   };
   return <div className="module-selector" data-generation-invalid={props.error ? "true" : undefined}>
     <div className="module-selector-meta"><span>每项对应一张图，拼接顺序在画布中调整</span><strong>共 {ids.length} 张{max < Number.MAX_SAFE_INTEGER ? ` / 最多 ${max} 张` : ""}</strong></div>
-    <div className="flex flex-wrap gap-2 py-2" aria-label="添加图片任务">
+    <div className="module-task-catalog flex flex-wrap gap-2 py-2" aria-label="添加图片任务">
       {props.modules.map((module) => <button key={module.id} type="button" className="module-parameter-add" disabled={ids.length >= max} onClick={() => add(module.id)}><Plus size={13} />添加{module.label}</button>)}
     </div>
     <div className="studio-module-list">

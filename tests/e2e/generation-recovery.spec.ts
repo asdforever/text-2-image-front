@@ -93,7 +93,7 @@ for (const kind of ["suite", "hero"] as const) {
     await expect(prompt).toHaveValue("原始提示词");
     await expect(prompt).not.toBeEditable();
     await page.getByRole("button", { name: "返回项目管理" }).click();
-    await expect(page.getByRole("heading", { name: "项目管理", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "项目", exact: true })).toBeVisible();
     await page.getByRole("article").filter({ hasText: "恢复测试项目" }).getByRole("button", { name: "进入工作台" }).click();
     await page.getByRole("navigation", { name: "输出类型" }).getByRole("button", { name: kind === "suite" ? "详情套图" : "主图", exact: true }).click();
     await expect(prompt).toHaveValue("原始提示词");

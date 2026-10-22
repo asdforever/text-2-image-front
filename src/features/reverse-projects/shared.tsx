@@ -3,8 +3,8 @@ import { Image, RefreshCw } from "lucide-react";
 import type { ReverseProject, ReverseReferenceImage } from "../../api/reverse-projects";
 import { Button } from "../../components/ui/button";
 
-export function ReverseShell({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) {
-  return <div className="app-shell rp-shell"><header className="app-topbar"><div className="workspace-title"><strong>爆品图反推</strong><span>{title}</span></div>{actions}</header><main className="rp-main">{children}</main></div>;
+export function ReverseShell({ title, children, actions, className = "" }: { title: string; children: ReactNode; actions?: ReactNode; className?: string }) {
+  return <div className={`app-shell rp-shell ${className}`}><header className="app-topbar"><div className="workspace-title"><strong>爆品图反推</strong><span>{title}</span></div>{actions}</header><main className="rp-main">{children}</main></div>;
 }
 export function ReferenceCover({ images }: { images: ReverseReferenceImage[] }) {
   return <div className={"rp-cover " + (images.length > 1 ? "rp-cover-multiple" : "")} aria-hidden="true">{images.length ? images.slice(0, 3).map(image => <img key={image.id} src={image.previewUrl} alt="" loading="lazy" />) : <div className="rp-cover-empty"><Image size={30} /><span>等待上传参考套图</span></div>}</div>;

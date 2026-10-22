@@ -1,0 +1,273 @@
+/* Main and detail generation: a quiet configuration rail beside editable image tasks. */
+:root .reference-project-workbench .professional-workspace {
+  --studio-accent: #ededed;
+  --studio-soft: #ffffff08;
+  color: #ededed;
+}
+:root .reference-project-workbench .professional-mode-toolbar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+:root .reference-project-workbench .creation-mode-switch { background: #0d0d0d; border: 1px solid #292929; padding: 4px; gap: 4px; border-radius: 9px; }
+:root .reference-project-workbench .creation-mode-switch button { min-height: 34px; padding-inline: 16px; color: #999; font-size: 12px; border-radius: 6px; }
+:root .reference-project-workbench .creation-mode-switch button[aria-pressed="true"] { background: #292929; color: #ededed; box-shadow: none; }
+:root .reference-project-workbench .generation-workspace { gap: 24px; }
+:root .reference-project-workbench .generation-config { background: #0d0d0d; border-color: #292929; border-radius: 12px; }
+:root .reference-project-workbench .generation-config-mobile-head { padding: 20px 20px 4px; color: #ededed; }
+:root .reference-project-workbench .generation-config-mobile-head strong { font-size: 15px; font-weight: 600; }
+:root .reference-project-workbench .generation-config-mobile-head button { color: #999; background: #171717; border-color: #292929; border-radius: 6px; }
+:root .reference-project-workbench .generation-config-stack { padding-inline: 20px; gap: 0; }
+:root .reference-project-workbench .generation-section-card { padding-block: 22px; border-color: #292929; }
+:root .reference-project-workbench .generation-section-card:last-child { border-bottom: 0; }
+:root .reference-project-workbench .generation-section-title { margin: 0; color: #ededed; font-size: 13px; font-weight: 600; line-height: 1.6; }
+:root .reference-project-workbench .generation-section-heading { gap: 14px; }
+:root .reference-project-workbench .generation-section-heading p { display: block; margin: 6px 0 0; color: #999; font-size: 11px; line-height: 1.8; }
+:root .reference-project-workbench .generation-section-heading > button { width: 28px; height: 28px; border: 1px solid #292929; background: #171717; color: #999; }
+:root .reference-project-workbench .generation-section-heading > button:hover { background: #222; color: #ededed; }
+:root .reference-project-workbench .generation-section-content { margin-top: 14px; }
+:root .reference-project-workbench .generation-config :is(input:not([type="checkbox"],[type="file"]),select,textarea),
+:root .reference-project-workbench .generation-result :is(input:not([type="checkbox"],[type="file"]),select,textarea) {
+  min-width: 0;
+  border: 1px solid #292929;
+  border-radius: 7px;
+  background: #171717;
+  color: #ededed;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.7;
+  box-shadow: none;
+}
+:root .reference-project-workbench .generation-config :is(select,input:not([type="checkbox"],[type="file"])),
+:root .reference-project-workbench .generation-result select { min-height: 38px; padding: 7px 10px; }
+:root .reference-project-workbench :is(.generation-config,.generation-result) textarea { padding: 11px 12px; resize: vertical; }
+:root .reference-project-workbench :is(.generation-config,.generation-result) textarea::placeholder { color: #777; }
+:root .reference-project-workbench :is(.generation-workspace,.professional-mode-toolbar) :is(button,a,input,select,textarea,summary):focus-visible { outline: 2px solid #a6cfff; outline-offset: 3px; }
+:root .reference-project-workbench :is(.generation-config,.generation-result) input[type="checkbox"] { accent-color: #a6cfff; }
+:root .reference-project-workbench .studio-source-select { padding: 10px; min-height: 76px; gap: 12px; background: #171717; border-color: #292929; border-radius: 8px; }
+:root .reference-project-workbench .studio-source-select > img,
+:root .reference-project-workbench .studio-source-placeholder { width: 48px; height: 48px; background: #222; object-fit: contain; }
+:root .reference-project-workbench .studio-source-select strong { color: #ededed; font-size: 12px; font-weight: 500; }
+:root .reference-project-workbench .studio-source-select small { color: #999; font-size: 11px; margin-top: 5px; }
+:root .reference-project-workbench .studio-source-options .asset-dropzone { min-height: 88px; padding: 14px 12px; border-color: #3a3a3a; background: #171717; }
+:root .reference-project-workbench .studio-source-options .asset-dropzone:hover,
+:root .reference-project-workbench .studio-source-options .asset-dropzone.is-dragging { border-color: #a6cfff; background: #1b2026; }
+:root .reference-project-workbench .generation-asset { background: #171717; border-color: #292929; }
+:root .reference-project-workbench .generation-asset.selected { border-color: #a6cfff; box-shadow: inset 0 0 0 1px #a6cfff; }
+:root .reference-project-workbench .generation-asset img { object-fit: contain; background: #222; }
+:root .reference-project-workbench .generation-empty-inline { background: #171717; color: #999; font-size: 12px; min-height: 76px; gap: 8px; }
+:root .reference-project-workbench .studio-market-fields { gap: 12px; }
+:root .reference-project-workbench .studio-market-field > span { color: #999; font-size: 11px; }
+:root .reference-project-workbench .market-guidance { margin-top: 12px; padding: 10px 12px; background: #171717; border-color: #292929; border-radius: 7px; }
+:root .reference-project-workbench .market-guidance summary { color: #bbb; font-size: 11px; }
+:root .reference-project-workbench .market-guidance p { color: #999; margin-bottom: 0; }
+:root .reference-project-workbench .style-library > .generation-config-meta { display: inline-block; margin-bottom: 12px; color: #999; font-size: 11px; line-height: 1.6; text-decoration-color: #555; }
+:root .reference-project-workbench .studio-style-tools { gap: 10px; margin-bottom: 12px; }
+:root .reference-project-workbench .studio-style-tools button { min-height: 38px; padding-inline: 12px; background: #171717; border-color: #3a3a3a; color: #bbb; }
+:root .reference-project-workbench .studio-style-tools button.selected { border-color: #a6cfff; color: #ededed; background: #a6cfff0a; }
+:root .reference-project-workbench .generation-config .style-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 10px; }
+:root .reference-project-workbench .generation-config .style-card-grid button { padding: 6px; border: 1px solid #292929; border-radius: 8px; background: #171717; }
+:root .reference-project-workbench .generation-config .style-card-grid button.selected { border-color: #a6cfff; background: #a6cfff0a; box-shadow: none; }
+:root .reference-project-workbench .generation-config .style-card-grid button:hover { border-color: #555; }
+:root .reference-project-workbench .generation-config .style-card-grid button.selected:hover { border-color: #a6cfff; }
+:root .reference-project-workbench .generation-config .style-card-grid strong { color: #ccc; margin-top: 8px; font-size: 11px; font-weight: 400; }
+:root .reference-project-workbench .studio-style-swatch { border-radius: 5px; }
+:root .reference-project-workbench .studio-style-selection { margin-top: 12px; align-items: flex-start; gap: 10px; color: #999; font-size: 11px; line-height: 1.8; }
+:root .reference-project-workbench .studio-style-selection > span { min-width: 0; overflow-wrap: anywhere; }
+:root .reference-project-workbench .studio-style-selection button { flex: none; color: #bbb; background: transparent; border-color: #292929; }
+:root .reference-project-workbench .style-custom-editor { gap: 8px; margin-bottom: 14px; }
+:root .reference-project-workbench .style-custom-editor textarea { min-height: 110px; }
+:root .reference-project-workbench .output-settings-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px 12px; }
+:root .reference-project-workbench .generation-config .output-settings-grid label { color: #999; font-size: 11px; gap: 8px; }
+:root .reference-project-workbench .generation-config .output-settings-grid label:nth-child(2) { grid-column: 1 / -1; grid-row: 1; }
+:root .reference-project-workbench .generation-config .output-settings-grid label:last-child { grid-column: 1 / -1; }
+:root .reference-project-workbench .output-settings-grid small { color: #777; line-height: 1.7; }
+:root .reference-project-workbench .generation-config-footer { background: #0d0d0d; border-color: #292929; box-shadow: none; }
+:root .reference-project-workbench .generation-footer-content { padding: 18px 20px; gap: 12px; }
+:root .reference-project-workbench .generation-footer-meta { align-items: flex-start; gap: 8px; line-height: 1.7; color: #999; }
+:root .reference-project-workbench .generation-footer-content > .ui-button { min-height: 42px; font-weight: 600; }
+:root .reference-project-workbench .suite-config-note { padding: 14px 20px 0; color: #999; font-size: 11px; }
+:root .reference-project-workbench .generation-config .recent-config-card { padding-block: 14px; }
+:root .reference-project-workbench .generation-config .recent-config-copy strong { color: #ccc; font-weight: 500; }
+:root .reference-project-workbench .generation-config .recent-config-copy span { color: #777; }
+:root .reference-project-workbench .studio-result-topbar { padding-bottom: 20px; }
+:root .reference-project-workbench .studio-result-topbar .generation-result-header { min-height: 44px; }
+:root .reference-project-workbench .generation-result-header h1 { color: #ededed; font-size: 16px; }
+:root .reference-project-workbench .generation-result-header small { color: #999; display: block; margin-top: 7px; line-height: 1.7; }
+:root .reference-project-workbench .generation-config-restore { position: static; display: flex; align-items: center; align-self: flex-start; width: fit-content; margin-bottom: 16px; padding: 8px 12px; color: #ccc; background: #171717; border: 1px solid #292929; min-height: 36px; font-size: 12px; line-height: 1.6; }
+:root .reference-project-workbench .is-config-collapsed .studio-result-topbar .generation-result-header { padding-left: 0; }
+
+/* The catalog describes available modules; each card below describes one image. */
+:root .reference-project-workbench .generation-modules-panel { margin-bottom: 22px; padding-inline: 20px; background: #0d0d0d; border-color: #292929; border-radius: 12px; }
+:root .reference-project-workbench .module-selector-meta { align-items: flex-start; gap: 12px; font-size: 11px; line-height: 1.8; color: #999; }
+:root .reference-project-workbench .module-selector-meta strong { flex: none; color: #ccc; font-size: 11px; font-weight: 500; }
+:root .reference-project-workbench .module-task-catalog { gap: 8px; padding: 14px 0 18px; border-bottom: 1px solid #292929; }
+:root .reference-project-workbench .module-parameter-add { min-height: 34px; padding: 7px 10px; gap: 6px; background: #171717; border: 1px solid #292929; border-radius: 6px; color: #ccc; font-size: 12px; line-height: 1.5; }
+:root .reference-project-workbench .module-parameter-add:hover:not(:disabled) { color: #ededed; background: #222; border-color: #555; }
+:root .reference-project-workbench .generation-modules-panel .studio-module-list { margin-top: 18px; gap: 14px; }
+:root .reference-project-workbench .generation-modules-panel .module-task-card { background: #141414; border-color: #292929; border-radius: 8px; }
+:root .reference-project-workbench .generation-modules-panel .module-task-card.is-editing { border-color: #555; }
+:root .reference-project-workbench .module-task-header { padding: 16px; gap: 12px; align-items: center; }
+:root .reference-project-workbench .module-task-number { background: #222; border: 1px solid #333; border-radius: 5px; padding: 4px 7px; color: #aaa; font-size: 11px; }
+:root .reference-project-workbench :is(.module-task-title,.module-task-title-text) { font-size: 13px; color: #ededed; }
+:root .reference-project-workbench .module-task-title:hover { color: #a6cfff; }
+:root .reference-project-workbench .module-task-type { max-width: 36%; white-space: normal; overflow-wrap: anywhere; background: #222; color: #999; }
+:root .reference-project-workbench .module-task-actions { gap: 6px; }
+:root .reference-project-workbench .module-task-edit-toggle { border: 1px solid #333; color: #ccc; min-height: 32px; padding: 6px 9px; }
+:root .reference-project-workbench .module-task-remove { min-height: 32px; width: 32px; color: #999; }
+:root .reference-project-workbench .module-task-overview,
+:root .reference-project-workbench .module-task-parameter-summary { padding: 0 16px 18px; }
+:root .reference-project-workbench .module-task-summary { gap: 9px; font-size: 12px; line-height: 1.8; }
+:root .reference-project-workbench .module-task-summary > div { grid-template-columns: 76px minmax(0,1fr); gap: 14px; }
+:root .reference-project-workbench .module-task-summary dt { color: #999; overflow-wrap: anywhere; }
+:root .reference-project-workbench .module-task-summary dd { color: #ccc; }
+:root .reference-project-workbench .module-task-meta { color: #888; font-size: 11px; }
+:root .reference-project-workbench .module-task-editor { display: grid; gap: 16px; padding: 18px 16px; background: #0d0d0d; border-color: #292929; }
+:root .reference-project-workbench .module-task-editor > label:not(.module-task-copy-lock) { display: grid; gap: 8px; color: #bbb; font-size: 12px; }
+:root .reference-project-workbench .module-task-editor > label > textarea { width: 100%; min-height: 86px; }
+:root .reference-project-workbench .module-task-copy-lock { display: flex; align-items: center; gap: 9px; color: #ccc; font-size: 12px; line-height: 1.7; }
+:root .reference-project-workbench .module-task-copy-lock > input { width: 16px; height: 16px; min-height: 0; flex: none; margin: 0; }
+:root .reference-project-workbench .module-task-editor-note { margin: -8px 0 0; color: #888; font-size: 11px; line-height: 1.8; }
+:root .reference-project-workbench .module-task-design { gap: 16px; }
+:root .reference-project-workbench .module-task-design label { gap: 8px; color: #bbb; font-size: 12px; }
+:root .reference-project-workbench .module-task-design :is(textarea,select) { margin-top: 0; }
+:root .reference-project-workbench .module-task-disclosure { margin-top: 0; border-color: #292929; }
+:root .reference-project-workbench .module-task-disclosure > summary { padding-block: 14px; color: #bbb; font-size: 12px; }
+:root .reference-project-workbench .module-task-disclosure-body { padding: 0 0 4px; }
+:root .reference-project-workbench .module-parameter-rows { gap: 14px; margin-bottom: 14px; }
+:root .reference-project-workbench .module-parameter-row { grid-template-columns: minmax(100px,.7fr) minmax(0,1.6fr) 30px; align-items: start; gap: 10px; }
+:root .reference-project-workbench .module-parameter-row label { gap: 7px; }
+:root .reference-project-workbench .module-parameter-row label > span { font-size: 11px; color: #999; }
+:root .reference-project-workbench .module-parameter-row :is(input,textarea) { width: 100%; padding: 9px 10px; font-size: 12px; line-height: 1.7; }
+:root .reference-project-workbench .module-parameter-remove { margin-top: 24px; width: 30px; height: 34px; border: 1px solid #292929; border-radius: 6px; color: #999; background: #171717; }
+
+/* Review prompts and task progress occupy distinct, readable sections. */
+:root .reference-project-workbench .studio-task-status { margin-bottom: 18px; padding: 14px 16px; gap: 10px 18px; border: 1px solid #292929; border-radius: 8px; background: #171717; }
+:root .reference-project-workbench .studio-task-status strong { color: #ededed; font-size: 12px; font-weight: 500; }
+:root .reference-project-workbench .studio-task-status :is(small,p,.studio-task-numbers) { color: #999; font-size: 11px; line-height: 1.7; }
+:root .reference-project-workbench .studio-task-status progress { accent-color: #a6cfff; background: #292929; }
+:root .reference-project-workbench .studio-status-dot { background: #999; box-shadow: none; }
+:root .reference-project-workbench .studio-task-status:is(.status-running,.status-generating,.status-queued) .studio-status-dot { background: #a6cfff; }
+:root .reference-project-workbench .studio-task-status:is(.status-failed,.status-partially_failed) { border-color: #624141; border-left: 3px solid #d78989; background: #211818; }
+:root .reference-project-workbench .studio-task-status:is(.status-failed,.status-partially_failed) .studio-status-dot { background: #e3a2a2; }
+:root .reference-project-workbench :is(.hero-generation-error,.suite-flow-error,.generation-field-error) { color: #f0adad; border-color: #624141; background: #211818; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+:root .reference-project-workbench .generation-field-error { padding: 9px 11px; border: 1px solid #624141; border-radius: 6px; margin-top: 10px; }
+:root .reference-project-workbench .generation-footer-meta [role="alert"] { color: #f0adad; }
+:root .reference-project-workbench .studio-task-details { padding: 14px 16px; border-color: #292929; background: #0d0d0d; border-radius: 8px; margin-bottom: 18px; }
+:root .reference-project-workbench .studio-task-details > summary { color: #bbb; font-size: 12px; line-height: 1.8; }
+:root .reference-project-workbench .studio-confirmation-details { margin-bottom: 22px; border-color: #3a3a3a; background: #0d0d0d; border-radius: 10px; }
+:root .reference-project-workbench .studio-confirmation-details > summary { padding: 16px 20px; color: #ededed; font-size: 13px; }
+:root .reference-project-workbench .studio-confirmation-details > .hero-prompt-confirmation { padding: 4px 20px 20px; }
+:root .reference-project-workbench .generation-result .hero-prompt-confirmation { background: #0d0d0d; border-color: #292929; gap: 18px; }
+:root .reference-project-workbench .hero-prompt-confirmation h2 { margin-top: 6px; color: #ededed; font-size: 15px; line-height: 1.6; }
+:root .reference-project-workbench .hero-prompt-confirmation > header span { color: #999; font-size: 11px; }
+:root .reference-project-workbench .hero-prompt-confirmation > p { margin: 0; color: #999; font-size: 12px; line-height: 1.8; }
+:root .reference-project-workbench .hero-batch-prompt-module { padding-top: 18px; gap: 14px; border-color: #292929; }
+:root .reference-project-workbench .hero-batch-prompt-module > header strong { font-size: 13px; color: #ddd; }
+:root .reference-project-workbench .hero-batch-prompt-module > header span { color: #999; }
+:root .reference-project-workbench .generation-result .hero-task-prompt-field { gap: 9px; color: #bbb; font-size: 12px; font-weight: 400; }
+:root .reference-project-workbench .generation-result .hero-task-prompt-field textarea { min-height: 156px; padding: 14px; background: #171717; border-color: #333; color: #ededed; font-size: 13px; line-height: 1.85; }
+:root .reference-project-workbench .hero-prompt-confirmation > footer { gap: 16px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #292929; }
+:root .reference-project-workbench .hero-prompt-confirmation > footer > span { color: #999; font-size: 11px; line-height: 1.8; }
+:root .reference-project-workbench .studio-prompt-context { color: #999; font-size: 12px; }
+:root .reference-project-workbench .studio-prompt-context > summary { padding-block: 9px; color: #aaa; }
+:root .reference-project-workbench .studio-prompt-context :is(.hero-constraint-grid article,.hero-fact-grid section) { background: #171717; border: 1px solid #292929; padding: 12px; border-radius: 6px; }
+:root .reference-project-workbench .studio-unconfirmed { padding: 10px 12px; background: #211e18; border: 1px solid #4b4432; border-radius: 6px; color: #d5c393; font-size: 12px; }
+:root .reference-project-workbench .suite-section-heading { margin-bottom: 18px; }
+:root .reference-project-workbench .suite-section-heading h2 { color: #ededed; font-size: 15px; }
+:root .reference-project-workbench .suite-global-constraints { border-color: #292929; background: #0d0d0d; }
+:root .reference-project-workbench .suite-prompt-card { padding: 20px; border-color: #292929; background: #0d0d0d; border-radius: 9px; gap: 18px; }
+:root .reference-project-workbench .suite-order-number { background: #222; color: #aaa; border: 1px solid #333; }
+:root .reference-project-workbench .suite-generate-strip { padding: 16px 0; margin-top: 8px; border-color: #292929; gap: 16px; flex-wrap: wrap; }
+:root .reference-project-workbench .suite-generate-strip > div { min-width: 0; gap: 7px; }
+:root .reference-project-workbench .suite-generate-strip strong { color: #ddd; font-size: 12px; }
+:root .reference-project-workbench .suite-generate-strip span { color: #999; font-size: 11px; line-height: 1.8; }
+:root .reference-project-workbench .hero-batch-status { background: transparent; border-color: #292929; }
+:root .reference-project-workbench .hero-batch-slot { background: #171717; border-color: #292929; color: #ccc; }
+
+/* Product images are contained, with room around the object and clear preview actions. */
+:root .reference-project-workbench .generation-result .studio-gallery { gap: 18px; }
+:root .reference-project-workbench .studio-result-context { gap: 12px; align-items: center; flex-wrap: wrap; }
+:root .reference-project-workbench .studio-result-context label { gap: 10px; font-size: 12px; color: #999; min-width: 0; }
+:root .reference-project-workbench .studio-result-context select { max-width: 100%; min-height: 38px; }
+:root .reference-project-workbench .studio-result-origin { color: #888; font-size: 11px; }
+:root .reference-project-workbench .studio-history-notice { padding: 12px 14px; background: #171717; color: #aaa; border: 1px solid #292929; border-radius: 7px; font-size: 12px; line-height: 1.8; }
+:root .reference-project-workbench .c-result-collection-heading { margin-bottom: 14px; color: #ddd; font-size: 13px; }
+:root .reference-project-workbench .c-result-grid { gap: 20px; }
+:root .reference-project-workbench .c-result-card { padding: 10px; background: #0d0d0d; border: 1px solid #292929; border-radius: 10px; }
+:root .reference-project-workbench .generation-result .c-result-art { height: clamp(230px,25vw,360px); border: 1px solid #292929; background: #171717; border-radius: 6px; padding: 16px; }
+:root .reference-project-workbench .c-result-art > img { object-fit: contain; }
+:root .reference-project-workbench .c-result-open { background: #0d0d0deb; color: #ededed; border: 1px solid #3a3a3a; }
+:root .reference-project-workbench .c-result-card-caption { padding: 14px 4px 0; gap: 10px; font-size: 12px; }
+:root .reference-project-workbench .c-result-card-detail { padding-inline: 4px; margin-block: 7px 5px; font-size: 11px; line-height: 1.8; }
+:root .reference-project-workbench .c-result-guidance { margin-top: 16px; font-size: 11px; color: #888; }
+:root .reference-project-workbench .studio-stage-toolbar { margin-bottom: 10px; color: #999; }
+:root .reference-project-workbench .studio-stage-viewport { flex: none; height: clamp(300px,46vh,600px); min-height: 260px; background: #0d0d0d; border: 1px solid #292929; border-radius: 10px; }
+:root .reference-project-workbench .studio-stage-image { padding: 24px; object-fit: contain; }
+:root .reference-project-workbench .studio-stage-empty { gap: 14px; }
+:root .reference-project-workbench .studio-stage-empty > svg { color: #666; }
+:root .reference-project-workbench .studio-stage-empty strong { color: #ccc; font-size: 14px; }
+:root .reference-project-workbench .studio-stage-empty p { max-width: 40ch; margin: 0; color: #888; font-size: 12px; line-height: 1.8; }
+:root .reference-project-workbench .studio-stage-empty button { padding: 8px 13px; background: #171717; border: 1px solid #3a3a3a; border-radius: 6px; color: #ddd; font-size: 12px; }
+:root .reference-project-workbench .studio-stage-caption { padding-block: 12px; gap: 14px; align-items: flex-start; color: #999; font-size: 11px; }
+:root .reference-project-workbench .studio-image-actions { flex-shrink: 0; }
+:root .reference-project-workbench .studio-image-actions :is(button,a) { color: #aaa; background: #171717; border-color: #292929; border-radius: 5px; }
+:root .reference-project-workbench .studio-image-prompt pre { background: #171717; color: #bbb; border-color: #292929; line-height: 1.8; overflow-wrap: anywhere; }
+:root .reference-project-workbench .c-result-preview .studio-stage-viewport { height: min(58vh,680px); min-height: 180px; }
+:root .reference-project-workbench .c-result-preview .studio-stage { padding: 0; }
+
+@media (min-width: 1200px) {
+  :root .reference-project-workbench .generation-workspace { grid-template-columns: 300px minmax(0,1fr); }
+  :root .reference-project-workbench .generation-workspace.is-config-collapsed { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 1199px) and (min-width: 1024px) {
+  :root .reference-project-workbench .generation-workspace { grid-template-columns: 272px minmax(0,1fr); gap: 20px; }
+  :root .reference-project-workbench .generation-workspace.is-config-collapsed { grid-template-columns: minmax(0,1fr); }
+  :root .reference-project-workbench .generation-config-stack { padding-inline: 16px; }
+}
+@media (max-width: 1023px) {
+  :root .reference-project-workbench .generation-config { width: min(380px,calc(100% - 20px)); box-shadow: 16px 0 50px #0008; }
+  :root .reference-project-workbench .generation-config-mobile-head { padding: 18px 20px; border-bottom: 1px solid #292929; }
+  :root .reference-project-workbench .generation-config-scroll { overflow-y: auto; scrollbar-gutter: auto; }
+  :root .reference-project-workbench .generation-config-backdrop { background: #0009; backdrop-filter: blur(3px); }
+  :root .reference-project-workbench .generation-config-stack { padding-inline: 20px; }
+}
+@media (max-width: 600px) {
+  :root .reference-project-workbench .professional-mode-toolbar { gap: 10px; padding-block: 2px 16px; }
+  :root .reference-project-workbench .creation-mode-switch { margin-right: auto; }
+  :root .reference-project-workbench .creation-mode-switch button { padding-inline: 12px; min-width: 66px; }
+  :root .reference-project-workbench .generation-result-header small { font-size: 11px; max-width: 28ch; }
+  :root .reference-project-workbench .generation-modules-panel { padding-inline: 14px; margin-bottom: 18px; }
+  :root .reference-project-workbench .generation-section-card { padding-block: 18px; }
+  :root .reference-project-workbench .module-selector-meta { flex-direction: column; gap: 6px; }
+  :root .reference-project-workbench .module-task-catalog { gap: 8px; padding-block: 12px 16px; }
+  :root .reference-project-workbench .module-task-header { padding: 12px; gap: 8px; }
+  :root .reference-project-workbench .module-task-type { max-width: 60%; }
+  :root .reference-project-workbench :is(.module-task-overview,.module-task-parameter-summary) { padding: 0 12px 14px; }
+  :root .reference-project-workbench .module-task-summary > div { grid-template-columns: minmax(0,1fr); gap: 2px; }
+  :root .reference-project-workbench .module-task-editor { padding: 16px 12px; }
+  :root .reference-project-workbench .module-parameter-row { grid-template-columns: minmax(0,1fr) 30px; gap: 9px; }
+  :root .reference-project-workbench .module-parameter-row > label { grid-column: 1; }
+  :root .reference-project-workbench .module-parameter-row > button { grid-column: 2; grid-row: 1; }
+  :root .reference-project-workbench .studio-confirmation-details > summary { padding: 14px; font-size: 12px; }
+  :root .reference-project-workbench .studio-confirmation-details > .hero-prompt-confirmation { padding: 4px 14px 16px; }
+  :root .reference-project-workbench .generation-result .hero-task-prompt-field textarea { min-height: 180px; padding: 12px; }
+  :root .reference-project-workbench .hero-constraint-grid,
+  :root .reference-project-workbench .hero-fact-grid { grid-template-columns: minmax(0,1fr); }
+  :root .reference-project-workbench .hero-prompt-confirmation > footer .ui-button { width: 100%; min-height: 42px; }
+  :root .reference-project-workbench .suite-prompt-card { padding: 16px; }
+  :root .reference-project-workbench .suite-generate-strip > .ui-button { width: 100%; min-height: 42px; }
+  :root .reference-project-workbench .studio-result-context { align-items: flex-start; }
+  :root .reference-project-workbench .studio-result-context label { width: 100%; display: grid; gap: 8px; }
+  :root .reference-project-workbench .studio-result-context select { width: 100%; }
+  :root .reference-project-workbench .c-result-grid { grid-template-columns: minmax(0,1fr); gap: 16px; }
+  :root .reference-project-workbench .generation-result .c-result-art { height: 300px; }
+  :root .reference-project-workbench .studio-stage-viewport { height: 330px; min-height: 260px; }
+  :root .reference-project-workbench .studio-stage-image { padding: 16px; }
+  :root .reference-project-workbench .studio-stage-caption { flex-wrap: wrap; }
+  :root .reference-project-workbench .studio-task-status { padding: 12px; }
+}
+@media (hover: none) { :root .reference-project-workbench .c-result-open { opacity: 1; } }

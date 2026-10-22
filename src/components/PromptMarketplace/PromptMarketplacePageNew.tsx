@@ -1,13 +1,16 @@
-import { Search, Store, Plus, Trash2, FolderCog, Pencil, X } from "lucide-react";
+import { Search, Store, Plus, Trash2, Pencil } from "lucide-react";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { suiteApi, ApiResultUnknownError, createIdempotencyKey, type ApiPromptCategory, type ApiPromptTemplate, type ApiPromptTemplateDetail } from "../../api/client";
 import { readCacheKeys, sharedReadCache } from "../../lib/read-cache";
 import { filterPromptTemplates, type PromptCategoryFilter } from "../../lib/prompt-categories";
 import { Button } from "../ui/button";
+import { Dialog } from "../ui/dialog";
 import { PromptSidebar } from "./PromptSidebar";
 import { PromptGrid } from "./PromptGrid";
 import { PromptDetailPanel } from "./PromptDetailPanel";
 import "./prompt-marketplace-interaction.css";
+import "../../pages/reference-pages.css";
+import "../../pages/reference-settings.css";
 
 export function PromptMarketplacePageNew() {
   const cachedItems = sharedReadCache.peek<ApiPromptTemplate[]>(readCacheKeys.promptTemplates());
@@ -17,6 +20,7 @@ export function PromptMarketplacePageNew() {
   const [activeCategory, setActiveCategory] = useState<PromptCategoryFilter>("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailActivation, setDetailActivation] = useState(0);
   const [selectedDetail, setSelectedDetail] = useState<ApiPromptTemplateDetail | null>(null);
   const [detailStatus, setDetailStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [detailError, setDetailError] = useState("");
@@ -36,6 +40,18 @@ export function PromptMarketplacePageNew() {
   const [categoryDrafts, setCategoryDrafts] = useState<Record<string, string>>(() => Object.fromEntries((cachedCategories ?? []).map((category) => [category.id, category.name])));
   const detailRequestId = useRef(0);
   const selectedIdRef = useRef<string | null>(null);
+  const detailTriggerRef = useRef<HTMLElement | null>(null);
+  const shellRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!selectedId || !window.matchMedia("(max-width: 1100px)").matches) return;
+    const frame = requestAnimationFrame(() => {
+      const panel = shellRef.current?.querySelector<HTMLElement>(".prompt-detail-panel");
+      panel?.focus({ preventScroll: true });
+      panel?.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedId, detailActivation]);
 
   const emptyPrompt = { code: "", name: "", kind: "image_to_image", kindName: "图生图", executionTarget: "llm", body: "", userPromptTemplate: "", categoryId: null as string | null };
   const [newPrompt, setNewPrompt] = useState(emptyPrompt);
@@ -44,6 +60,7 @@ export function PromptMarketplacePageNew() {
   const isDirty = newPrompt.code !== "" || newPrompt.name !== "" || newPrompt.body !== "" || newPrompt.userPromptTemplate !== "" || Boolean(newPrompt.categoryId);
 
   const confirmClose = () => {
+    if (creatingPrompt) return;
     if (!isDirty) { setCreating(false); return; }
     if (confirm("确定放弃已填写的内容？")) { setCreating(false); setNewPrompt(emptyPrompt); setCreateError(""); setIdempotencyKey(createIdempotencyKey()); }
   };
@@ -264,6 +281,8 @@ export function PromptMarketplacePageNew() {
   };
 
   const handleSelect = (id: string) => {
+    setDetailActivation(current => current + 1);
+    detailTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     selectedIdRef.current = id;
     setSelectedId(id);
     setSelectedDetail(sharedReadCache.peek<ApiPromptTemplateDetail>(readCacheKeys.promptDetail(id)) ?? null);
@@ -271,6 +290,8 @@ export function PromptMarketplacePageNew() {
   };
 
   const handleEdit = (item: ApiPromptTemplate) => {
+    setDetailActivation(current => current + 1);
+    detailTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     selectedIdRef.current = item.id;
     setSelectedId(item.id);
     setSelectedDetail(sharedReadCache.peek<ApiPromptTemplateDetail>(readCacheKeys.promptDetail(item.id)) ?? null);
@@ -279,6 +300,8 @@ export function PromptMarketplacePageNew() {
   };
 
   const handleTest = (item: ApiPromptTemplate) => {
+    setDetailActivation(current => current + 1);
+    detailTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     selectedIdRef.current = item.id;
     setSelectedId(item.id);
     setSelectedDetail(sharedReadCache.peek<ApiPromptTemplateDetail>(readCacheKeys.promptDetail(item.id)) ?? null);
@@ -287,6 +310,8 @@ export function PromptMarketplacePageNew() {
   };
 
   const handleDuplicate = async (item: ApiPromptTemplate) => {
+    setDetailActivation(current => current + 1);
+    detailTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     // 直接在版本历史中选择要复制的版本
     selectedIdRef.current = item.id;
     setSelectedId(item.id);
@@ -322,7 +347,7 @@ export function PromptMarketplacePageNew() {
   };
 
   return (
-    <div className="app-shell">
+    <div className="app-shell reference-library reference-prompts">
       <header className="app-topbar">
         <div className="workspace-title">
           <Store size={16} />
@@ -333,7 +358,8 @@ export function PromptMarketplacePageNew() {
         </div>
       </header>
 
-      <main className="prompt-marketplace-shell">
+      <main ref={shellRef} className={`prompt-marketplace-shell ${selectedId ? "has-detail" : ""}`}>
+        <div className="reference-prompts-heading"><h1>提示词商城</h1><p>按业务整理模板，查看、测试和对比版本。</p><span>{items.length} 个模板 · {categories.length} 个分类</span></div>
         {initialLoading ? (
           <div className="prompt-loading-container">
             <div className="prompt-loading-spinner">
@@ -360,6 +386,7 @@ export function PromptMarketplacePageNew() {
                   <Search size={15} />
                   <input
                     className="prompt-search-field"
+                    aria-label="搜索提示词"
                     value={query}
                     placeholder="搜索提示词"
                     onChange={(event) => setQuery(event.target.value)}
@@ -449,6 +476,7 @@ export function PromptMarketplacePageNew() {
                 setDetailStatus("idle");
                 setDetailError("");
                 setActiveTabOverride(null);
+                requestAnimationFrame(() => detailTriggerRef.current?.focus());
               }}
               onRetry={() => { if (selectedId) void loadDetail(selectedId); }}
               onSaveNewVersion={handleSaveNewVersion}
@@ -462,17 +490,7 @@ export function PromptMarketplacePageNew() {
       </main>
 
       {creating && (
-        <div className="prompt-detail-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) confirmClose(); }}>
-          <section className="prompt-detail prompt-create-form" role="dialog" aria-modal="true" aria-labelledby="prompt-create-title" onMouseDown={(event) => event.stopPropagation()}>
-            <header className="prompt-create-header">
-              <div>
-                <strong id="prompt-create-title">新建提示词</strong>
-                <span>首次保存将创建 v1</span>
-              </div>
-              <button type="button" className="prompt-create-close" aria-label="关闭新建提示词" onClick={() => confirmClose()}>
-                ×
-              </button>
-            </header>
+        <Dialog open title="新建提示词" eyebrow="首次保存将创建 v1" onOpenChange={open => { if (!open) confirmClose(); }}>
             <div className="prompt-create-fields">
               <label className="prompt-form-field">
                 <span>Code <em>必填</em></span>
@@ -510,19 +528,15 @@ export function PromptMarketplacePageNew() {
                 {creatingPrompt ? "创建中…" : "创建 v1"}
               </Button>
             </div>
-          </section>
-        </div>
+        </Dialog>
       )}
       {managingCategories && (
-        <div className="prompt-detail-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setManagingCategories(false); }}>
-          <section className="prompt-detail prompt-category-manager" role="dialog" aria-modal="true" aria-labelledby="category-manager-title" onMouseDown={(event) => event.stopPropagation()}>
-            <header className="prompt-create-header"><div><strong id="category-manager-title"><FolderCog size={15} />分类管理</strong><span>分类用于整理提示词，不影响执行类型</span></div><button type="button" className="prompt-create-close" aria-label="关闭分类管理" onClick={() => setManagingCategories(false)}><X size={15} /></button></header>
+        <Dialog open title="分类管理" eyebrow="按业务整理提示词" onOpenChange={setManagingCategories}>
             <div className="prompt-category-manager-body">
-              <div className="prompt-category-create-row"><input value={newCategoryName} maxLength={40} placeholder="输入新分类名称" onChange={(event) => setNewCategoryName(event.target.value)} /><Button size="sm" onClick={() => void createCategory(newCategoryName).then((category) => { if (category) setNewCategoryName(""); })}><Plus size={13} />新增分类</Button></div>
+              <div className="prompt-category-create-row"><input aria-label="新分类名称" value={newCategoryName} maxLength={40} placeholder="输入新分类名称" onChange={(event) => setNewCategoryName(event.target.value)} /><Button size="sm" onClick={() => void createCategory(newCategoryName).then((category) => { if (category) setNewCategoryName(""); })}><Plus size={13} />新增分类</Button></div>
               {categories.length === 0 ? <div className="prompt-category-manager-empty">暂无自定义分类</div> : categories.map((category) => <div className="prompt-category-manager-row" key={category.id}><input aria-label={`编辑分类 ${category.name}`} value={categoryDrafts[category.id] ?? category.name} onChange={(event) => setCategoryDrafts((current) => ({ ...current, [category.id]: event.target.value }))} /><span>{category.templateCount} 个提示词</span><Button size="sm" variant="ghost" title="保存重命名" onClick={() => void saveCategoryName(category)}><Pencil size={13} /></Button><Button size="sm" variant="ghost" title="删除分类" onClick={() => void deleteCategory(category)}><Trash2 size={13} /></Button></div>)}
             </div>
-          </section>
-        </div>
+        </Dialog>
       )}
     </div>
   );

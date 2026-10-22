@@ -37,7 +37,7 @@ export function PromptDetailPanel({ template, selectedItem, detailStatus, detail
 
   if (!template) {
     return (
-      <aside className="prompt-detail-panel">
+      <aside className="prompt-detail-panel" tabIndex={-1} aria-label="提示词详情">
         {selectedItem ? <>
           <div className="prompt-detail-header">
             <div><strong>{selectedItem.name}</strong><span>{selectedItem.code}</span></div>
@@ -88,7 +88,7 @@ export function PromptDetailPanel({ template, selectedItem, detailStatus, detail
   };
 
   return (
-    <aside className="prompt-detail-panel">
+    <aside className="prompt-detail-panel" tabIndex={-1} aria-label="提示词详情">
       <div className="prompt-detail-header">
         <div>
           <strong>{template.name}</strong>

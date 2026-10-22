@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createIdempotencyKey } from "../../api/client";
 import { reverseProjectsApi, type ReverseModule, type ReverseProject } from "../../api/reverse-projects";
 import { Button } from "../../components/ui/button";
 import { Dialog } from "../../components/ui/dialog";
@@ -6,7 +7,7 @@ import { errorMessage, moduleFields, overallFields, ReverseError } from "./share
 
 export function AnalysisEditDialog({ project, module, kind, onClose, onSaved }: { project: ReverseProject; module?: ReverseModule; kind: "overall" | "module"; onClose: () => void; onSaved: (project: ReverseProject) => void }) {
   const [overall, setOverall] = useState(project.overall);
-  const [draft, setDraft] = useState<ReverseModule>(module ?? { id: crypto.randomUUID(), title: "", referenceImageId: project.references[0]?.id ?? "", goal: "", layout: "", informationHierarchy: "", typography: "", colorAndLighting: "", adaptationNotes: "" });
+  const [draft, setDraft] = useState<ReverseModule>(module ?? { id: createIdempotencyKey(), title: "", referenceImageId: project.references[0]?.id ?? "", goal: "", layout: "", informationHierarchy: "", typography: "", colorAndLighting: "", adaptationNotes: "" });
   const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   async function save() {
     if (busy) return; setBusy(true); setError("");

@@ -14,7 +14,7 @@ export type CanvasImage = {
 };
 export type GenerationStep = ApiCanvasGenerationStep & { sourceNodeIds: string[]; outputNodeIds: string[]; missingSource: boolean };
 export type CanvasGraph = { steps: GenerationStep[]; edges: Edge[] };
-export type CanvasNode = Node<{ image?: CanvasImage; title?: string; step?: GenerationStep; openStep?: (step: GenerationStep) => void; regenerateStep?: (step: GenerationStep) => void; selectImageVersion?: (image: CanvasImage, versionId: string) => void; versionSaving?: boolean; generationStatus?: string; latestRevisionNumber?: number }, "image" | "imageGroup" | "generation">;
+export type CanvasNode = Node<{ image?: CanvasImage; title?: string; step?: GenerationStep; openStep?: (step: GenerationStep) => void; regenerateStep?: (step: GenerationStep) => void; selectImageVersion?: (image: CanvasImage, versionId: string) => void; versionSaving?: boolean; generationStatus?: string; latestRevisionNumber?: number; connectNodes?: (source: string, target: string) => void; connectionCandidates?: () => Array<{ id: string; title: string; upstream: boolean; downstream: boolean }> }, "image" | "imageGroup" | "generation">;
 export type CanvasGroup = ApiCanvasLayout["groups"][number] & { title?: string };
 export function imagePrompt(image: CanvasImage, version = image.version) {
   const prompt = version?.promptSnapshot.finalPrompt ?? version?.promptSnapshot.prompt ?? version?.promptSnapshot.summary;
@@ -95,7 +95,7 @@ export function canvasGraph(images: CanvasImage[], workbench: ApiWorkbench, asse
     const id = `generation:${step.id}`;
     for (const [source, target] of [...step.sourceNodeIds.map((source) => [source, id]), ...step.outputNodeIds.map((target) => [id, target])]) {
       if (source === target) continue;
-      edges.push({ id: `${source}->${target}`, source, target, type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed, color: "#668878" }, style: { stroke: "#668878", strokeWidth: 2 }, selectable: false });
+      edges.push({ id: `${source}->${target}`, source, target, type: "default", markerEnd: { type: MarkerType.ArrowClosed, color: "#3b4658" }, style: { stroke: "#3b4658", strokeWidth: 2 }, selectable: false });
     }
   }
   return { steps, edges };

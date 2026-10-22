@@ -183,7 +183,7 @@ test("图片编辑会话刷新可恢复，并支持失败重试与终版选择",
   await page.route("**/api/projects/proj-demo/assets/*/preview", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="white"/></svg>' }));
 
   await page.route("**/api/suites/proj-demo/workbench", (route) => route.fulfill({ json: { data: state.workbench } }));
-  await page.route("**/api/image-editor/capabilities", (route) => route.fulfill({ json: { data: { provider: { name: "fake", version: "1", capabilitiesVersion: "1" }, capabilities: { imageToImage: true, currentVersionInput: true, addText: true, changeText: true, redraw: true, erase: true, outpaint: true, ocr: true } } } }));
+  await page.route("**/api/image-editor/capabilities", (route) => route.fulfill({ json: { data: { provider: { name: "fake", version: "1", capabilitiesVersion: "1" }, capabilities: { imageToImage: true, currentVersionInput: true, promptEdit: true, addText: true, changeText: true, redraw: true, erase: true, cropResize: true, ocr: true } } } }));
   await page.route("**/api/image-editor/sessions", async (route) => {
     calls.session += 1;
     expect(route.request().postDataJSON().sourceVersionId).toBe("asset-source");
@@ -214,10 +214,10 @@ test("图片编辑会话刷新可恢复，并支持失败重试与终版选择",
   await page.getByRole("complementary", { name: "图片属性" }).getByRole("button", { name: "编辑图片" }).dispatchEvent("click");
   await expect(page.getByRole("dialog", { name: "图片编辑器" })).toBeVisible();
   const editor = page.getByRole("dialog", { name: "图片编辑器" });
-  await expect(editor.getByRole("button", { name: /描述修改/ })).toHaveCount(0);
+  await expect(editor.getByRole("button", { name: "描述修改 可用", exact: true })).toBeEnabled();
   await expect(editor.getByRole("button", { name: /^再次生成|^扩图|^消除笔/ })).toHaveCount(0);
   await expect(editor.getByLabel("修改要求", { exact: true })).toHaveCount(0);
-  await expect(editor.getByText("需要修改提示词时，请返回前面的提示词节点修改并生成新版本。", { exact: true })).toBeVisible();
+  await expect(editor.getByText("选择“描述修改”，直接输入你希望这张图片如何变化；也可以选择其他工具精细编辑。", { exact: true })).toBeVisible();
   await editor.getByRole("button", { name: "添加文本 可用", exact: true }).click();
   await expect(editor.getByLabel("添加文字要求")).toHaveValue("醒目");
   await expect(page.getByText("添加文本：新品主视觉", { exact: true })).toBeVisible();

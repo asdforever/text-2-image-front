@@ -27,14 +27,14 @@ test("首页展示真实任务并保留独立新建入口", async ({ page }) => 
   await page.route("**/api/projects/home-project", route => route.fulfill({ json: { data: project } }));
   await page.route("**/api/task-center", route => route.fulfill({ json: { data: { projects: [{ projectId: project.id, projectName: project.name, tasks: [{ id: "task", projectId: project.id, projectName: project.name, type: "suite", workbenchTab: "suite", status: "partially_failed", updatedAt: project.updatedAt, progress: { total: 10, succeeded: 5, failed: 5, cancelled: 0 } }] }] } } }));
   await page.goto("/workspace");
-  await expect(page.getByRole("heading", { name: "今天继续做什么？" })).toBeVisible();
-  await expect(page.getByLabel("最近任务动态")).toContainText("部分失败");
-  await expect(page.getByLabel("最近任务动态")).toContainText("5 / 10");
+  await expect(page.getByRole("heading", { name: "图片工作室" })).toBeVisible();
+  await expect(page.getByLabel("任务动态")).toContainText("部分失败");
+  await expect(page.getByLabel("任务动态")).toContainText("5/10");
   await page.getByRole("button", { name: "新建项目", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "创建项目" })).toBeVisible();
 });
 
-test("旧后端尚未重启时仍显示真实图片数量和封面", async ({ page }) => {
+test("旧接口兜底也使用生成结果作为封面", async ({ page }) => {
   const project = { id: "legacy-home", name: "旧接口项目", status: "active", archivedAt: null, createdAt: "2026-09-25T00:00:00Z", updatedAt: "2026-09-25T00:00:00Z" };
   await page.route("**/api/projects", route => route.fulfill({ json: { data: [project] } }));
   await page.route("**/api/projects/legacy-home", route => route.fulfill({ json: { data: {
@@ -43,53 +43,60 @@ test("旧后端尚未重启时仍显示真实图片数量和封面", async ({ pa
       { id: "result", kind: "generated", state: "available" },
     ],
   } } }));
-  await page.route("**/api/projects/legacy-home/assets/source/preview", route => route.fulfill({ path: "public/assets/gan65-product.jpg", contentType: "image/jpeg" }));
+  await page.route("**/api/projects/legacy-home/assets/result/preview", route => route.fulfill({ path: "public/assets/gan65-product.jpg", contentType: "image/jpeg" }));
   await page.route("**/api/task-center", route => route.fulfill({ json: { data: { projects: [] } } }));
   await page.goto("/workspace");
   const card = page.getByRole("button", { name: /旧接口项目/ });
   await expect(card).toContainText("2 张图片");
-  await expect(card.locator("img")).toHaveAttribute("src", "/api/projects/legacy-home/assets/source/preview");
+  await expect(card.locator("img")).toHaveAttribute("src", "/api/projects/legacy-home/assets/result/preview");
 });
 
-test("上传失败后重试复用项目，文件名自动填写名称", async ({ page }) => {
-  let creates = 0, uploads = 0;
+test("创建失败可重试，保留填写的项目名称", async ({ page }) => {
+  let creates = 0;
+  const project = { id: "retry-project", name: "我的商品", status: "active", assetCount: 0, coverAssetId: null, createdAt: "2026-10-13T00:00:00Z", updatedAt: "2026-10-13T00:00:00Z", assets: [], selections: {} };
   await page.route("**/api/projects", route => {
-    if (route.request().method() === "POST") { creates++; return route.fulfill({ json: { data: { id: "new-home", name: "商品" } } }); }
-    return route.fulfill({ json: { data: [] } });
-  });
-  await page.route("**/api/task-center", route => route.fulfill({ json: { data: { projects: [] } } }));
-  await page.route("**/api/projects/new-home/assets", route => { uploads++; return route.fulfill({ status: 503, json: { error: { message: "上传暂时失败" } } }); });
-  await page.goto("/workspace");
-  await page.getByRole("button", { name: "新建项目", exact: true }).click();
-  await page.getByLabel("商品图片").setInputFiles({ name: "商品.png", mimeType: "image/png", buffer: Buffer.from("test") });
-  await expect(page.getByLabel("项目名称", { exact: true })).toHaveValue("商品");
-  await page.getByRole("button", { name: "创建并进入工作台" }).click();
-  await expect(page.getByRole("alert")).toContainText("上传暂时失败");
-  await page.getByRole("button", { name: "重试上传" }).click();
-  await expect.poll(() => uploads).toBe(2);
-  expect(creates).toBe(1);
-});
-
-test("新建项目先保存商品图片再进入工作台", async ({ page }) => {
-  const project = { id: "created-project", name: "我的商品", status: "active", updatedAt: "2026-09-24T08:00:00Z", createdAt: "2026-09-24T08:00:00Z", assets: [], selections: {} };
-  let uploaded = false;
-  await page.route("**/api/projects", route => route.fulfill({ json: { data: route.request().method() === "POST" ? project : [] } }));
-  await page.route("**/api/task-center", route => route.fulfill({ json: { data: { projects: [] } } }));
-  await page.route("**/api/projects/created-project", route => route.fulfill({ json: { data: project } }));
-  await page.route("**/api/projects/created-project/assets", route => {
     if (route.request().method() !== "POST") return route.fulfill({ json: { data: [] } });
-    expect(route.request().postData()).toContain('name="kind"');
-    expect(route.request().postData()).toContain("source");
-    uploaded = true;
-    return route.fulfill({ json: { data: { id: "source" } } });
+    creates++;
+    expect(route.request().postDataJSON().name).toBe("我的商品");
+    return creates === 1 ? route.fulfill({ status: 503, json: { error: { message: "创建暂时失败" } } }) : route.fulfill({ json: { data: project } });
   });
+  await page.route("**/api/projects/retry-project", route => route.fulfill({ json: { data: project } }));
+  await page.route("**/api/task-center", route => route.fulfill({ json: { data: { projects: [] } } }));
   await page.goto("/workspace");
-  await page.getByRole("button", { name: "新建项目", exact: true }).click();
-  await page.getByLabel("商品图片").setInputFiles({ name: "商品.png", mimeType: "image/png", buffer: Buffer.from("test") });
+  await page.getByRole("button", { name: "商品图创作", exact: true }).click();
   await page.getByLabel("项目名称", { exact: true }).fill("我的商品");
   await page.getByRole("button", { name: "创建并进入工作台" }).click();
+  await expect(page.getByRole("alert")).toContainText("创建暂时失败");
+  await expect(page.getByLabel("项目名称", { exact: true })).toHaveValue("我的商品");
+  await page.getByRole("button", { name: "创建并进入工作台" }).click();
+  await expect(page).toHaveURL(/\/projects\/retry-project\?tab=base$/);
+  expect(creates).toBe(2);
+});
+
+test("创建等待期间禁止重复提交", async ({ page }) => {
+  let creates = 0;
+  let releaseCreate!: () => void;
+  const pending = new Promise<void>(resolve => { releaseCreate = resolve; });
+  const project = { id: "created-project", name: "我的商品", status: "active", assetCount: 0, coverAssetId: null, updatedAt: "2026-10-13T00:00:00Z", createdAt: "2026-10-13T00:00:00Z", assets: [], selections: {} };
+  await page.route("**/api/projects", async route => {
+    if (route.request().method() !== "POST") return route.fulfill({ json: { data: [] } });
+    creates++;
+    await pending;
+    return route.fulfill({ json: { data: project } });
+  });
+  await page.route("**/api/projects/created-project", route => route.fulfill({ json: { data: project } }));
+  await page.route("**/api/task-center", route => route.fulfill({ json: { data: { projects: [] } } }));
+  await page.goto("/workspace");
+  await page.getByRole("button", { name: "商品图创作", exact: true }).click();
+  await page.getByLabel("项目名称", { exact: true }).fill("我的商品");
+  await page.getByRole("button", { name: "创建并进入工作台" }).click();
+  try {
+    await expect.poll(() => creates).toBe(1);
+    await expect(page.getByRole("button", { name: "创建中…" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "取消", exact: true })).toBeDisabled();
+  } finally { releaseCreate(); }
   await expect(page).toHaveURL(/\/projects\/created-project\?tab=base$/);
-  expect(uploaded).toBe(true);
+  expect(creates).toBe(1);
 });
 
 test("任务服务失败与项目刷新失败均不移除已显示项目", async ({ page }) => {
@@ -103,7 +110,7 @@ test("任务服务失败与项目刷新失败均不移除已显示项目", async
   await page.route("**/api/task-center", route => route.fulfill({ status: 503, json: { error: { message: "任务服务失败" } } }));
   await page.goto("/workspace");
   await expect(page.getByRole("button", { name: /保留的项目/ })).toBeVisible();
-  await expect(page.getByLabel("最近任务动态")).toContainText("任务动态暂时不可用");
+  await expect(page.getByLabel("任务动态")).toContainText("任务动态暂时不可用");
   await page.getByRole("button", { name: "刷新项目", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("项目刷新失败");
   await expect(page.getByRole("button", { name: /保留的项目/ })).toBeVisible();
@@ -124,5 +131,5 @@ test("C 工作台中等宽度导航可见且白底图各行不重叠", async ({ 
     return secondRow!.y - first!.y - first!.height;
   }).toBeGreaterThanOrEqual(0);
   await page.setViewportSize({ width: 1100, height: 800 });
-  await expect(page.getByRole("link", { name: "工作台", exact: true }).locator("svg")).toBeVisible();
+  await expect(page.getByRole("link", { name: "首页", exact: true }).locator("svg")).toBeVisible();
 });

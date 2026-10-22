@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Sparkles, X } from "lucide-react";
-import { projectAssetPreviewUrl, suiteApi, type ApiCanvasRevision, type ApiCanvasTrack, type ApiProjectAsset } from "../../api/client";
+import { createIdempotencyKey, projectAssetPreviewUrl, suiteApi, type ApiCanvasRevision, type ApiCanvasTrack, type ApiProjectAsset } from "../../api/client";
 import type { GenerationStep } from "./model";
 
 const statusLabel = (status: string) => ({ queued: "等待生成", generating: "生成中", succeeded: "已完成", failed: "失败", partial: "部分完成" }[status] ?? status);
@@ -52,12 +52,12 @@ export function CanvasRegenerateDialog({ projectId, step, tracks, assets, close,
     setBusy(true); setError("");
     const body = { stepId, baseRevisionId: baseId, taskPrompt: prompt, sourceAssetIds: sources, ...(preview ? { restoredConstraintsHash: preview.constraintsHash } : {}) };
     const payload = JSON.stringify(body);
-    if (request.current?.payload !== payload) request.current = { payload, key: crypto.randomUUID() };
+    if (request.current?.payload !== payload) request.current = { payload, key: createIdempotencyKey() };
     try { await suiteApi.regenerateCanvas(projectId, body, request.current!.key); await submitted(); close(); }
     catch (err) { setError(err instanceof Error ? err.message : "提交失败，请重试"); }
     finally { setBusy(false); }
   };
-  return <dialog ref={dialog} className="ic-generation-dialog ic-regenerate-dialog" aria-label="迭代生成" onCancel={(event) => { if (locked) event.preventDefault(); else close(); }}>
+  return <dialog ref={dialog} className="ic-generation-dialog ic-regenerate-dialog reference-editor" aria-label="迭代生成" aria-busy={locked} onCancel={(event) => { if (locked) event.preventDefault(); else close(); }}>
     <header><div><small>提示词与图片版本</small><h2>{step.title}</h2></div><button aria-label="关闭迭代生成" disabled={locked} onClick={close}><X size={18} /></button></header>
     <div className="ic-generation-detail-body">
       <label className="ic-version-field">基于提示词版本<select aria-label="提示词版本" value={baseId} disabled={locked} onChange={(e) => switchBase(e.target.value)}>{revisions.map((r) => <option key={r.id} value={r.id}>V{r.number} · {statusLabel(r.status)}</option>)}</select></label>

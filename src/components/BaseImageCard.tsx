@@ -22,7 +22,7 @@ export function BaseImageCard({ asset, selected, selectionMode, onSelect, onPrev
   const label = (isGeneratingWhiteBackground ? generatingBackground : asset.background) === "transparent" ? "透明图" : "白底图";
   return <article className={`base-card ${selected ? "selected" : ""}`}>
     <div className={`base-card-image ${asset.background === "transparent" ? "is-transparent" : ""}`}>
-      <img src={asset.url} alt={asset.name} />
+      <button type="button" className="base-card-preview" aria-label={`查看素材 ${asset.name}`} onClick={onPreview}><img src={asset.url} alt={asset.name} loading="lazy" /></button>
       {selectionMode && <input className="base-card-check" type="checkbox" checked={selected} onChange={onSelect} aria-label={`选择 ${asset.name}`} />}
       <div className="base-card-hover">{asset.type === "source" && <Button size="sm" variant="secondary" title={isGeneratingWhiteBackground ? `正在生成${label}` : "生成白底图"} onClick={onGenerateWhiteBackground} disabled={isGeneratingWhiteBackground}><Sparkles size={12} /></Button>}<Button size="sm" variant="secondary" title={isCurrent ? "当前使用的图片" : "设为当前使用"} onClick={onSetCurrent} disabled={isCurrent}><Check size={12} /></Button><Button size="sm" variant="secondary" title="查看大图" onClick={onPreview}><Eye size={12} /></Button><Button size="sm" variant="secondary" title="导出" onClick={onExport}><Download size={12} /></Button><Button size="sm" variant="danger" title="删除" onClick={onDelete}><Trash2 size={12} /></Button></div>
     </div>

@@ -56,14 +56,15 @@ test("成品库按项目展示自动归档的全部资产", async ({ page }) => 
   await page.route(`**/api/product-libraries/${library.id}/products?includeArchived=false`, (route) =>
     route.fulfill({ json: { data: [product] } }),
   );
+  await page.route(`**/api/products/${product.id}`, route => route.fulfill({ json: { data: product } }));
 
   await page.goto("/product-libraries");
   await expect(page.getByRole("heading", { name: "项目成品档案" })).toBeVisible();
   const projectCard = page.locator(".workflow-project-card").filter({ hasText: "无线键盘项目" });
   await expect(projectCard).toBeVisible();
-  await expect(projectCard).toHaveAttribute("aria-expanded", "false");
+  await expect(projectCard.locator("img")).toHaveAttribute("src", product.assets[1].previewUrl);
   await projectCard.click();
-  await expect(projectCard).toHaveAttribute("aria-expanded", "true");
+  await expect(page).toHaveURL(/\/product-libraries\/projects\/prod-1$/);
   await expect(page.getByText("keyboard.png", { exact: true })).toBeVisible();
   await expect(page.getByText("hero.png", { exact: true })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "项目批次" })).toBeVisible();
@@ -75,7 +76,7 @@ test("成品库按项目展示自动归档的全部资产", async ({ page }) => 
   await page.getByRole("combobox", { name: "图片模块类型" }).selectOption("source");
   await expect(page.getByText("keyboard.png", { exact: true })).toBeVisible();
   await expect(page.getByText("hero.png", { exact: true })).toHaveCount(0);
-  await expect(page).toHaveURL(/\/product-libraries$/);
+  await expect(page).toHaveURL(/\/product-libraries\/projects\/prod-1$/);
   await page.goto(`/product-libraries/${library.id}`);
   await expect(page.getByText("无线键盘项目", { exact: true })).toBeVisible();
   await expect(page.getByText("原图 1", { exact: true })).toBeVisible();

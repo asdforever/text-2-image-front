@@ -1,0 +1,174 @@
+/* Library pages share iToVideo's project proportions and dark workspace panels. */
+.reference-library {
+  --page-bg:#141414; --surface-1:#0d0d0d; --surface-2:#171717;
+  --border:#242424; --text:#ededed; --muted:#8a8a8a; --studio-accent:#fff;
+  color:#ededed; background:#141414; color-scheme:dark;
+}
+.reference-library :is(.management-page,.task-center-page) { width:100%; max-width:1600px; margin-inline:auto; padding:28px 48px 56px; }
+.reference-library .reference-library-heading { display:flex; flex-direction:row; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+.reference-library .reference-library-heading > div { display:flex; align-items:baseline; flex-wrap:wrap; gap:10px; }
+:root .reference-library.app-shell .reference-library-heading h1 { margin:0; color:#f0f0f0; font-size:20px; font-weight:600; letter-spacing:.5px; }
+.reference-library .reference-library-heading p { margin:0; color:#8a8a8a; font-size:12px; }
+.reference-library .reference-library-heading > button { flex:none; }
+.reference-library .reference-project-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:20px; }
+.reference-library .reference-project-stats > div { display:grid; gap:7px; padding:14px 16px; background:#0d0d0d; border:1px solid #222; border-radius:10px; box-shadow:0 2px 10px #0008; }
+.reference-library .reference-project-stats small { display:flex; align-items:center; gap:7px; font-size:11px; color:#8c8c8c; }
+.reference-library .reference-project-stats strong { font-size:24px; font-weight:600; line-height:1; color:#fff; }
+.reference-library .reference-project-stats .is-active strong { color:#4a9eff; }
+.reference-library .reference-project-stats .is-complete strong { color:#34d399; }
+.reference-library .reference-project-stats .is-attention strong { color:#f5a36c; }
+.reference-library-filters { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+:root .reference-library .reference-library-filters .management-search { flex:1; width:auto; min-width:180px; max-width:340px; margin:0; height:36px; border:1px solid #242424; border-radius:8px; background:#0d0d0d; color:#8a8a8a; }
+.reference-library .management-search input { height:34px; color:#ededed; font-size:13px; }
+.reference-library .management-search input::placeholder { color:#777; }
+.reference-library-select { height:36px; max-width:100%; padding:0 12px; background:#0d0d0d; border:1px solid #242424; border-radius:8px; color:#ededed; font:inherit; font-size:13px; cursor:pointer; }
+:root body .reference-library.app-shell .ui-button-default { background:#fff; color:#111; border-color:#fff; border-radius:8px; }
+:root .reference-library.app-shell .ui-button-secondary { background:#1b1b1d; color:#ddd; border-color:#333; border-radius:6px; }
+:root .reference-library.app-shell .ui-button-ghost { color:#aaa; border-radius:6px; }
+:root .reference-library.app-shell .ui-button-ghost:hover { color:#fff; background:#222; }
+.reference-library .management-grid { grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr)); gap:20px; }
+:root .reference-library .reference-management-card { position:relative; display:flex; padding:0; gap:0; overflow:hidden; border-radius:14px; transition:transform .25s,border-color .25s,box-shadow .25s; }
+.reference-library .reference-management-card::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:0; background:linear-gradient(135deg,#4a9eff0d,transparent); transition:opacity .25s; }
+:root .reference-library .reference-management-card:hover { border-color:#4a9eff66; box-shadow:0 8px 32px #000a,0 0 40px #4a9eff26; transform:translateY(-3px); }
+.reference-library .reference-management-card:hover::before { opacity:1; }
+.reference-library .reference-management-open { gap:16px; padding:16px; font:inherit; }
+.reference-library .reference-management-copy { gap:12px; padding:4px 0; }
+:root .reference-library .reference-management-copy h2 { padding-right:36px; font-size:16px; color:#e8f0ff; letter-spacing:.3px; }
+.reference-library .reference-management-copy > div { display:grid; justify-items:start; gap:5px; }
+.reference-library .reference-management-copy p { margin:0; font-size:11px; color:#8d9aaa; }
+.reference-library .reference-management-arrow { align-self:flex-end; flex:none; color:#8a8a8a; }
+.reference-card-actions { position:absolute; z-index:2; right:10px; top:10px; display:flex; gap:6px; opacity:0; transition:opacity .2s; }
+.reference-management-card:is(:hover,:focus-within) .reference-card-actions { opacity:1; }
+:root .reference-library .reference-card-actions .ui-button { width:28px; height:28px; min-height:28px; padding:0; border:1px solid #2e2e2e; background:#0a0a0ad1; }
+:root .reference-library .reference-card-actions .ui-button:hover { color:#4a9eff; border-color:#3d7fd0; }
+:root .reference-library .reference-card-actions .reference-card-danger:hover { color:#f87171; border-color:#ef4444; }
+.reference-library-pagination { display:flex; align-items:center; flex-wrap:wrap; gap:14px; margin-top:24px; color:#999; font-size:12px; }
+.reference-library-pagination > span:first-child { margin-right:auto; }
+.reference-library-pagination label { display:flex; align-items:center; gap:6px; }
+.reference-library-pagination .reference-library-select { height:30px; font-size:12px; padding:0 8px; }
+.reference-library .empty-state { padding:56px 20px; border:1px dashed #292929; border-radius:12px; color:#999; font-size:13px; }
+.reference-library .upload-feedback { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-bottom:16px; padding:10px 14px; border:1px solid #333; border-radius:8px; background:#181818; color:#ccc; font-size:12px; }
+.reference-library .upload-feedback[role="alert"] { background:#ef444414; border-color:#ef444447; color:#f87171; }
+.reference-task-sync { display:flex; align-items:center; gap:7px; margin-left:auto; font-size:11px; color:#999; }
+.reference-task-sync i { width:5px; height:5px; border-radius:50%; background:#777; }
+.reference-task-sync i.is-live { background:#4a9eff; box-shadow:0 0 8px #4a9eff66; }
+.reference-tasks .task-project-list { gap:24px; }
+.reference-tasks .task-project-group { padding-top:16px; border-color:#282828; }
+.reference-tasks .task-project-header { margin-bottom:14px; }
+:root .reference-tasks .task-project-header h2 { font-size:14px; font-weight:600; color:#e8f0ff; overflow-wrap:anywhere; }
+.reference-tasks .task-project-header span { font-size:11px; color:#999; }
+.reference-tasks .task-list { gap:10px; }
+:root .reference-library.reference-tasks .task-row { grid-template-columns:48px minmax(0,1fr) minmax(180px,260px) auto; gap:16px; padding:18px 20px; border:1px solid #4a9eff26; border-radius:12px; background:linear-gradient(135deg,#0f0f14b3,#14141cd9); transition:border-color .2s; }
+.reference-tasks .task-row:hover { border-color:#4a9eff59; }
+.reference-task-icon { display:grid; place-items:center; height:48px; width:48px; border-radius:10px; color:#6ab3ff; background:#4a9eff12; border:1px solid #4a9eff26; }
+.reference-task-icon.suite { color:#c0aff5; border-color:#b49aff26; background:#b49aff0d; }
+:root .reference-tasks .task-row-main strong { font-size:13px; font-weight:600; color:#ededed; }
+.reference-tasks .task-row-main span { color:#999; font-size:11px; }
+.reference-tasks .task-status { min-width:0; color:#999; }
+.reference-tasks .task-status strong { display:flex; align-items:center; gap:6px; font-size:11px; }
+.reference-tasks .task-status:is(.running,.generating,.queued,.leased,.dispatching,.compiling,.compiling_prompt) { color:#6ab3ff; }
+.reference-tasks .task-status:is(.succeeded,.completed) { color:#34d399; }
+.reference-tasks .task-status:is(.failed,.partially_failed,.needs_retry) { color:#f5a36c; }
+.reference-task-progress { width:100%; height:4px; margin-top:8px; border-radius:3px; overflow:hidden; background:#ffffff14; }
+.reference-task-progress i { display:block; height:100%; border-radius:inherit; background:currentColor; transition:width .45s ease; }
+.reference-tasks .reference-task-error { color:#f2a2a2; overflow-wrap:anywhere; line-height:1.6; }
+.reference-tasks .reference-task-failures { color:#f5a36c; }
+.reference-library :is(button,input,select):focus-visible { outline:2px solid #a6cfff; outline-offset:3px; }
+:root .reference-library .reference-library-filters .management-search:focus-within { border-color:#3d7fd0; outline:2px solid #a6cfff; outline-offset:2px; }
+.reference-library .management-search input:focus-visible { outline:none; }
+@media (max-width:1024px) {
+  .reference-library :is(.management-page,.task-center-page) { padding:20px 24px 40px; }
+  .reference-library .reference-project-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  :root .reference-library.reference-tasks .task-row { grid-template-columns:40px minmax(0,1fr) auto; gap:12px; padding:16px; }
+  .reference-task-icon { width:40px; height:40px; }
+  .reference-tasks .task-status { grid-column:2 / 3; grid-row:2; }
+  .reference-tasks .task-row > button { grid-column:3; grid-row:1 / 3; }
+}
+@media (hover:none) { .reference-card-actions { opacity:1; } }
+@media (max-width:600px) {
+  .reference-library :is(.management-page,.task-center-page) { padding:20px 12px 36px; }
+  .reference-library .reference-library-heading { flex-direction:row; align-items:flex-start; }
+  .reference-library .reference-library-heading > div { display:grid; gap:7px; }
+  .reference-library .reference-library-heading p { max-width:170px; line-height:1.6; }
+  .reference-library .reference-management-thumb { flex-basis:80px; width:80px; height:80px; }
+  .reference-library .reference-management-copy h2 { font-size:14px; padding-right:40px; }
+  .reference-library .reference-management-arrow { display:none; }
+  .reference-card-actions { opacity:1; }
+  :root .reference-library .reference-library-filters .management-search { min-width:0; flex-basis:100%; max-width:none; }
+  .reference-task-filters .task-filter { flex:1; width:0; min-width:0; }
+  .reference-task-sync { flex-basis:100%; }
+  :root .reference-library.reference-tasks .task-row { grid-template-columns:32px minmax(0,1fr); }
+  .reference-task-icon { width:32px; height:32px; }
+  .reference-tasks .task-row > button { grid-column:2; grid-row:3; justify-self:start; }
+  .reference-library-pagination { gap:10px; }
+  .reference-library-pagination > span:first-child { flex-basis:100%; }
+  .reference-library-pagination > label { flex-basis:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .reference-library *,.reference-library *::before { animation:none!important; transition:none!important; }
+}
+
+/* Input libraries and archived output share the compact project card. */
+.reference-library .reference-three-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.reference-library-result { margin-left:auto; color:#777; font-size:11px; }
+:root .reference-library.reference-assets .reference-asset-card { border:1px solid #4a9eff26; background:linear-gradient(135deg,#0f0f14b3,#14141cd9); box-shadow:0 4px 16px #0008,inset 0 1px #ffffff08; }
+:root .reference-library.reference-assets .reference-management-copy h2 { margin:0; color:#e8f0ff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reference-assets .reference-asset-symbol { color:#6ab3ff; }
+.reference-assets .reference-asset-symbol.text { color:#baa7ef; border-color:#b49aff33; background:radial-gradient(circle at 30% 30%,#b49aff1f,transparent 70%),#1b1922; }
+.reference-assets .reference-card-description { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.6; overflow-wrap:anywhere; }
+:root .reference-assets .dialog-panel { background:#141414; border-color:#333; color:#ddd; }
+:root .reference-assets .dialog-panel :is(.ui-input,.ui-textarea,.ui-select) { background:#0d0d0d; color:#ededed; border-color:#333; }
+:root .reference-assets .dialog-header h2 { color:#f0f0f0; }
+.reference-assets .dialog-body > p { line-height:1.8; overflow-wrap:anywhere; font-size:13px; }
+:root .reference-products .workflow-project-grid { grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr)); gap:20px; }
+:root .reference-products .workflow-project-card { gap:16px; padding:16px; border:1px solid #4a9eff26; border-radius:14px; color:#ededed; background:linear-gradient(135deg,#0f0f14b3,#14141cd9); box-shadow:0 4px 16px #0008,inset 0 1px #ffffff08; transition:transform .25s,border-color .25s,box-shadow .25s; }
+:root .reference-products .workflow-project-card:is(:hover,[aria-expanded="true"]) { border-color:#4a9eff66; box-shadow:0 8px 32px #000a,0 0 40px #4a9eff26; }
+:root .reference-products .workflow-project-card:hover { transform:translateY(-3px); }
+:root .reference-products .workflow-project-card .project-thumb { flex:0 0 100px; width:100px; height:100px; border:1px solid #4a9eff33; border-radius:10px; color:#7e8da2; background:linear-gradient(135deg,#1a1a25,#25252f); }
+:root .reference-products .project-thumb img { object-fit:cover; }
+:root .reference-products .workflow-project-body { display:grid; gap:7px; }
+:root .reference-products .workflow-project-body h3 { margin:0; font-size:16px; color:#e8f0ff; }
+:root .reference-products .workflow-project-body p { color:#8d9aaa; font-size:11px; }
+:root .reference-products .workflow-project-body > .reference-status { margin:0; font-size:10px; color:#aaa; }
+:root .reference-products .workflow-project-body > .reference-status.active { color:#6ab3ff; }
+.reference-products .workflow-project-body small { font-size:11px; color:#888; }
+:root .reference-products .workflow-project-card > svg { align-self:flex-end; margin:0; color:#888; }
+:root .reference-products .product-library-inline-archive { background:#0d0d0d; border-color:#292929; }
+
+/* Scope these rules to the reverse project list; its editor keeps its own layout. */
+.reference-reverse { --studio-soft:#4a9eff1f; --surface-3:#1a1a20; }
+.reference-reverse .rp-main { width:100%; max-width:1600px; margin-inline:auto; padding:28px 48px 56px; }
+.reference-reverse .reference-library-heading { flex-wrap:nowrap; }
+.reference-reverse .rp-filters { margin-right:0; padding:3px; border:1px solid #242424; border-radius:8px; background:#0d0d0d; }
+.reference-reverse .rp-filters button { padding:6px 12px; font-size:12px; }
+.reference-reverse .rp-filters button[aria-pressed="true"] { color:#ededed; background:#2a2a2a; }
+:root .reference-reverse .rp-search { padding:0 10px; }
+.reference-reverse .rp-search input { min-width:0; width:100%; }
+.reference-reverse .rp-project-grid { grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr)); gap:20px; }
+.reference-reverse .rp-project-card { min-width:0; border:1px solid #4a9eff26; border-radius:14px; background:linear-gradient(135deg,#0f0f14,#14141c); box-shadow:0 4px 16px #0008; transition:transform .25s,border-color .25s,box-shadow .25s; }
+.reference-reverse .rp-project-card:hover { border-color:#4a9eff66; transform:translateY(-3px); box-shadow:0 8px 32px #000a,0 0 40px #4a9eff26; }
+.reference-reverse .rp-project-card:focus-visible { outline:2px solid #a6cfff; outline-offset:3px; }
+.reference-reverse .rp-cover { border-bottom:1px solid #ffffff0a; background:radial-gradient(ellipse at top,#4a9eff12,transparent 70%),#18181d; }
+:root .reference-reverse .rp-project-card h2 { color:#e8f0ff; font-size:16px; }
+.reference-reverse .rp-card-open { color:#9fcaff; }
+.reference-reverse .rp-badge.is-published { color:#70dcb7; background:#34d3991a; }
+.reference-reverse .rp-project-card footer { flex-wrap:wrap; row-gap:10px; }
+.reference-reverse .rp-error { border-color:#ef444447; background:#ef444414; color:#f87171; }
+.reference-reverse .rp-list-note { font-size:11px; border-color:#282828; }
+@media(max-width:1024px) {
+  .reference-reverse .rp-main { padding:20px 24px 40px; }
+}
+@media(max-width:600px) {
+  .reference-library .reference-three-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .reference-library .reference-three-stats > div:first-child { grid-column:1 / -1; }
+  :root .reference-products .workflow-project-card .project-thumb { flex-basis:80px; width:80px; height:80px; }
+  :root .reference-products .workflow-project-body h3 { font-size:14px; }
+  :root .reference-products .workflow-project-card > svg { display:none; }
+  .reference-reverse .rp-main { padding:20px 12px 36px; }
+  .reference-reverse .rp-filters { width:100%; }
+  .reference-reverse .rp-filters button { flex:1; }
+  :root .reference-reverse .rp-search.management-search { flex-basis:calc(100% - 50px); }
+  .reference-reverse .rp-cover { height:190px; }
+  .reference-reverse .rp-cover img { height:160px; }
+  .reference-reverse .rp-cover-multiple img:not(:first-child) { height:140px; }
+}

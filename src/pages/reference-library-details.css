@@ -1,0 +1,66 @@
+/* Image-first detail surfaces use the same neutral panels as the reference workspace. */
+.reference-detail .reference-detail-back { margin:0 0 18px; }
+.reference-detail .reference-detail-heading > div:first-child { min-width:0; display:grid; gap:9px; }
+.reference-detail .reference-detail-heading h1 { overflow-wrap:anywhere; }
+.reference-detail .reference-detail-heading p { max-width:80ch; line-height:1.7; overflow-wrap:anywhere; }
+.reference-detail .reference-library-heading > .reference-detail-actions { display:flex; align-items:center; gap:8px; flex:none; }
+.reference-media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr)); gap:20px; }
+.reference-media-card { position:relative; min-width:0; border:1px solid #29292f; border-radius:12px; overflow:hidden; background:#0d0d0f; transition:border-color .2s,box-shadow .2s; }
+.reference-media-card:is(:hover,:focus-within) { border-color:#4a9eff66; box-shadow:0 8px 24px #0006; }
+.reference-media-open { display:block; width:100%; min-width:0; border:0; padding:0; background:transparent; color:#ededed; text-align:left; cursor:pointer; font:inherit; }
+.reference-media-preview { position:relative; display:grid; place-items:center; aspect-ratio:1; overflow:hidden; padding:12px; border-bottom:1px solid #24242a; background:radial-gradient(ellipse at top,#4a9eff0d,transparent 70%),#1a1a20; color:#7a8ca0; }
+.reference-media-preview img { display:block; width:100%; height:100%; min-height:0; object-fit:contain; }
+.reference-media-preview.is-text { display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:20px; padding:24px; color:#b8a6ee; }
+.reference-media-preview.is-text p { display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; margin:0; color:#c9c9ce; font-size:13px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
+.reference-media-hint { position:absolute; left:12px; bottom:12px; padding:5px 9px; border:1px solid #ffffff24; border-radius:5px; background:#000b; color:#eee; font-size:10px; opacity:0; transition:opacity .2s; }
+.reference-media-card:is(:hover,:focus-within) .reference-media-hint { opacity:1; }
+.reference-media-meta { display:grid; gap:7px; padding:16px; }
+:root .reference-detail .reference-media-meta h2 { margin:0; color:#e8f0ff; font-size:14px; font-weight:600; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.reference-media-meta span { color:#9a9aa4; font-size:11px; }
+.reference-media-meta small { color:#72727e; font-size:10px; }
+.reference-media-actions { position:absolute; right:10px; top:10px; opacity:0; transition:opacity .2s; }
+.reference-media-card:is(:hover,:focus-within) .reference-media-actions { opacity:1; }
+:root .reference-detail .reference-media-actions button { width:28px; height:28px; min-height:28px; border:1px solid #ffffff24; background:#0d0d0dd9; color:#aaa; }
+:root .reference-detail .reference-media-actions button:hover { color:#f87171; border-color:#ef4444; }
+.reference-detail .dialog-footer { margin:0; padding:16px 21px; border-top:1px solid #292929; }
+.reference-detail .dialog-backdrop:has(.reference-preview-body) .dialog-panel { width:min(960px,100%); }
+.reference-preview-body { display:grid; gap:16px; }
+.reference-preview-image { width:100%; height:60dvh; object-fit:contain; border-radius:6px; background:#1a1a1f; }
+.reference-preview-original { display:inline-flex; align-items:center; gap:7px; justify-self:start; color:#a6cfff; font-size:12px; }
+.reference-preview-text { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:13px; line-height:1.9; color:#d3d3d9; }
+.reference-preview-original:focus-visible { outline:2px solid #a6cfff; outline-offset:4px; }
+
+.reference-archive-detail { --surface-3:#1a1a20; }
+.reference-archive-detail .reference-archive-filters { gap:12px; align-items:center; }
+.reference-archive-detail .product-library-inline-filters { justify-content:flex-start; }
+.reference-archive-detail .product-library-inline-filters .image-batch-filter { display:grid; gap:6px; }
+.reference-archive-detail .product-library-inline-filters select { min-width:150px; background:#0d0d0d; color:#ededed; border-color:#292929; border-radius:7px; height:36px; }
+.reference-archive-detail .project-archive { padding:20px; border:1px solid #292929; border-radius:12px; background:#0d0d0d; }
+.reference-archive-detail .project-archive-header { padding-bottom:16px; border-bottom:1px solid #242424; }
+:root .reference-archive-detail .project-archive-header h2 { color:#e8f0ff; font-size:15px; overflow-wrap:anywhere; }
+.reference-archive-detail .project-archive-header > div { min-width:0; }
+.reference-archive-detail .project-archive-header > button { flex:none; }
+.reference-archive-detail .project-asset-group h3 { padding-left:10px; border-left:2px solid #4a9eff; font-size:12px; color:#b9c4d1; }
+.reference-archive-detail .project-asset-grid { grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr)); gap:16px; }
+.reference-archive-detail .project-asset-tile { border:1px solid #29292f; border-radius:10px; background:#141416; transition:border-color .2s,box-shadow .2s; }
+.reference-archive-detail .project-asset-tile:hover { border-color:#4a9eff66; box-shadow:0 4px 16px #0006; }
+.reference-archive-detail .project-asset-tile:focus-visible { outline:2px solid #a6cfff; outline-offset:3px; }
+.reference-archive-detail .project-asset-preview { padding:12px; background:#1a1a20; }
+.reference-archive-detail .project-asset-meta { gap:7px; padding:14px; }
+.reference-archive-detail .project-asset-meta strong { color:#e0e5eb; font-size:12px; }
+.reference-archive-detail .project-asset-meta small { color:#888f99; font-size:10px; }
+.reference-archive-detail .project-archive-empty { border-radius:8px; min-height:180px; }
+@media(hover:none) { .reference-media-actions,.reference-media-hint { opacity:1; } }
+@media(max-width:600px) {
+  .reference-detail .reference-detail-heading { flex-wrap:wrap; }
+  .reference-detail .reference-detail-heading p { max-width:100%; }
+  .reference-detail .reference-library-heading > .reference-detail-actions { width:100%; justify-content:flex-end; }
+  .reference-media-grid { gap:14px; }
+  .reference-media-actions,.reference-media-hint { opacity:1; }
+  .reference-archive-detail .reference-archive-filters .product-library-inline-filters { width:100%; }
+  .reference-archive-detail .product-library-inline-filters .image-batch-filter { flex:1; width:auto; min-width:0; }
+  .reference-archive-detail .product-library-inline-filters select { width:100%; min-width:0; }
+  .reference-archive-detail .project-archive { padding:14px; }
+  .reference-archive-detail .project-archive-header { flex-wrap:wrap; }
+  .reference-preview-image { height:50dvh; }
+}

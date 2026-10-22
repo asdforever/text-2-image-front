@@ -7,6 +7,8 @@ import { PromptModelConfig } from "../components/PromptModelConfig";
 import { type GenerationModuleDefinition, type StyleDefinition } from "../lib/generation-workspace";
 import { groupGenerationMarkets, validateGenerationConfig, type GenerationMarketDefinition, type GenerationMarketScope, type GenerationModelDefinition, type PromptBinding, type PromptVersionReference } from "../lib/generation-config";
 import { useGenerationConfigStore } from "../store/useGenerationConfigStore";
+import "./reference-pages.css";
+import "./reference-settings.css";
 
 interface PromptOption {
   templateId: string;
@@ -270,11 +272,11 @@ export function GenerationConfigPage() {
   const selectedPublishedVersion = useMemo(() => published.version, [published.version]);
   const isReady = loadState === "ready";
 
-  return <div className="app-shell generation-config-page generation-config-compact">
+  return <div className="app-shell reference-library reference-config generation-config-page generation-config-compact">
     <header className="app-topbar"><div className="workspace-title"><strong>生成配置</strong><span>主图与套图的生成规则</span></div><div className="topbar-meta"><span>已发布 v{selectedPublishedVersion}</span>{isDirty && <span className="generation-config-unsaved">有未保存修改</span>}</div></header>
     <main className="generation-config-content">
       <div className="generation-config-heading">
-        <div><span className="eyebrow">GENERATION SETTINGS</span><h1>生成配置</h1><p>选择一项进行配置，发布后用于后续生成。</p></div>
+        <div><h1>生成配置</h1><p>管理平台、风格与模型，保存草稿后发布生效。</p></div>
         <div className="generation-config-actions">
           <Button variant="ghost" onClick={() => void discard()} disabled={!isReady || isSaving || formOpen}><RotateCcw size={14} />放弃草稿</Button>
           <Button variant="secondary" onClick={() => void save()} disabled={!isReady || isSaving || !isDirty || formOpen || awaitingBindingVersions}><Save size={14} />保存草稿</Button>

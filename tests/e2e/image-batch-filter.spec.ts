@@ -45,6 +45,7 @@ test("画布和长图按批次与模块交集筛选，跨批次选图和原布�
   await expect.poll(() => page.evaluate(() => localStorage.getItem("canvas-module:batch-demo"))).toBe("all");
   await filter.selectOption("all");
   await moduleFilter.selectOption("hero-detail");
+  await page.getByRole("button", { name: "项目图片", exact: true }).click();
   await expect(page.getByRole("complementary", { name: "项目图片" }).locator(".ic-library-item")).toHaveCount(3);
   await expect(page.locator('.react-flow__node[data-id="asset:a1"]')).toBeVisible();
   await filter.selectOption("batch-b");

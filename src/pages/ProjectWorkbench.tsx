@@ -13,6 +13,8 @@ import { BaseImageWorkspace } from "./BaseImageWorkspace";
 import { HeroImageWorkspace } from "./HeroImageWorkspace";
 import { SuiteWorkspace } from "./SuiteWorkspace";
 import { ProjectReverseWorkspace } from "./ProjectReverseWorkspace";
+import "./reference-workspaces.css";
+import "./reference-generation.css";
 const EmbeddedBoard = lazy(() => import("./BoardPage").then(module => ({ default: module.BoardPage })));
 
 type ImageTab = Exclude<OutputTarget, "video"> | "canvas" | "reverse";
@@ -94,7 +96,7 @@ function ProjectWorkbenchContent() {
       : <SuiteWorkspace key={project.id + ":suite"} project={project} onToast={setToast} onSelectAsset={inspectAsset} onRefresh={refreshProject} />;
 
   return (
-    <div className="app-shell studio-workbench c-workbench">
+    <div className={`app-shell studio-workbench c-workbench ${activeTab === "canvas" ? "reference-canvas-workbench" : "reference-project-workbench"}`}>
       <header className="app-topbar">
         <span className="studio-breadcrumb">个人工作区 / {project.name}</span>
         <div className="topbar-meta"><span>个人工作区</span><Button variant="ghost" size="icon" title="删除项目" aria-label="删除项目" onClick={() => void onClearData()}><Trash2 size={15} /></Button></div>
@@ -106,6 +108,7 @@ function ProjectWorkbenchContent() {
             <Button variant="secondary" aria-expanded={panelOpen} onClick={() => setPanelOpen(value => !value)}><PanelRight size={16} />素材与历史</Button>
           </section>
           <div className="workspace-header">
+            {activeTab === "canvas" && <div className="reference-canvas-project"><Button variant="ghost" size="sm" aria-label="返回工作台" onClick={() => void navigate({ to: "/workspace", search: { variant: undefined } })}><ChevronLeft size={16} /></Button><strong title={project.name}>{project.name}</strong></div>}
             <nav className="workspace-tabs" aria-label="输出类型">
               {(Object.keys(TAB_LABELS) as ImageTab[]).map((tab) => (
                 <button key={tab} className={["workspace-tab", activeTab === tab ? "active" : ""].filter(Boolean).join(" ")} aria-pressed={activeTab === tab} onClick={() => changeTab(tab)}>
@@ -114,7 +117,8 @@ function ProjectWorkbenchContent() {
               ))}
 
             </nav>
-            <div className="topbar-meta">
+            <div id={`canvas-actions-${project.id}`} className="reference-canvas-actions" hidden={activeTab !== "canvas"} />
+            <div className="topbar-meta" hidden={activeTab === "canvas"}>
               {activeTab === "base" && <Button variant="ghost" size="icon" title="批量选择" aria-label="批量选择" aria-pressed={selectionMode} onClick={() => setSelectionMode((value) => !value)}><CheckSquare size={16} /></Button>}
               <Button variant="ghost" size="icon" title={panelOpen ? "收起素材面板" : "展开素材面板"} onClick={() => setPanelOpen((value) => !value)}>
                 <PanelRight size={15} />
@@ -128,7 +132,7 @@ function ProjectWorkbenchContent() {
                   <Suspense fallback={<div className="page-loading" role="status">正在打开{TAB_LABELS[tab]}…</div>}>{renderWorkspace(tab)}</Suspense>
                 </div>)}
               </Panel>
-              {panelOpen && <><Separator className="resizer" /><Panel id="right" className="studio-asset-panel" defaultSize="24" minSize="15" maxSize="34" collapsible collapsedSize={0}><aside className="right-panel"><div className="panel-tabs"><button className={`panel-tab ${panelTab === "assets" ? "active" : ""}`} onClick={() => setPanelTab("assets")}>项目素材</button><button className={`panel-tab ${panelTab === "history" ? "active" : ""}`} onClick={() => setPanelTab("history")}>版本记录</button><Button variant="ghost" size="icon" aria-label="关闭素材面板" title="关闭素材面板" onClick={() => setPanelOpen(false)}><X size={15} /></Button></div><div className="panel-body">{panelTab === "assets" ? <AssetLibraryPanel project={project} selectedAssetId={selectedAssetId} onLocate={locate} /> : <HistoryVersionPanel asset={selectedAsset} onGenerate={generateSelected} />}</div></aside></Panel></>}
+              {panelOpen && activeTab !== "canvas" && <><Separator className="resizer" /><Panel id="right" className="studio-asset-panel" defaultSize="24" minSize="15" maxSize="34" collapsible collapsedSize={0}><aside className="right-panel" aria-label="素材与历史"><div className="panel-tabs"><button className={`panel-tab ${panelTab === "assets" ? "active" : ""}`} aria-pressed={panelTab === "assets"} onClick={() => setPanelTab("assets")}>项目素材</button><button className={`panel-tab ${panelTab === "history" ? "active" : ""}`} aria-pressed={panelTab === "history"} onClick={() => setPanelTab("history")}>版本记录</button><Button variant="ghost" size="icon" aria-label="关闭素材面板" title="关闭素材面板" onClick={() => setPanelOpen(false)}><X size={15} /></Button></div><div className="panel-body">{panelTab === "assets" ? <AssetLibraryPanel project={project} selectedAssetId={selectedAssetId} onLocate={locate} /> : <HistoryVersionPanel asset={selectedAsset} onGenerate={generateSelected} />}</div></aside></Panel></>}
             </Group>
           </div>
         </div>
@@ -137,4 +141,3 @@ function ProjectWorkbenchContent() {
     </div>
   );
 }
-

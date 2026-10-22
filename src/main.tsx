@@ -10,5 +10,7 @@ import "./components/generation-workspace/regular-generation.css";
 import "./components/generation-workspace/c-result-gallery.css";
 import "./pages/workflow-home.css";
 import "./features/reverse-projects/reverse-projects.css";
+import "./pages/reference-home.css";
+import "./components/image-canvas/reference-editors.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><RouterProvider router={router} /></StrictMode>);

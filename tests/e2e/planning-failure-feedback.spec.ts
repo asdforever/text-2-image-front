@@ -33,7 +33,9 @@ for (const mode of ["hero", "suite"] as const) {
     await page.getByRole("button", { name: "选择产品素材", exact: true }).click();
     await page.getByRole("button", { name: /商品.jpg 可用/ }).click();
     await page.getByRole("button", { name: "收起素材选择", exact: true }).click();
-    await page.getByLabel("参数填写", { exact: true }).fill("商品名称：随行杯\n容量：500ml");
+    await page.getByRole("button", { name: "打开规划大师", exact: true }).click();
+    await page.getByLabel("商品信息与规划需求", { exact: true }).fill("商品名称：随行杯\n容量：500ml");
+    await page.getByRole("button", { name: "关闭规划大师", exact: true }).click();
     await page.getByRole("button", { name: config.styleCategories[0].styles[0].label, exact: true }).click();
     await page.getByRole("button", { name: `添加${chosen.label}`, exact: true }).click();
     await page.getByRole("button", { name: "编译提示词", exact: true }).click();

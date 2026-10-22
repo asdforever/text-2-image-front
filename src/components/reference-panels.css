@@ -1,0 +1,55 @@
+:root body .app-shell.reference-project-workbench .studio-asset-panel { background: #0d0d0d; border-color: #292929; overflow: hidden; }
+:root body .app-shell.reference-project-workbench .right-panel { display: flex; flex-direction: column; height: 100%; background: #0d0d0d; border: 0; color: #ededed; }
+:root body .app-shell.reference-project-workbench .panel-tabs { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: center; padding: 4px 8px; border-color: #292929; flex-shrink: 0; }
+:root body .app-shell.reference-project-workbench .panel-tab { min-height: 40px; font-size: 13px; color: #999; border: 0; border-bottom: 2px solid transparent; background: transparent; }
+:root body .app-shell.reference-project-workbench .panel-tab.active { color: #ededed; border-bottom-color: #ededed; }
+:root body .app-shell.reference-project-workbench .panel-body { height: auto; flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.reference-asset-panel, .reference-history-panel { padding: 16px; color: #ededed; min-width: 0; }
+.reference-asset-panel .panel-description, .reference-history-panel .panel-description { color: #999; font-size: 12px; line-height: 1.6; margin: 0 0 14px; }
+:root body .reference-project-workbench .reference-asset-panel .panel-search { display: flex; gap: 8px; align-items: center; background: #171717; border: 1px solid #333; border-radius: 8px; margin-bottom: 16px; padding: 0 10px; color: #999; }
+:root body .reference-project-workbench .reference-asset-panel .panel-search input { border: 0; box-shadow: none; border-radius: 0; background: transparent; padding: 10px 0; height: 38px; color: #ededed; width: 100%; min-width: 0; }
+.reference-asset-panel .panel-search:focus-within { outline: 2px solid #a6cfff; outline-offset: 2px; }
+:root body .reference-project-workbench .reference-asset-panel .asset-group { margin: 0 0 8px; }
+:root body .reference-project-workbench .reference-asset-panel .asset-group-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; background: transparent; color: #bdbdbd; padding: 10px 0; font-size: 12px; border: 0; }
+.reference-asset-panel .asset-group-toggle > span:first-child { display: flex; align-items: center; gap: 7px; }
+.reference-asset-panel .asset-group-toggle > span:last-child { background: #202020; border-radius: 5px; padding: 2px 6px; font-size: 11px; }
+.reference-asset-panel .asset-list { display: grid; gap: 6px; }
+:root body .reference-project-workbench .reference-asset-panel .asset-item { grid-template-columns: 54px minmax(0, 1fr); width: 100%; gap: 10px; padding: 8px; border: 1px solid #292929; border-radius: 9px; background: #171717; color: #ededed; align-items: center; }
+:root body .reference-project-workbench .reference-asset-panel .asset-item:hover { background: #202020; border-color: #555; }
+:root body .reference-project-workbench .reference-asset-panel .asset-item.selected { background: #242424; border-color: #ccc; }
+.reference-asset-panel .asset-item img { width: 54px; height: 54px; object-fit: contain; background: #202020; border-radius: 5px; }
+.reference-asset-panel .asset-item > span { min-width: 0; margin: 0; }
+.reference-asset-panel .asset-item strong { font-size: 12px; color: #ededed; font-weight: 500; }
+.reference-asset-panel .asset-item span span { font-size: 11px; color: #999; }
+.reference-asset-panel .panel-empty { color: #888; padding: 10px 0 12px 21px; text-align: left; font-size: 12px; }
+.reference-asset-panel .panel-stats { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid #292929; color: #999; font-size: 11px; }
+.reference-asset-panel .panel-search-empty, .reference-history-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; color: #999; padding: 40px 16px; font-size: 12px; line-height: 1.6; }
+.reference-asset-panel .panel-search-empty strong, .reference-history-empty strong { color: #ddd; font-size: 13px; font-weight: 500; }
+.reference-history-panel .section-heading { margin-bottom: 14px; }
+.reference-history-panel .section-heading h2 { margin: 0 0 7px; font-size: 14px; color: #ededed; overflow-wrap: anywhere; }
+.reference-history-panel .section-heading span { color: #999; font-size: 12px; }
+.reference-history-panel .history-version-list { display: grid; gap: 12px; margin-top: 16px; }
+:root body .reference-project-workbench .reference-history-panel .history-item { margin: 0; padding: 12px; border: 1px solid #292929; border-radius: 10px; background: #171717; min-width: 0; }
+.reference-history-panel .history-version-heading { display: flex; align-items: baseline; gap: 10px; overflow-wrap: anywhere; }
+.reference-history-panel .history-version-heading strong { color: #ededed; font-size: 13px; flex-shrink: 0; }
+.reference-history-panel .history-version-heading span, .reference-history-panel time { color: #999; font-size: 11px; line-height: 1.6; }
+.reference-history-panel time { display: block; margin-top: 5px; }
+.reference-history-panel .history-preview { position: relative; display: block; width: 100%; margin: 12px 0; padding: 0; background: #101010; border: 1px solid #292929; border-radius: 7px; overflow: hidden; cursor: zoom-in; color: #ddd; }
+.reference-history-panel .history-preview img { display: block; width: 100%; height: 160px; object-fit: contain; margin: 0; border-radius: 0; background: transparent; }
+.reference-history-panel .history-preview > span { position: absolute; right: 6px; bottom: 6px; display: flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 5px; background: #171717e6; color: #ddd; font-size: 10px; }
+:root body .app-shell.reference-project-workbench .reference-history-panel button[aria-pressed="true"] { border-color: #ccc; color: #ededed; background: #303030; }
+.reference-history-panel .history-comparison { margin-top: 18px; padding-top: 12px; border-top: 1px solid #333; }
+.reference-history-panel .history-comparison header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.reference-history-panel .history-comparison strong { color: #ededed; font-size: 12px; }
+.reference-history-panel .history-comparison p { color: #999; font-size: 12px; line-height: 1.6; }
+.reference-history-panel .compare-grid .history-preview img { height: 110px; aspect-ratio: auto; }
+:root body .app-shell.reference-project-workbench .history-preview-dialog .dialog-panel { width: min(860px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; }
+.history-preview-content { min-width: 0; }
+.history-preview-content img { display: block; width: 100%; height: min(65dvh, 680px); object-fit: contain; background: #101010; border-radius: 8px; }
+.history-preview-content p { color: #999; font-size: 12px; margin: 14px 0 0; }
+:root body .reference-project-workbench :is(.reference-asset-panel, .reference-history-panel, .panel-tabs) :is(button, input):focus-visible { outline: 2px solid #a6cfff; outline-offset: 3px; }
+@media (max-width: 1023px) {
+  :root body .app-shell.reference-project-workbench .studio-asset-panel { margin-left: 0; max-width: 100%; width: min(360px, 100%) !important; }
+}
+
+.reference-history-panel .history-item::before { display: none; }

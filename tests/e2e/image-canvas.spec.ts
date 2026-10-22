@@ -68,7 +68,7 @@ test("画布可以进入全屏工作区并通过按钮或 Esc 退出", async ({ 
   await expect(page.getByRole("button", { name: "退出画布全屏" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(studio).not.toHaveClass(/is-fullscreen/);
-  await expect(page.getByRole("button", { name: "项目图片", exact: true })).toHaveClass(/is-active/);
+  await expect(page.getByRole("button", { name: "项目图片", exact: true })).not.toHaveClass(/is-active/);
   await expect(page.getByRole("button", { name: "进入画布全屏" })).toBeVisible();
 });
 
@@ -313,66 +313,47 @@ test("失败版本保留旧图和提示词，可再次打开修改，手机弹�
   await page.screenshot({ path: testInfo.outputPath("canvas-version-mobile.png") });
 });
 
-test("左键长按平移画布，短按选图与直接拖图仍可用，松开和失焦结束平移", async ({ page }) => {
+test("直接拖动空白处只改变视野，拖动图片只改变节点位置", async ({ page }) => {
   const state = await setup(page);
   state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: .75 }, groups: [], nodes: [
     { nodeId: "asset:source-1", x: 80, y: 180 }, { nodeId: "asset:hero-1", x: 450, y: 180 }, { nodeId: "asset:white-1", x: 80, y: 700 },
   ] };
   await page.setViewportSize({ width: 1600, height: 1050 });
   await page.goto("/suites/proj-demo/board");
-  const canvas = page.getByRole("main", { name: "图片画布", exact: true });
   const viewport = page.locator(".react-flow__viewport");
   const transform = () => viewport.evaluate(element => {
     const matrix = new DOMMatrix(getComputedStyle(element).transform);
     return { x: matrix.e, y: matrix.f, zoom: matrix.a };
   });
   await expect.poll(async () => (await transform()).zoom).toBeCloseTo(.75, 2);
-  const picture = page.locator('[data-id="asset:hero-1"] .ic-node-picture');
-  const box = await picture.boundingBox();
-  const point = { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
   const before = await transform();
   const initialNodes = structuredClone(state.layout.nodes);
-  await page.mouse.move(point.x, point.y);
+  const pane = await page.locator(".react-flow__pane").boundingBox();
+  const empty = { x: pane!.x + pane!.width - 150, y: pane!.y + pane!.height - 200 };
+  await page.mouse.move(empty.x, empty.y);
   await page.mouse.down();
-  await expect(canvas).toHaveClass(/is-hold-panning/);
-  await page.mouse.move(point.x + 90, point.y + 55, { steps: 7 });
+  await page.mouse.move(empty.x - 70, empty.y - 40, { steps: 5 });
   await page.mouse.up();
-  await expect(canvas).not.toHaveClass(/is-hold-panning/);
-  await expect.poll(async () => (await transform()).x).toBeCloseTo(before.x + 90, 1);
-  await expect.poll(async () => (await transform()).y).toBeCloseTo(before.y + 55, 1);
-  await expect.poll(() => state.layout.viewport.x).toBeCloseTo(before.x + 90, 1);
+  await expect.poll(() => state.layout.viewport.x).toBeCloseTo(before.x - 70, 1);
+  await expect.poll(() => state.layout.viewport.y).toBeCloseTo(before.y - 40, 1);
   for (const node of initialNodes) expect(state.layout.nodes.find((item: any) => item.nodeId === node.nodeId)).toMatchObject(node);
   const stopped = await transform();
-  await page.mouse.move(point.x + 160, point.y + 110);
+  await page.mouse.move(empty.x - 100, empty.y - 80);
   expect(await transform()).toEqual(stopped);
-  await expect(page.getByRole("complementary", { name: "图片属性" })).toHaveCount(0);
+  await expect(page.locator(".react-flow__selection")).toHaveCount(0);
+  const picture = page.locator('[data-id="asset:hero-1"] .ic-node-picture');
   await picture.click();
   await expect(page.getByRole("complementary", { name: "图片属性" })).toBeVisible();
   await page.getByRole("button", { name: "关闭图片属性", exact: true }).click();
-  const nextBox = await picture.boundingBox();
-  const start = { x: nextBox!.x + nextBox!.width / 2, y: nextBox!.y + nextBox!.height / 2 };
-  const beforeDrag = await transform();
+  const box = await picture.boundingBox();
   const priorX = state.layout.nodes.find((item: any) => item.nodeId === "asset:hero-1").x;
-  await page.mouse.move(start.x, start.y);
+  await page.mouse.move(box!.x + 50, box!.y + 50);
   await page.mouse.down();
-  await page.mouse.move(start.x + 60, start.y + 30, { steps: 3 });
+  await page.mouse.move(box!.x + 110, box!.y + 80, { steps: 3 });
   await page.mouse.up();
   await expect.poll(() => state.layout.nodes.find((item: any) => item.nodeId === "asset:hero-1").x).toBeGreaterThan(priorX);
-  expect(await transform()).toEqual(beforeDrag);
-  const pane = await page.locator(".react-flow__pane").boundingBox();
-  const empty = { x: pane!.x + pane!.width - 100, y: pane!.y + pane!.height - 170 };
-  await page.mouse.move(empty.x, empty.y);
-  await page.mouse.down();
-  await expect(canvas).toHaveClass(/is-hold-panning/);
-  await page.mouse.move(empty.x - 70, empty.y - 40, { steps: 5 });
-  await page.mouse.up();
-  await expect.poll(async () => (await transform()).x).toBeCloseTo(beforeDrag.x - 70, 1);
-  await expect(page.locator(".react-flow__selection")).toHaveCount(0);
-  await page.mouse.down();
-  await expect(canvas).toHaveClass(/is-hold-panning/);
-  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
-  await expect(canvas).not.toHaveClass(/is-hold-panning/);
-  await page.mouse.up();
+  expect(await transform()).toEqual(stopped);
+  expect(state.generations).toBe(0);
 });
 
 test("右键拖动画布且滚轮直接缩放，无需切换工具", async ({ page }) => {
@@ -430,18 +411,6 @@ test("右键拖动画布且滚轮直接缩放，无需切换工具", async ({ pa
   await expect.poll(() => state.layout?.viewport.zoom).toBeGreaterThan(savedViewport.zoom);
   await expect(page.getByRole("button", { name: "选择工具", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "平移工具", exact: true })).toHaveCount(0);
-  const panImageBox = await image.boundingBox();
-  const beforeToolPan = await transform();
-  const beforeToolNode = await page.locator('[data-id="asset:hero-1"]').getAttribute("style");
-  await page.mouse.move(panImageBox!.x + panImageBox!.width / 2, panImageBox!.y + panImageBox!.height / 2);
-  await page.mouse.down();
-  await expect(page.getByRole("main", { name: "图片画布", exact: true })).toHaveClass(/is-hold-panning/);
-  await page.mouse.move(panImageBox!.x + panImageBox!.width / 2 + 50, panImageBox!.y + panImageBox!.height / 2 + 20, { steps: 6 });
-  await page.mouse.up();
-  await expect.poll(async () => (await transform()).x).toBeCloseTo(beforeToolPan.x + 50, 1);
-  await expect.poll(async () => (await transform()).y).toBeCloseTo(beforeToolPan.y + 20, 1);
-  expect(await page.locator('[data-id="asset:hero-1"]').getAttribute("style")).toBe(beforeToolNode);
-  await expect(page.getByRole("main", { name: "图片画布", exact: true })).not.toHaveClass(/is-hold-panning/);
   expect(state.generations).toBe(0);
 });
 
@@ -449,7 +418,9 @@ test("无旧任务的项目也显示真实图片，移出后刷新不丢资产�
   const state = await setup(page);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto("/suites/proj-demo/board");
+  await page.getByRole("button", { name: "项目图片", exact: true }).click();
   await expect(page.getByRole("complementary", { name: "项目图片" })).toBeVisible();
+  await page.getByRole("button", { name: "关闭项目图片" }).click();
   await expect(page.locator(".ic-image-node")).toHaveCount(3);
   await page.locator('.react-flow__node[data-id="asset:hero-1"]').click();
   await page.getByRole("button", { name: "移出画布", exact: true }).click();
@@ -457,8 +428,176 @@ test("无旧任务的项目也显示真实图片，移出后刷新不丢资产�
   await expect.poll(() => state.layout?.nodes.find((n: any) => n.nodeId === "asset:hero-1")?.hidden).toBe(true);
   await page.reload();
   await expect(page.locator(".ic-image-node")).toHaveCount(2);
+  await page.getByRole("button", { name: "项目图片", exact: true }).click();
   await page.getByRole("button", { name: "加入画布 hero-1-产品图片.png" }).click();
   await expect(page.locator(".ic-image-node")).toHaveCount(3);
+  expect(state.deletes).toBe(0);
+  expect(state.generations).toBe(0);
+});
+
+test("从圆点拖到卡片建立连接，刷新保留并可选中断开", async ({ page }) => {
+  const state = await setup(page);
+  state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: 1 }, groups: [], nodes: [
+    { nodeId: "asset:source-1", x: 80, y: 160 }, { nodeId: "asset:hero-1", x: 600, y: 160 }, { nodeId: "asset:white-1", x: 80, y: 680 },
+  ] };
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.goto("/projects/proj-demo?tab=canvas");
+  const source = page.locator('[data-id="asset:source-1"]');
+  const target = page.locator('[data-id="asset:hero-1"]');
+  await expect(source).toBeVisible();
+  const from = await source.locator('.react-flow__handle.source').boundingBox();
+  const to = await target.locator('.ic-node-picture').boundingBox();
+  await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to!.x + 80, to!.y + 80, { steps: 12 });
+  await page.mouse.up();
+  await expect.poll(() => state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1")?.connections).toEqual(["asset:hero-1"]);
+  expect(state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1")).toMatchObject({ x: 80, y: 160 });
+  await page.reload();
+  const edge = page.locator('.react-flow__edge[data-id="manual:asset:source-1->asset:hero-1"]');
+  await expect(edge).toHaveCount(1);
+  const midpoint = await edge.locator('.react-flow__edge-path').evaluate(path => {
+    const svgPath = path as SVGPathElement;
+    const point = svgPath.getPointAtLength(svgPath.getTotalLength() / 2);
+    const screen = new DOMPoint(point.x, point.y).matrixTransform(svgPath.getScreenCTM()!);
+    return { x: screen.x, y: screen.y };
+  });
+  await page.mouse.click(midpoint.x, midpoint.y);
+  await page.getByRole("button", { name: "断开连接", exact: true }).click();
+  await expect(edge).toHaveCount(0);
+  await expect.poll(() => state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1")?.connections ?? []).toEqual([]);
+  await expect(page.locator('.react-flow__edge')).toHaveCount(1);
+  await page.reload();
+  await expect(edge).toHaveCount(0);
+  expect(state.generations).toBe(0);
+});
+
+for (const reverse of [false, true]) test(reverse ? "从输入圆点反向拖到卡片也能连接" : "圆点对圆点连接，空白松手不创建连接", async ({ page }) => {
+  const state = await setup(page);
+  state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: 1 }, groups: [], nodes: [
+    { nodeId: "asset:source-1", x: 80, y: 160 }, { nodeId: "asset:hero-1", x: 600, y: 180 }, { nodeId: "asset:white-1", x: 80, y: 680 },
+  ] };
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.goto("/projects/proj-demo?tab=canvas");
+  const source = page.locator('.react-flow__node[data-id="asset:source-1"]');
+  const target = page.locator('.react-flow__node[data-id="asset:hero-1"]');
+  await expect(source).toBeVisible();
+  const from = await (reverse ? target.locator('.react-flow__handle.target') : source.locator('.react-flow__handle.source')).boundingBox();
+  const to = await (reverse ? source.locator('.ic-node-picture') : target.locator('.react-flow__handle.target')).boundingBox();
+  if (!reverse) {
+    await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(1100, 580, { steps: 12 });
+    await page.mouse.up();
+    await expect(page.locator('.react-flow__edge[data-id^="manual:"]')).toHaveCount(0);
+  }
+  await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to!.x + to!.width / 2, to!.y + to!.height / 2, { steps: 12 });
+  await page.mouse.up();
+  await expect(page.locator('.react-flow__edge[data-id="manual:asset:source-1->asset:hero-1"]')).toHaveCount(1);
+  await expect.poll(() => state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1")?.connections).toEqual(["asset:hero-1"]);
+});
+
+test("加号选择已有节点连接，移动节点后保存连接且禁止重复和循环", async ({ page }, testInfo) => {
+  const state = await setup(page);
+  state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: 1 }, groups: [], nodes: [
+    { nodeId: "asset:source-1", x: 80, y: 160 }, { nodeId: "asset:hero-1", x: 600, y: 180 }, { nodeId: "asset:white-1", x: 80, y: 680 },
+  ] };
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.goto("/projects/proj-demo?tab=canvas");
+  const source = page.locator('.react-flow__node[data-id="asset:source-1"]');
+  const target = page.locator('.react-flow__node[data-id="asset:hero-1"]');
+  await source.hover();
+  await source.getByRole("button", { name: "连接下游节点", exact: true }).click();
+  await page.getByRole("dialog", { name: "选择下游节点" }).getByRole("button", { name: "hero-1-产品图片.png", exact: true }).click();
+  await expect(page.locator('.react-flow__edge[data-id="manual:asset:source-1->asset:hero-1"]')).toHaveCount(1);
+  const box = (await source.locator('.ic-node-picture').boundingBox())!;
+  await page.mouse.move(box.x + 90, box.y + 70);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 130, box.y + 120, { steps: 10 });
+  await page.mouse.up();
+  await expect.poll(() => state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1")?.x).not.toBe(80);
+  expect(state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1").connections).toEqual(["asset:hero-1"]);
+  await page.reload();
+  await source.hover();
+  await source.getByRole("button", { name: "连接下游节点", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "选择下游节点" }).getByRole("button", { name: "hero-1-产品图片.png", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "关闭连接菜单" }).click();
+  await target.hover();
+  await target.getByRole("button", { name: "连接下游节点", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "选择下游节点" }).getByRole("button", { name: "source-1-产品图片.png", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "关闭连接菜单" }).click();
+  await page.screenshot({ path: testInfo.outputPath("canvas-connections.png") });
+  expect(state.generations).toBe(0);
+});
+
+test("加号候选菜单滚轮只滚动列表，不缩放画布", async ({ page }) => {
+  const state = await setup(page);
+  state.assets = Array.from({ length: 18 }, (_, i) => asset(`source-${i}`));
+  state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: 1 }, groups: [], nodes: state.assets.map((image, i) => ({ nodeId: `asset:${image.id}`, x: i ? 1100 : 80, y: i ? 500 + i * 350 : 160 })) };
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.goto("/projects/proj-demo?tab=canvas");
+  const source = page.locator('.react-flow__node[data-id="asset:source-0"]');
+  await source.hover();
+  await source.getByRole("button", { name: "连接下游节点", exact: true }).click();
+  const menu = page.getByRole("dialog", { name: "选择下游节点" });
+  const list = menu.locator(':scope > div');
+  const transform = await page.locator('.react-flow__viewport').getAttribute('style');
+  await list.hover();
+  await page.mouse.wheel(0, 360);
+  await expect.poll(() => list.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  expect(await page.locator('.react-flow__viewport').getAttribute('style')).toBe(transform);
+});
+
+test("连接保存失败时可重试，重载已保存布局会撤回未保存连接", async ({ page }) => {
+  const state = await setup(page);
+  state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: 1 }, groups: [], nodes: [
+    { nodeId: "asset:source-1", x: 80, y: 160 }, { nodeId: "asset:hero-1", x: 600, y: 180 }, { nodeId: "asset:white-1", x: 80, y: 680 },
+  ] };
+  let rejectSave = true;
+  await page.route("**/api/suites/proj-demo/workbench/layout", async route => {
+    if (rejectSave) await route.fulfill({ status: 409, json: { error: { message: "画布布局已被更新" } } });
+    else { state.layout = { ...route.request().postDataJSON(), layoutVersion: state.layout.layoutVersion + 1 }; await route.fulfill({ json: { data: state.layout } }); }
+  });
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.goto("/projects/proj-demo?tab=canvas");
+  const source = page.locator('.react-flow__node[data-id="asset:source-1"]');
+  await source.hover();
+  await source.getByRole("button", { name: "连接下游节点", exact: true }).click();
+  await page.getByRole("dialog", { name: "选择下游节点" }).getByRole("button", { name: "hero-1-产品图片.png", exact: true }).click();
+  await page.getByRole("button", { name: "重试保存", exact: true }).click();
+  rejectSave = false;
+  await page.getByRole("button", { name: "再次尝试保存", exact: true }).click();
+  await expect.poll(() => state.layout.nodes.find((n: any) => n.nodeId === "asset:source-1")?.connections).toEqual(["asset:hero-1"]);
+  await expect(page.getByRole("dialog", { name: "恢复布局保存" })).toHaveCount(0);
+  rejectSave = true;
+  await source.hover();
+  await source.getByRole("button", { name: "连接下游节点", exact: true }).click();
+  await page.getByRole("dialog", { name: "选择下游节点" }).getByRole("button", { name: "white-1-产品图片.png", exact: true }).click();
+  await page.getByRole("button", { name: "重试保存", exact: true }).click();
+  await page.getByRole("button", { name: "重新加载已保存布局", exact: true }).click();
+  await expect(page.locator('.react-flow__edge[data-id="manual:asset:source-1->asset:white-1"]')).toHaveCount(0);
+  await expect(page.locator('.react-flow__edge[data-id="manual:asset:source-1->asset:hero-1"]')).toHaveCount(1);
+});
+
+test("从右侧图片抽屉拖入画布后保存落点并在刷新后恢复", async ({ page }) => {
+  const state = await setup(page);
+  state.layout = { layoutVersion: 1, viewport: { x: 0, y: 0, zoom: 1 }, groups: [], nodes: [
+    { nodeId: "asset:source-1", x: 80, y: 180 }, { nodeId: "asset:hero-1", x: 450, y: 180, hidden: true }, { nodeId: "asset:white-1", x: 80, y: 700 },
+  ] };
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/projects/proj-demo?tab=canvas");
+  await page.getByRole("button", { name: "项目图片", exact: true }).click();
+  const item = page.getByRole("button", { name: "加入画布 hero-1-产品图片.png" });
+  const canvas = page.getByRole("main", { name: "图片画布", exact: true });
+  await item.dragTo(canvas, { targetPosition: { x: 420, y: 350 } });
+  await expect(page.locator('[data-id="asset:hero-1"]')).toBeVisible();
+  await expect.poll(() => state.layout.nodes.find((n: any) => n.nodeId === "asset:hero-1")?.hidden).toBe(false);
+  expect(state.layout.nodes.find((n: any) => n.nodeId === "asset:hero-1")).toMatchObject({ x: 420, y: 350 });
+  await page.reload();
+  await expect(page.locator('[data-id="asset:hero-1"]')).toBeVisible();
+  expect(state.layout.nodes.find((n: any) => n.nodeId === "asset:hero-1")).toMatchObject({ x: 420, y: 350 });
   expect(state.deletes).toBe(0);
   expect(state.generations).toBe(0);
 });

@@ -1,0 +1,172 @@
+/* Match the reference app's neutral chrome while retaining the existing editors. */
+.reference-config, .reference-prompts { --surface-3:#242424; --studio-soft:#4a9eff14; }
+.reference-config .generation-config-content { width:100%; max-width:1600px; margin-inline:auto; padding:28px 48px 56px; }
+.reference-config.generation-config-compact :is(.generation-config-heading,.generation-config-editor,.generation-config-errors,.generation-config-footnote) { max-width:none; }
+.reference-config.generation-config-compact .generation-config-heading { position:static; padding:0; margin-bottom:24px; align-items:center; }
+:root .reference-config.app-shell .generation-config-heading h1 { margin:0 0 10px; color:#f0f0f0; font-size:20px; font-weight:600; }
+.reference-config .generation-config-heading p { color:#999; font-size:12px; }
+.reference-config .generation-config-selection { padding:20px 22px; gap:18px; margin-bottom:20px; background:#0d0d0d; border-color:#272727; border-radius:10px; }
+.reference-config .generation-config-select { gap:8px; }
+.reference-config .generation-config-select:first-child { flex-basis:210px; }
+.reference-config.generation-config-compact :is(.ui-select,.ui-input,.ui-textarea) { background:#171717; border:1px solid #333; color:#ddd; font-size:12px; border-radius:7px; }
+.reference-config.generation-config-compact .ui-select { height:40px; }
+.reference-config.generation-config-compact .generation-config-section { padding:22px; background:#0d0d0d; border-color:#272727; border-radius:10px; }
+.reference-config.generation-config-compact .generation-config-section-head { padding-bottom:18px; border-bottom:1px solid #262626; }
+:root .reference-config .generation-config-section-head h2 { color:#e8e8e8; font-size:15px; }
+.reference-config .generation-config-section-head > div { min-width:0; }
+.reference-config .generation-config-section-head p { color:#929292; }
+.reference-config.generation-config-compact .generation-config-card { padding:20px; border:1px solid #292929; background:#171717; border-radius:9px; }
+.reference-config .generation-config-card-head > div { min-width:0; }
+:root .reference-config.generation-config-compact .generation-config-card-head strong { color:#eee; font-size:15px; overflow-wrap:anywhere; }
+.reference-config.generation-config-compact .generation-config-card p { margin:16px 0; color:#a2a2a2; font-size:12px; line-height:1.8; }
+.reference-config.generation-config-compact .generation-config-card-actions button { border-color:#383838; background:#202020; color:#aaa; }
+.reference-config .generation-config-card-actions button:hover:not(:disabled) { border-color:#777; color:#eee; }
+.reference-config .generation-config-category-toolbar { color:#aaa; }
+.reference-config .generation-config-category-toolbar > span { min-width:0; overflow-wrap:anywhere; }
+.reference-config.generation-config-compact .generation-config-inline-form { padding:20px; background:#171717; border:1px solid #333; border-radius:9px; }
+.reference-config .generation-config-inline-form > * { min-width:0; }
+.reference-config .generation-config-inline-form .generation-config-field:has(textarea) { grid-column:1 / -1; }
+.reference-config .generation-config-inline-form > .generation-config-edit-note { grid-column:1 / -1; margin:0; }
+.reference-config .generation-config-inline-form > .generation-config-errors { grid-column:1 / -1; width:100%; }
+.reference-config .generation-config-field { color:#aaa; }
+.reference-config .generation-config-empty { background:#171717; color:#999; border:1px dashed #333; }
+.reference-config.generation-config-compact .generation-config-errors { background:#ef444414; border-color:#ef444447; color:#f87171; }
+.reference-config .generation-config-footnote { padding-top:18px; border-top:1px solid #272727; color:#999; }
+.reference-config :is(button,input,select,textarea):focus-visible { outline:2px solid #a6cfff; outline-offset:3px; }
+
+.reference-prompts .prompt-marketplace-shell { width:100%; max-width:1600px; margin-inline:auto; padding:28px 48px 40px; grid-template-columns:180px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); gap:20px; }
+.reference-prompts .prompt-marketplace-shell.has-detail { grid-template-columns:180px minmax(0,1fr) 380px; }
+.reference-prompts-heading { grid-column:1 / -1; display:flex; align-items:baseline; flex-wrap:wrap; gap:10px; min-width:0; }
+:root .reference-prompts.app-shell .reference-prompts-heading h1 { margin:0; color:#f0f0f0; font-size:20px; font-weight:600; }
+.reference-prompts-heading p { margin:0; color:#999; font-size:12px; }
+.reference-prompts-heading > span { margin-left:auto; color:#888; font-size:11px; }
+:root .reference-prompts :is(.prompt-sidebar,.prompt-detail-panel) { min-width:0; background:#0d0d0d; border:1px solid #272727; border-radius:10px; }
+.reference-prompts .prompt-marketplace-shell:not(.has-detail) .prompt-detail-panel { display:none; }
+.reference-prompts .prompt-sidebar-header { padding:16px 14px; border-color:#272727; }
+:root .reference-prompts .prompt-sidebar-header h3 { color:#ddd; font-size:12px; }
+.reference-prompts .prompt-sidebar-content { scrollbar-width:thin; }
+.reference-prompts .prompt-category-section { border-color:#272727; }
+.reference-prompts .prompt-category-item { min-width:0; padding:9px 8px; color:#999; }
+.reference-prompts .prompt-category-item span { min-width:0; }
+.reference-prompts .prompt-category-item em { flex:none; margin-left:10px; }
+.reference-prompts .prompt-category-item.active { background:#252525; color:#eee; box-shadow:inset 2px 0 #ededed; }
+.reference-prompts .prompt-list { padding:8px; }
+.reference-prompts .prompt-list-item { padding:12px 9px; border-radius:6px; border:1px solid transparent; }
+.reference-prompts .prompt-list-item.selected { border-color:#4a9eff66; background:#4a9eff0d; }
+:root .reference-prompts .prompt-list-item strong { color:#bbb; font-size:11px; }
+.reference-prompts .prompt-list-code { color:#777; }
+.reference-prompts .prompt-list-version { color:#a6cfff; }
+:root .reference-prompts .prompt-main-area { min-height:0; background:transparent; }
+.reference-prompts .prompt-toolbar { padding:0 0 18px; gap:10px; border:0; background:transparent; flex-wrap:wrap; }
+.reference-prompts .prompt-search { min-width:180px; border-color:#333; background:#0d0d0d; border-radius:8px; }
+.reference-prompts .prompt-search:focus-within { border-color:#a6cfff; outline:2px solid #a6cfff; outline-offset:2px; }
+.reference-prompts .prompt-search-field { min-height:36px; color:#eee; }
+.reference-prompts .prompt-toolbar-actions { flex-wrap:wrap; gap:8px; }
+.reference-prompts .prompt-grid-container { padding:2px 3px 12px; background:transparent; scrollbar-width:thin; }
+.reference-prompts .prompt-grid { grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr)); gap:14px; }
+:root .reference-prompts .prompt-card { min-width:0; padding:16px; gap:14px; border:1px solid #292929; background:#0d0d0d; border-radius:10px; box-shadow:none; cursor:default; }
+:root .reference-prompts .prompt-card:is(:hover,:focus-within) { border-color:#4a9eff66; background:#111; transform:none; box-shadow:0 4px 14px #0005; }
+:root .reference-prompts .prompt-card.selected { background:#4a9eff0d; border-color:#4a9eff80; }
+.reference-prompts .prompt-card-header { flex-wrap:wrap; gap:10px; }
+.reference-prompts .prompt-card-category { margin:0; padding:4px 7px; border:0; border-radius:5px; background:#242424; color:#999; max-width:100%; overflow-wrap:anywhere; }
+.reference-prompts .prompt-card-select { min-width:0; }
+.reference-prompts .prompt-card-select input { flex:none; accent-color:#4a9eff; }
+.reference-prompts .prompt-card-actions { opacity:1; margin-left:auto; gap:2px; }
+.reference-prompts .prompt-card-actions .ui-button { min-width:26px; min-height:26px; padding:5px; color:#888; }
+.reference-prompts .prompt-card-actions .prompt-delete-btn { color:#d38383; }
+.reference-prompts .prompt-card-body { position:relative; display:flex; flex:1; flex-direction:column; gap:9px; }
+:root .reference-prompts .prompt-card h2 { color:#eee; font-size:14px; white-space:normal; overflow:visible; }
+.reference-prompts .prompt-card-open { border:0; padding:0; color:inherit; background:transparent; text-align:left; font:inherit; overflow-wrap:anywhere; }
+.reference-prompts .prompt-card-open::after { content:""; position:absolute; inset:0; cursor:pointer; }
+:root .reference-prompts .prompt-card p { color:#999; font-size:11px; line-height:1.7; overflow-wrap:anywhere; }
+.reference-prompts .prompt-card-footer { border-color:#292929; }
+.reference-prompts .prompt-detail-header { padding:18px; border-color:#272727; }
+:root .reference-prompts .prompt-detail-header strong { color:#eee; font-size:14px; }
+.reference-prompts .prompt-detail-tabs { margin:12px 14px 0; padding:3px; gap:2px; border:1px solid #292929; border-radius:8px; background:#171717; }
+.reference-prompts .prompt-detail-tab { padding:8px 3px; border:0; border-radius:5px; color:#999; }
+.reference-prompts .prompt-detail-tab.active { background:#303030; color:#eee; }
+.reference-prompts .prompt-detail-content { min-width:0; padding:18px; scrollbar-width:thin; }
+.reference-prompts .prompt-info-toolbar { display:flex; gap:6px; flex-wrap:wrap; }
+.reference-prompts .prompt-info-section label { color:#999; text-transform:none; letter-spacing:0; font-weight:500; }
+.reference-prompts .prompt-info-section span { color:#ccc; overflow-wrap:anywhere; }
+:root .reference-prompts .prompt-info-body { margin:0; padding:14px; background:#171717; border-color:#303030; border-radius:7px; color:#bbb; font-size:12px; line-height:1.85; }
+:root .reference-prompts :is(.prompt-edit-input,.prompt-edit-textarea,.prompt-test-select,.prompt-test-textarea) { min-width:0; width:100%; background:#171717; border-color:#333; border-radius:7px; color:#ddd; }
+:root .reference-prompts :is(.prompt-version-item,.prompt-test-result,.prompt-test-preview,.prompt-compare-result-card,.prompt-version-option) { min-width:0; background:#171717; border-color:#303030; border-radius:8px; }
+:root .reference-prompts :is(.prompt-version-item.is-default,.prompt-version-option.selected) { border-color:#4a9eff66; background:#4a9eff0d; }
+:root .reference-prompts .prompt-version-note { background:#252525; color:#bbb; }
+:root .reference-prompts :is(.prompt-version-field,.prompt-test-preview,.prompt-test-output,.prompt-compare-output,.prompt-compare-prompt) pre { background:#0d0d0d; color:#bbb; border-color:#333; }
+:root .reference-prompts .prompt-input-type-btn { background:#171717; border-color:#333; color:#aaa; }
+:root .reference-prompts .prompt-input-type-btn.active { background:#303030; border-color:#666; color:#eee; }
+.reference-prompts :is(.prompt-version-header,.prompt-version-actions,.prompt-version-meta,.prompt-test-actions,.prompt-test-result-header,.prompt-info-actions) { flex-wrap:wrap; }
+.reference-prompts :is(.prompt-version-content pre,.prompt-test-output pre,.prompt-compare-output pre) { overflow-wrap:anywhere; white-space:pre-wrap; }
+.reference-prompts .prompt-compare-grid { grid-template-columns:minmax(0,1fr); }
+.reference-prompts .upload-feedback { margin:0 0 14px; border:1px solid #4a9eff33; background:#4a9eff0d; color:#a6cfff; }
+.reference-prompts .prompt-catalog-error { flex-wrap:wrap; border-color:#ef444447; background:#ef444414; color:#f87171; }
+.reference-prompts :is(button,input,select,textarea):focus-visible { outline:2px solid #a6cfff; outline-offset:3px; }
+.reference-prompts .prompt-detail-panel:focus { outline:0; }
+:root .reference-prompts .dialog-panel { width:min(640px,100%); background:#141414; color:#ddd; border-color:#383838; border-radius:12px; }
+:root .reference-prompts .dialog-header h2 { color:#eee; font-size:16px; }
+.reference-prompts .dialog-header { border-color:#292929; }
+.reference-prompts .prompt-create-fields { padding:20px 22px; }
+.reference-prompts .prompt-create-meta { grid-template-columns:minmax(0,1fr); }
+:root .reference-prompts .prompt-form-field { min-width:0; color:#aaa; }
+:root .reference-prompts .prompt-form-field :is(input,textarea,select) { min-width:0; background:#0d0d0d; border-color:#333; color:#ddd; border-radius:7px; }
+:root .reference-prompts .prompt-create-actions { position:sticky; bottom:0; margin:0; padding:16px 22px; background:#141414; border-color:#292929; }
+.reference-prompts .prompt-category-manager-body { padding:20px 22px; }
+.reference-prompts .prompt-category-create-row { flex-wrap:wrap; }
+.reference-prompts :is(.prompt-category-create-row,.prompt-category-manager-row) input { background:#0d0d0d; border-color:#333; color:#ddd; }
+.reference-prompts .prompt-category-manager-row { flex-wrap:wrap; }
+.reference-prompts .prompt-category-manager-row input { flex-basis:100%; }
+.reference-prompts .prompt-category-manager-row > span { flex:1; }
+
+@media(max-width:1280px) {
+  .reference-prompts .prompt-marketplace-shell.has-detail { grid-template-columns:160px minmax(0,1fr) 340px; gap:16px; }
+}
+@media(max-width:1100px) {
+  .reference-prompts .prompt-marketplace-shell, .reference-prompts .prompt-marketplace-shell.has-detail { grid-template-columns:160px minmax(0,1fr); grid-template-rows:auto auto auto; overflow:auto; align-content:start; }
+  .reference-prompts .prompt-sidebar { max-height:520px; }
+  .reference-prompts .prompt-main-area { min-height:340px; max-height:520px; }
+  .reference-prompts .prompt-detail-panel { grid-column:1 / -1; min-height:420px; overflow:visible; scroll-margin-top:20px; }
+  .reference-prompts .prompt-detail-content { overflow:visible; }
+}
+@media(max-width:1024px) {
+  .reference-config .generation-config-content, .reference-prompts .prompt-marketplace-shell { padding:20px 24px 40px; }
+  .reference-config .generation-config-heading { flex-wrap:wrap; gap:18px; }
+}
+@media(max-width:650px) {
+  .reference-prompts .prompt-marketplace-shell, .reference-prompts .prompt-marketplace-shell.has-detail { display:flex; flex-direction:column; gap:18px; padding:20px 12px 32px; }
+  .reference-prompts-heading { gap:9px; }
+  .reference-prompts-heading > span { flex-basis:100%; margin:0; }
+  .reference-prompts .prompt-sidebar { flex:none; max-height:none; }
+  .reference-prompts .prompt-sidebar-header { display:none; }
+  .reference-prompts .prompt-sidebar-content { padding:4px; overflow:visible; }
+  .reference-prompts .prompt-category-section { display:flex; align-items:center; gap:4px; padding:0; border:0; overflow-x:auto; scrollbar-width:thin; }
+  .reference-prompts .prompt-category-toolbar { flex:none; gap:8px; padding-inline:8px; }
+  .reference-prompts .prompt-category-toolbar strong { display:none; }
+  .reference-prompts .prompt-category-item { flex:none; width:auto; max-width:220px; white-space:nowrap; }
+  .reference-prompts .prompt-category-add { display:none; }
+  .reference-prompts .prompt-list { display:none; }
+  .reference-prompts .prompt-main-area { flex:none; min-height:0; max-height:none; }
+  .reference-prompts .prompt-toolbar { gap:12px; }
+  .reference-prompts .prompt-search { flex-basis:100%; min-width:0; }
+  .reference-prompts .prompt-grid-container { flex:none; max-height:480px; }
+  .reference-prompts .prompt-detail-panel { flex:none; min-height:420px; }
+  .reference-prompts .prompt-detail-header, .reference-prompts .prompt-detail-content { padding:16px; }
+  .reference-prompts .prompt-create-fields, .reference-prompts .prompt-category-manager-body { padding:18px 16px; }
+  .reference-prompts .prompt-create-actions { padding:14px 16px; }
+  .reference-prompts .prompt-category-create-row input { flex-basis:100%; }
+}
+@media(max-width:600px) {
+  .reference-config .generation-config-content { padding:20px 12px 32px; }
+  .reference-config.generation-config-compact .generation-config-heading { gap:18px; }
+  .reference-config .generation-config-actions { flex-wrap:wrap; gap:7px; }
+  .reference-config .generation-config-selection { padding:16px; }
+  .reference-config .generation-config-select:first-child { flex:1 0 100%; }
+  .reference-config.generation-config-compact .generation-config-section { padding:16px; }
+  .reference-config.generation-config-compact .generation-config-card { padding:14px; }
+  .reference-config .generation-config-card-head { flex-wrap:wrap; }
+  .reference-config.generation-config-compact .generation-config-inline-form { grid-template-columns:minmax(0,1fr); padding:14px; }
+  .reference-config .generation-config-category-add { flex-wrap:wrap; }
+  .reference-config.generation-config-compact .generation-config-category-add .ui-input { flex-basis:100%; }
+  .reference-config .topbar-meta { flex:none; flex-wrap:wrap; justify-content:flex-end; gap:5px; }
+}

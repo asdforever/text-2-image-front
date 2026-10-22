@@ -10,9 +10,10 @@ interface ProjectCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (project: ApiProject) => void;
+  initialTab?: "base" | "canvas";
 }
 
-export function ProjectCreateDialog({ open, onOpenChange, onCreated }: ProjectCreateDialogProps) {
+export function ProjectCreateDialog({ open, onOpenChange, onCreated, initialTab = "base" }: ProjectCreateDialogProps) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export function ProjectCreateDialog({ open, onOpenChange, onCreated }: ProjectCr
   const close = () => { if (!busy.current) onOpenChange(false); };
   const enterProject = (project: ApiProject) => {
     onOpenChange(false);
-    void navigate({ to: "/projects/$projectId", params: { projectId: project.id }, search: { tab: "base" } });
+    void navigate({ to: "/projects/$projectId", params: { projectId: project.id }, search: { tab: initialTab } });
   };
   const submit = async () => {
     if (busy.current) return;

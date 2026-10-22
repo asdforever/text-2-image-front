@@ -17,6 +17,7 @@ test("任务中心按项目分组展示主图和详情套图，并且只读刷�
   await expect(page.getByRole("heading", { name: "任务中心", exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "项目 当前项目" })).toBeVisible();
   await expect(page.getByText("2 / 5", { exact: true })).toBeVisible();
+  await expect(page.locator('.reference-task-stats .is-attention strong')).toHaveText("1");
   await page.getByLabel("任务状态").selectOption("awaiting_confirmation");
   await expect(page.getByRole("region", { name: "项目 另一个项目" })).toBeVisible();
   await expect(page.getByRole("region", { name: "项目 当前项目" })).toHaveCount(0);

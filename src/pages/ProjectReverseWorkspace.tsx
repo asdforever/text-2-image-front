@@ -295,7 +295,7 @@ export function ProjectReverseWorkspace({ project, projectDetail, onRefresh, onT
 
   return <section className="project-reverse-workspace" aria-label="项目反推">
     <header className="project-reverse-header">
-      <div><span className="project-reverse-eyebrow">项目反推</span><h1>{project.name} · 模板执行方案</h1><p>按参考套图顺序逐张生成，每次按当前商品信息与模块拆解重新编译提示词。参考图仅供对照。</p></div>
+      <div><h1>项目反推</h1><p>按参考套图顺序逐张生成，用当前商品信息重新编译提示词。</p></div>
       {plan && <div className="project-reverse-actions"><span className={dirty ? "project-reverse-dirty" : "project-reverse-saved"}>{dirty ? "有未保存修改" : <><Check size={13} />已保存</>}</span><Button variant="secondary" disabled={!dirty || busy} onClick={() => void save()}><Save size={14} />保存方案</Button><Button variant="secondary" disabled={busy} onClick={() => void compile()}><Sparkles size={14} />编译提示词</Button><Button disabled={busy || !tasks.length || !hasSource} onClick={() => void generateImages()}><Sparkles size={14} />{working && !generatingTaskId ? "生成中…" : "整套生成"}</Button></div>}
     </header>
     {error && <div className="project-reverse-error" role="alert">{error}</div>}

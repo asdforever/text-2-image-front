@@ -15,12 +15,18 @@ test.beforeEach(async ({ page }) => {
 test("canvas remains inside project navigation and preserves local controls across tabs", async ({ page }) => {
   await page.goto("/projects/proj-ui?tab=canvas");
   await expect(page.getByLabel("输出类型")).toBeVisible();
-  await expect(page.getByRole("complementary", { name: "主导航" })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "主导航" })).toBeHidden();
   await expect(page.getByLabel("图片画布", { exact: true })).toBeVisible();
   await page.getByRole("combobox", { name: "画布模块类型", exact: true }).selectOption("unassigned");
   await page.getByLabel("输出类型").getByRole("button", { name: "白底图", exact: true }).click();
+  await expect(page.getByRole("complementary", { name: "主导航" })).toBeVisible();
   await page.getByLabel("输出类型").getByRole("button", { name: "画布", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "画布模块类型", exact: true })).toHaveValue("unassigned");
+  await expect(page.locator(".reference-canvas-actions").getByRole("button", { name: "进入画布全屏" })).toBeVisible();
+  await page.locator(".reference-canvas-actions").getByRole("button", { name: "进入画布全屏" }).click();
+  await expect(page.getByRole("button", { name: "退出画布全屏" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".reference-canvas-actions").getByRole("button", { name: "进入画布全屏" })).toBeVisible();
   await expect(page).toHaveURL(/projects\/proj-ui\?tab=canvas/);
 });
 
@@ -28,6 +34,19 @@ test("legacy canvas link resolves to the embedded project canvas", async ({ page
   await page.goto("/suites/proj-ui/board");
   await expect(page).toHaveURL(/projects\/proj-ui\?tab=canvas/);
   await expect(page.getByLabel("输出类型")).toBeVisible();
+});
+
+test("切换离开画布再返回，顶部工具仍可见且不改变视野", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", message => { if (message.type() === "error" && message.text().includes("NaN")) errors.push(message.text()); });
+  await page.goto("/projects/proj-ui?tab=canvas");
+  await expect(page.locator(".react-flow")).toBeVisible();
+  const initialViewport = await page.locator(".react-flow__viewport").getAttribute("style");
+  await page.getByLabel("输出类型").getByRole("button", { name: "白底图", exact: true }).click();
+  await page.getByLabel("输出类型").getByRole("button", { name: "画布", exact: true }).click();
+  await expect(page.locator(".reference-canvas-actions").getByRole("button", { name: "刷新项目图片" })).toBeVisible();
+  await expect(page.locator(".react-flow__viewport")).toHaveAttribute("style", initialViewport!);
+  expect(errors).toEqual([]);
 });
 
 test("both generation tabs omit reference suite inputs", async ({ page }) => {
