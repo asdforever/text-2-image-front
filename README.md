@@ -20,6 +20,10 @@ PicAgent Studio 的前端（React 19 + Vite）。后端在另一个仓库。
 2. 将练习分支推送到 GitHub，创建目标为 `main` 的 Pull Request。
 3. 检查变更内容后合并，再在本地同步 `main`。
 
+本次练习分两步进行：先创建 PR 并停留在 `Open` 状态查看差异，再单独点击 `Merge pull request` 完成合并。
+
+合并成功后，PR 显示 `Merged`；关闭而不合并则显示 `Closed`。查看状态可以确认改动是否已经进入 `main`。
+
 ## 本地运行
 
 ```bash
